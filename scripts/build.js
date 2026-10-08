@@ -1,0 +1,10 @@
+const fs = require('node:fs');
+const path = require('node:path');
+const root = path.resolve(__dirname, '..');
+const read = file => fs.readFileSync(path.join(root, file), 'utf8');
+const out = path.join(root, 'dist');
+fs.mkdirSync(out, { recursive: true });
+for (const [source, target] of [['src/domain/analysis.js','Domain.gs'], ['src/server/store.js','Store.gs'], ['src/server/catalog.js','Catalog.gs'], ['src/server/api.js','Api.gs'], ['src/appsscript.json','appsscript.json']]) fs.writeFileSync(path.join(out, target), read(source));
+const html = read('src/web/Index.html').replace('/*__CSS__*/', () => read('src/web/styles.css')).replace('/*__DOMAIN__*/', () => read('src/domain/analysis.js')).replace('/*__APP__*/', () => read('src/web/app.js'));
+fs.writeFileSync(path.join(out,'Index.html'),html);
+console.log('Build concluído em dist/ (Apps Script e demonstração local).');

@@ -1,0 +1,70 @@
+function doGet() {
+  return HtmlService.createHtmlOutputFromFile('Index').setTitle('Análise de fichas de EPI');
+}
+function setupDatabase() { return EpiStore.locked(function () { EpiStore.initialize(); return 'Tabelas inicializadas'; }); }
+function epiBootstrap() { return EpiStore.locked(epiBootstrap_); }
+function epiBootstrap_() {
+  var catalog = EpiCatalog.load(EpiStore), lives = {};
+  EpiStore.rows('Lifetimes').forEach(function (r) { lives[EpiDomain.ca(r.ca)] = Number(r.days); });
+  return { catalog: catalog.index, metadata: catalog.metadata, lifetimes: lives, sheets: epiListSheets_() };
+}
+function epiListSheets() { return EpiStore.locked(epiListSheets_); }
+function epiListSheets_() {
+  var workers = {};
+  EpiStore.rows('Workers').forEach(function (w) { workers[w.id] = w; });
+  return EpiStore.rows('Sheets').map(function(s) { return { id: s.id, worker: workers[s.workerId], state: s.state, updatedAt: s.updatedAt, revision: Number(s.revision) }; });
+}
+function epiLoadSheet(id) { return EpiStore.locked(function () { return epiLoadSheet_(id); }); }
+function epiLoadSheet_(id) {
+  var sheet = EpiStore.rows('Sheets').find(function(s) { return s.id === id; });
+  if (!sheet) throw new Error('Ficha não encontrada.');
+  var worker = EpiStore.rows('Workers').find(function(w) { return w.id === sheet.workerId; });
+  var entries = EpiStore.rows('Entries').filter(function(e) { return e.sheetId === id; }).sort(function(a,b) { return Number(a.position) - Number(b.position); }).map(function(e) {
+    return { id: e.id, ca: String(e.ca), date: String(e.date), physicalExpiry: String(e.physicalExpiry || '') };
+  });
+  return { id: sheet.id, worker: worker, state: sheet.state, revision: Number(sheet.revision), entries: entries };
+}
+function epiSaveSheet(input) {
+  EpiDomain.validateSheet(input);
+  ['id'].forEach(function(k) { if (!/^[\w-]{1,80}$/.test(input[k])) throw new Error('ID inválido.'); });
+  if (!/^[\w-]{1,80}$/.test(input.worker.id)) throw new Error('ID de trabalhador inválido.');
+  if (!['draft', 'complete'].includes(input.state)) throw new Error('Estado da ficha inválido.');
+  input.entries.forEach(function(e) { if (e.physicalExpiry) EpiDomain.date(e.physicalExpiry); });
+  return EpiStore.locked(function () {
+    var sheets = EpiStore.rows('Sheets'), workers = EpiStore.rows('Workers'), entries = EpiStore.rows('Entries');
+    var existing = sheets.find(function(s) { return s.id === input.id; });
+    if (existing && (existing.workerId !== input.worker.id || Number(existing.revision) !== Number(input.revision))) throw new Error('Ficha alterada em outra sessão. Reabra a versão salva antes de continuar. O rascunho local permanece disponível.');
+    // Snapshot for best-effort recovery: Sheets has no multi-table transactions.
+    var oldSheets = sheets.slice(), oldWorkers = workers.slice(), oldEntries = entries.slice();
+    var revision = existing ? Number(existing.revision) + 1 : 1;
+    sheets = sheets.filter(function(s) { return s.id !== input.id; });
+    sheets.push({ id: input.id, workerId: input.worker.id, state: input.state, updatedAt: new Date().toISOString(), revision: revision });
+    workers = workers.filter(function(w) { return w.id !== input.worker.id; });
+    workers.push({ id: input.worker.id, name: input.worker.name.trim(), sector: input.worker.sector.trim(), role: input.worker.role.trim(), ges: input.worker.ges.trim() });
+    entries = entries.filter(function(e) { return e.sheetId !== input.id; });
+    input.entries.forEach(function(e, i) { entries.push({ id: e.id, sheetId: input.id, ca: EpiDomain.ca(e.ca), date: e.date, physicalExpiry: e.physicalExpiry || '', position: i }); });
+    try { EpiStore.replace('Workers', workers); EpiStore.replace('Entries', entries); EpiStore.replace('Sheets', sheets); }
+    catch (error) {
+      try { EpiStore.replace('Workers', oldWorkers); EpiStore.replace('Entries', oldEntries); EpiStore.replace('Sheets', oldSheets); }
+      catch (_) { throw new Error('Falha de gravação e recuperação. Preserve o rascunho local e verifique a planilha antes de repetir.'); }
+      throw new Error('Falha de gravação; versão anterior restaurada. Preserve o rascunho local.');
+    }
+    return { id: input.id, revision: revision };
+  });
+}
+function epiSaveLifetime(number, days) {
+  number = EpiDomain.ca(number); days = Number(days);
+  if (!EpiDomain.validLife(days)) throw new Error('Vida útil deve ser um inteiro entre 1 e 36500 dias.');
+  return EpiStore.locked(function () {
+    var rows = EpiStore.rows('Lifetimes').filter(function(r) { return String(r.ca) !== number; });
+    rows.push({ ca: number, days: days }); EpiStore.replace('Lifetimes', rows); return { ca: number, days: days };
+  });
+}
+function epiDeleteLifetime(number) {
+  number = EpiDomain.ca(number);
+  return EpiStore.locked(function () { EpiStore.replace('Lifetimes', EpiStore.rows('Lifetimes').filter(function(r) { return String(r.ca) !== number; })); return number; });
+}
+function epiAnalyzeSheet(input) {
+  var data = epiBootstrap();
+  return EpiDomain.analyze(input, data.catalog, data.lifetimes, data.metadata);
+}
