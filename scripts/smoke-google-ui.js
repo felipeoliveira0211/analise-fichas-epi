@@ -6,7 +6,7 @@ require('./build');
  const useDefault=process.env.SMOKE_DEFAULT_BASE==='1';
  const tables={Workers:[],Sheets:[],Entries:[],Lifetimes:[],CaIndex:[],Metadata:[],CaDefaultStage:[],CaDefaultBackup:[]};
  const props={};
- const c=vm.createContext({EpiDomain:require('../src/domain/analysis'),EpiImport:require('../src/domain/catalog-import'),
+ const c=vm.createContext({EpiReports:require('../src/domain/reports'),EpiDomain:require('../src/domain/analysis'),EpiImport:require('../src/domain/catalog-import'),
   Utilities:{DigestAlgorithm:{SHA_256:'sha256'},Charset:{UTF_8:'utf8'},computeDigest:(_,text)=>Array.from(crypto.createHash('sha256').update(text).digest())},
   EpiStore:{rows:n=>structuredClone(tables[n]),count:n=>tables[n].length,replace:(n,v)=>{tables[n]=structuredClone(v)},locked:fn=>fn(),connection:()=>({connected:true,caCount:tables.CaIndex.length,...tables.Metadata[0]})}});
  for(const name of ['catalog','api','setup'])vm.runInContext(fs.readFileSync(path.join(__dirname,`../src/server/${name}.js`),'utf8'),c);
@@ -21,7 +21,7 @@ require('./build');
   c.EpiUpdates=require('../src/domain/official-updates');
   c.UrlFetchApp={fetch:()=>({getResponseCode:()=>200,getAllHeaders:()=>({'Content-Type':'text/html'}),getContentText:()=>'<a href="/cadastro-EPI-ficticio.xlsx">Arquivo fictício para teste</a>'})};
  }
- const allowed=new Set(['epiLoadDefaultBase','epiCheckOfficialUpdates','epiBootstrap','epiListSheets','epiLoadSheet','epiSaveSheet','epiSaveLifetime','epiDeleteLifetime','epiAnalyzeSheet','epiConnectionStatus','epiPreviewCatalog','epiImportCatalog']);
+ const allowed=new Set(['epiGenerateReports','epiLoadDefaultBase','epiCheckOfficialUpdates','epiBootstrap','epiListSheets','epiLoadSheet','epiSaveSheet','epiSaveLifetime','epiDeleteLifetime','epiAnalyzeSheet','epiConnectionStatus','epiPreviewCatalog','epiImportCatalog']);
  const server=http.createServer((req,res)=>{res.setHeader('Content-Type','text/html; charset=utf-8');res.end(fs.readFileSync(path.join(__dirname,'../dist/Index.html')))});
  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));let browser;
  try{
@@ -53,8 +53,8 @@ require('./build');
   await page.waitForFunction(()=>document.getElementById('message').textContent==='Planilha conectada.');
   await page.locator('[data-view="catalog"]').click();assert.match(await page.locator('#connectionSummary').innerText(),/0 CAs/);
   await page.locator('[data-view="entry"]').click();
-  for(const [name,value]of[['workerName','Pessoa fictícia Google'],['workerSector','Setor fictício'],['workerRole','Cargo fictício'],['workerGes','GES teste']])await page.locator('#'+name).fill(value);
-  for(const date of ['01012026','01022026']){await page.locator('#ca').fill('123');await page.locator('#ca').press('Enter');await page.locator('#date').fill(date);await page.locator('#date').press('Enter');}
+  for(const [name,value]of[['workerCompany','Empresa fictícia'],['workerName','Pessoa fictícia Google'],['workerSector','Setor fictício'],['workerRole','Cargo fictício'],['workerGes','GES teste']])await page.locator('#'+name).fill(value);
+  for(const date of ['01012026','01022026']){await page.locator('#quickLifeDays').fill('30');await page.locator('#ca').fill('123');await page.locator('#ca').press('Enter');await page.locator('#date').fill(date);await page.locator('#date').press('Enter');await page.waitForFunction(()=>document.getElementById('ca').value==='');}
   await page.locator('#analyze').click();await page.waitForFunction(()=>document.getElementById('message').textContent.includes('Base de CAs vazia'));
   await page.locator('[data-view="catalog"]').click();
   await page.locator('#catalogFile').setInputFiles({name:'ficticio.csv',mimeType:'text/csv',buffer:Buffer.from('CA;Equipamento;Aprovado para;Data de validade\n123;Auditivo fictício;Proteção auditiva contra ruído;31/12/2030\n')});
@@ -67,6 +67,14 @@ require('./build');
   await page.locator('#reloadSheet').click();await page.waitForFunction(()=>document.getElementById('message').textContent==='Versão da planilha reaberta.');
   await page.reload();await page.waitForFunction(()=>document.getElementById('message').textContent==='Planilha conectada.');assert.equal(await page.locator('#entries tr').count(),2);
   assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('epi.analysis.google.v1')).sheets[0].worker.name),'Pessoa fictícia Google');
-  assert.deepEqual(errors,[]);console.log('Fluxo Google SIMULADO passou: base vazia, prévia/importação, vida útil, análise, salvar/retomar e isolamento da demonstração. OAuth/Sheets reais não foram testados.');
+  assert.equal(tables.Workers[0].company,'Empresa fictícia'); assert.ok(tables.Entries.every(e=>/^\d{4}-/.test(e.savedAt)));
+  assert.match(await page.locator('#entries').innerText(),/Brasília/);
+  await page.locator('[data-view="reports"]').click();await page.locator('#reportSource').selectOption('google');
+  await page.locator('#reportCompany').fill('empresa ficticia');await page.locator('#reportStart').fill('2026-02-01');await page.locator('#reportEnd').fill('2026-02-01');await page.locator('#reportForm button').click();
+  await page.waitForFunction(()=>document.getElementById('reportStatus').textContent.includes('1 ficha(s), 1 lançamento(s)'));
+  assert.match(await page.locator('#reportPreview').innerText(),/31 dias/);assert.match(await page.locator('#reportPreview').innerText(),/Fora do prazo/);assert.match(await page.locator('#reportPreview').innerText(),/Brasília/);
+  await page.locator('#reportSource').selectOption('local');await page.locator('#reportForm button').click();await page.waitForFunction(()=>document.getElementById('reportStatus').textContent.includes('1 ficha(s), 1 lançamento(s)'));
+  assert.match(await page.locator('#reportPreview').innerText(),/Rascunhos deste navegador/);
+  assert.deepEqual(errors,[]);console.log('Fluxo Google SIMULADO passou: vida útil rápida, empresa, horários persistidos, relatórios de fichas Google e rascunhos locais, importação e salvar/retomar. OAuth/Sheets reais não foram testados.');
  }finally{if(browser)await browser.close();await new Promise(resolve=>server.close(resolve));}
 })().catch(err=>{console.error(err);process.exitCode=1});

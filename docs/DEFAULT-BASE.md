@@ -6,9 +6,9 @@ Use **o mesmo projeto Apps Script, a mesma planilha e a implantação existente*
 
 1. Baixe a versão mais recente do repositório. A pasta `google-apps-script/` contém os arquivos completos.
 2. Atualize os seis scripts existentes (`Domain`, `ImportDomain`, `Store`, `Catalog`, `Api`, `Setup`) e o HTML `Index` com os conteúdos correspondentes.
-3. Acrescente quatro arquivos de script: **DefaultData**, **DefaultCatalog**, **UpdateDomain** e **OfficialUpdates**. Cole o conteúdo completo dos `.gs` correspondentes. `DefaultData` é grande porque contém a base comprimida; não edite ou recorte seus blocos de dados.
+3. Acrescente os scripts adicionais que ainda não existirem: **DefaultData**, **DefaultCatalog**, **UpdateDomain**, **OfficialUpdates** e **ReportDomain**. Cole o conteúdo completo dos `.gs` correspondentes. `DefaultData` é grande porque contém a base comprimida; não edite ou recorte seus blocos de dados.
 4. Atualize `appsscript.json`. Ele mantém o acesso pessoal e acrescenta a permissão `script.external_request` para consultar as páginas oficiais. Autorize a nova permissão na sua própria conta quando o Google solicitar.
-5. Execute **initializeApplication**. O ID da planilha atual é reutilizado e são criadas duas tabelas auxiliares para preparar e recuperar o catálogo.
+5. Execute **initializeApplication**. O ID da planilha atual é reutilizado e são criadas duas tabelas auxiliares para preparar e recuperar o catálogo e acrescentadas as colunas de empresa/horário nas tabelas legadas. Para uma aplicação que já usa a base padrão, veja [REPORTS.md](REPORTS.md).
 6. Abra **Implantar → Gerenciar implantações**, edite a implantação existente e selecione **Nova versão**. Mantenha execução como usuário que acessa e acesso somente você.
 7. Reabra a aplicação e vá a **Base e conexão**. Se o catálogo estiver vazio, o carregamento continua automaticamente em etapas. Mantenha a aba aberta até aparecer **36.136 CAs**. Se uma chamada falhar ou a aba for fechada, use **Carregar ou retomar base padrão**.
 8. Se já houver outro catálogo, ele é mantido. Para usar a base padrão em seu lugar, clique no mesmo botão e confirme a substituição apresentada. Fichas, trabalhadores, lançamentos e prazos de vida útil são preservados.

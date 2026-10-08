@@ -28,3 +28,8 @@ test('text sent to spreadsheet is escaped, number of days remains numeric; remov
 });
 test('lock always released on failure',()=>{const {store:s,isLocked}=setup();assert.throws(()=>s.locked(()=>{assert.equal(isLocked(),true);throw new Error('fake error')}));assert.equal(isLocked(),false);});
 test('catálogo expande a capacidade da aba além das mil linhas iniciais',()=>{const {store:s,tabs}=setup();s.initialize();s.replace('CaIndex',Array.from({length:1200},(_,i)=>({ca:String(i+1),name:'EPI fictício',approvedProtection:'Proteção fictícia',caExpiry:''})));assert.equal(tabs.get('CaIndex').maxRows,1201);assert.equal(s.count('CaIndex'),1200);});
+test('migração adiciona empresa e savedAt preservando IDs, dados e abas',()=>{
+ const {store:s,tabs}=setup();s.initialize();s.replace('Workers',[{id:'w1',name:'Legado',sector:'A',role:'B',ges:'C'}]);s.replace('Entries',[{id:'e1',sheetId:'s1',ca:'1',date:'01/01/2026',position:0}]);
+ tabs.get('Workers').cells.forEach(r=>r.splice(5));tabs.get('Entries').cells.forEach(r=>r.splice(6));
+ s.initialize();assert.equal(s.rows('Workers')[0].name,'Legado');assert.equal(s.rows('Workers')[0].company,'');assert.equal(s.rows('Entries')[0].id,'e1');assert.equal(s.rows('Entries')[0].savedAt,'');s.initialize();assert.equal(tabs.size,8);
+});

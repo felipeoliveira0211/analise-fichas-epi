@@ -1,8 +1,8 @@
 var EpiStore = (function () {
   var schema = {
-    Workers: ['id', 'name', 'sector', 'role', 'ges'],
+    Workers: ['id', 'name', 'sector', 'role', 'ges', 'company'],
     Sheets: ['id', 'workerId', 'state', 'updatedAt', 'revision'],
-    Entries: ['id', 'sheetId', 'ca', 'date', 'physicalExpiry', 'position'],
+    Entries: ['id', 'sheetId', 'ca', 'date', 'physicalExpiry', 'position', 'savedAt'],
     Lifetimes: ['ca', 'days'],
     CaIndex: ['ca', 'name', 'approvedProtection', 'caExpiry'],
     CaDefaultStage: ['ca', 'name', 'approvedProtection', 'caExpiry'],
@@ -27,6 +27,12 @@ var EpiStore = (function () {
     Object.keys(schema).forEach(function (name) {
       var tab = db.getSheetByName(name);
       if (!tab) { tab = db.insertSheet(name); tab.getRange(1, 1, 1, schema[name].length).setValues([schema[name]]); tab.setFrozenRows(1); }
+      // Append new columns only to recognized legacy headers; preserve all data.
+      var legacy = name === 'Workers' ? schema[name].slice(0,5) : name === 'Entries' ? schema[name].slice(0,6) : null;
+      if (legacy) {
+        var header = tab.getRange(1,1,1,schema[name].length).getValues()[0];
+        if (header.slice(0,legacy.length).join('|') === legacy.join('|') && !header[legacy.length]) tab.getRange(1,legacy.length+1,1,1).setValues([[schema[name][legacy.length]]]);
+      }
       table(name);
     });
   }

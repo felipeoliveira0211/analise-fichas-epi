@@ -34,6 +34,7 @@ var EpiDomain = (function () {
     ['name', 'sector', 'role', 'ges'].forEach(function (field) {
       if (typeof sheet.worker[field] !== 'string' || !sheet.worker[field].trim() || sheet.worker[field].length > 200) throw new Error('Preencha nome, setor, cargo e GES (até 200 caracteres).');
     });
+    if (sheet.worker.company != null && (typeof sheet.worker.company !== 'string' || sheet.worker.company.length > 200)) throw new Error('Empresa deve ter até 200 caracteres.');
     if (!Array.isArray(sheet.entries)) throw new Error('Lançamentos inválidos.');
     var seen = {};
     sheet.entries.forEach(function (entry) {
@@ -57,7 +58,7 @@ var EpiDomain = (function () {
       var entry = item.entry, number = ca(entry.ca), record = catalog[number], group = classify(record);
       var row = { id: entry.id, ca: number, date: entry.date, name: record ? record.name : 'CA não identificado', group: group,
         interval: null, limit: null, status: 'Sem análise de periodicidade', caExpiry: record && record.caExpiry || null,
-        physicalExpiry: entry.physicalExpiry || null, caStatus: 'Situação atual do CA precisa ser confirmada', source: metadata.source || 'Indisponível', referenceDate: metadata.referenceDate || null };
+        usefulLifeDays: group === GROUP.DERMICA ? 30 : validLife(lifetimes[number]) ? lifetimes[number] : null, savedAt: entry.savedAt || '', physicalExpiry: entry.physicalExpiry || null, caStatus: 'Situação atual do CA precisa ser confirmada', source: metadata.source || 'Indisponível', referenceDate: metadata.referenceDate || null };
       if (row.physicalExpiry) date(row.physicalExpiry);
       if (record && record.caExpiry) {
         try { row.caAtDelivery = item.time <= date(record.caExpiry) ? 'Dentro da validade informada do CA' : 'Após a validade informada do CA'; }

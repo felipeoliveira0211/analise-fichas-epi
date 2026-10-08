@@ -26,7 +26,11 @@ docs/GOOGLE-SETUP.md      # Ativação da parte 2, pelo navegador ou clasp
 .clasp.example.json       # Modelo sem credenciais
 ```
 
-`dist/` é gerado e ignorado no Git. PDFs, relatório consolidado por GES e download/importação incremental da base oficial são extensões futuras. A parte 2 inclui importação de CSV local validado, sem scraping. Os módulos de análise, catálogo e persistência permitem evoluí-los sem misturar a interface com regras técnicas.
+`dist/` é gerado e ignorado no Git. A tela Relatórios / PDFs consolida fichas com filtros e gera PDFs pela impressão local do navegador. Download/importação incremental da base oficial é uma extensão futura. A parte 2 inclui importação de CSV local validado, sem scraping. Os módulos de análise, catálogo e persistência permitem evoluí-los sem misturar a interface com regras técnicas.
+
+## Empresa, vida útil rápida e PDFs
+
+Consulte [REPORTS.md](docs/REPORTS.md) para atualizar a aplicação já implantada, preservar os dados e usar os filtros de relatórios. A atualização adiciona colunas de empresa/horário e o script ReportDomain.
 
 ## Base padrão enviada e atualização da aplicação
 
@@ -64,7 +68,7 @@ npm run dev
 
 Fora do ambiente na nuvem, pode omitir a opção `--cache`. A demonstração escuta apenas a interface de loopback, porta 3000. Usa CAs **fictícios** 90001 (auditivo), 90002 (luva química), 90003 (creme) e 90004 (luva mecânica). Nunca os utilize como dados oficiais. A persistência da demonstração é apenas `localStorage`; não simula uma conexão bem-sucedida ao Google Sheets.
 
-Fluxo: preencha nome, setor, cargo e GES; digite CA → Enter → data DD/MM/AAAA → Enter. Os campos são limpos e o foco volta ao CA. A máscara aceita oito dígitos, inclusive datas coladas. A validade física é opcional e exige informação específica do EPI. Editar e excluir mantêm a sequência original de digitação; apenas o resultado é ordenado por data. Nenhuma consulta de CA ocorre enquanto se digita.
+Fluxo: preencha empresa, nome, setor, cargo e GES; digite CA → Enter → data DD/MM/AAAA → Enter. Os campos são limpos e o foco volta ao CA. A máscara aceita oito dígitos, inclusive datas coladas. A vida útil em dias é opcional no lançamento rápido; quando preenchida, é salva no cadastro de prazos por CA. Editar e excluir mantêm a sequência original de digitação; apenas o resultado é ordenado por data. Nenhuma consulta de CA ocorre enquanto se digita.
 
 “Novo trabalhador” cria IDs distintos de ficha e trabalhador. O rascunho anterior permanece na sessão. A lista agrupa as fichas por GES para navegação. Fichas podem ser salvas como em andamento ou concluídas e continuam editáveis. “Reabrir ficha da planilha” permite resolver conflito entre sessões, mediante descarte explícito do rascunho dessa ficha. Salvar novamente o mesmo ID atualiza a ficha, sem duplicá-la. Pessoas homônimas não são mescladas automaticamente.
 
@@ -124,9 +128,9 @@ Nesta versão de uso pessoal, o proprietário também administra os prazos. Auto
 
 | Aba | Colunas |
 | --- | --- |
-| Workers | id, name, sector, role, ges |
+| Workers | id, name, sector, role, ges, company |
 | Sheets | id, workerId, state, updatedAt, revision |
-| Entries | id, sheetId, ca, date, physicalExpiry, position |
+| Entries | id, sheetId, ca, date, physicalExpiry (legado), position, savedAt |
 | Lifetimes | ca, days |
 | CaIndex | ca, name, approvedProtection, caExpiry |
 | Metadata | source, referenceDate, updatedAt |
@@ -166,4 +170,4 @@ Rascunhos não são criptografados pela aplicação. Em computador compartilhado
 1. Executar a validação real, pessoal e privada no Apps Script/Sheets.
 2. Validar o importador CSV com a planilha oficial fornecida pelo usuário e evoluir para XLSX, bases grandes e atualização incremental.
 3. Evoluir classificação assistida e resolução de CAs pendentes, com registro de justificativa.
-4. Adicionar PDFs e relatórios consolidados por GES, com governança de acesso antes do uso por equipe.
+4. Evoluir a governança de acesso aos relatórios antes do uso por equipe.

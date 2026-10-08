@@ -2,27 +2,33 @@
 <html lang="pt-BR">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Análise de fichas de EPI</title><style>:root{font-family:system-ui,-apple-system,sans-serif;color:#18312d;background:#f3f6f5;line-height:1.5;--green:#146350}*{box-sizing:border-box}body{margin:0}header{background:#153f35;color:white;padding:26px max(24px,calc((100vw - 1280px)/2));display:flex;align-items:center;justify-content:space-between;gap:20px}h1{font-size:28px;margin:5px 0}h2{font-size:22px}h3{font-size:18px}.eyebrow{font-size:12px;letter-spacing:2px;color:#bbd8cf}.badge{border:1px solid #a5c5ba;padding:6px 12px;border-radius:20px;font-size:13px}nav{max-width:1280px;margin:20px auto 0;display:flex;gap:8px;padding:0 20px}main{max-width:1280px;margin:0 auto;padding:0 20px 30px}.view{background:white;border:1px solid #d9e3df;border-radius:12px;padding:24px;box-shadow:0 3px 12px #153f3508}button{cursor:pointer;border:1px solid #afc5bd;background:white;color:#183e32;padding:10px 16px;border-radius:6px;font:inherit;font-size:14px}button:hover{background:#e8f1ed}button.primary,nav button.active{background:var(--green);color:white;border-color:var(--green)}button:disabled{opacity:.5;cursor:wait}.danger{color:#a12626}.toolbar{display:flex;align-items:center;justify-content:space-between;gap:15px;flex-wrap:wrap}.toolbar>div{display:flex;gap:8px}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin:24px 0}label{display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:600}input,select{font:inherit;font-size:18px;border:1px solid #9bb5aa;border-radius:6px;padding:12px;width:100%;background:white;color:#18312d}input:focus,button:focus-visible,select:focus{outline:3px solid #78b9a4;outline-offset:2px}.quick{background:#edf5f1;border-radius:8px;padding:18px;margin:24px 0}.quick h3{margin-top:0}.quick form,.inline{display:flex;align-items:end;gap:14px;flex-wrap:wrap}.quick input{font-size:24px;max-width:280px}.muted,.privacy{font-size:14px;color:#51675f}.table-wrap{overflow:auto}table{border-collapse:collapse;width:100%;font-size:14px;margin:12px 0 24px}th{text-align:left;background:#eff4f1;color:#496257;font-size:12px}th,td{padding:12px;border-bottom:1px solid #dce6e0;vertical-align:top}td button{padding:5px 10px;margin-right:5px}.status{display:inline-block;padding:3px 7px;border-radius:4px;background:#edf1f0}.ok{background:#e1f3e7;color:#206338}.bad{background:#fde6e3;color:#9e2b21}.warn{background:#fff1cc;color:#755a10}#message{min-height:25px;padding:8px 0}#message.error{color:#9e2b21}#sheetList button{margin:4px 8px 8px 0}footer{text-align:center;color:#62756d;font-size:12px;padding:20px}[hidden]{display:none!important}@media(max-width:800px){header{padding:20px;align-items:start;flex-direction:column}h1{font-size:23px}.grid{grid-template-columns:repeat(2,1fr)}nav{flex-wrap:wrap}.view{padding:16px}.toolbar>div{flex-wrap:wrap}.quick form label{flex:1;min-width:150px}}@media(max-width:480px){.grid{grid-template-columns:1fr}main{padding:0 10px 20px}nav{padding:0 10px}button{font-size:13px}}
 #connectionSummary,#defaultBaseSummary,#officialUpdateResults{overflow-wrap:anywhere}
+.save-warning{max-width:310px;align-self:center}.report-sheet{margin-top:30px}#reportPreview{overflow-wrap:anywhere;overflow-x:auto}#reportPreview td{min-width:75px}
+@media print{
+ @page{size:A4 landscape;margin:12mm}
+ body{background:white;color:black;font-size:10pt}header,nav,footer,#message,.report-controls,.view{display:none!important}main{max-width:none;padding:0;margin:0}#reports{display:block!important;border:0;box-shadow:none;padding:0}#reportPreview{overflow:visible}#reportPreview table{font-size:8pt;table-layout:fixed;width:100%}#reportPreview th,#reportPreview td{padding:5px;min-width:0;overflow-wrap:anywhere}thead{display:table-header-group}tr{break-inside:avoid}.report-sheet{break-before:page}.report-sheet:first-of-type{break-before:auto}h3{break-after:avoid}
+}
 </style></head>
 <body>
 <header><div><span class="eyebrow">SEGURANÇA DO TRABALHO</span><h1>Análise de fichas de EPI</h1></div><span id="mode" class="badge"></span></header>
-<nav aria-label="Seções"><button data-view="entry" class="active">Ficha e lançamentos</button><button data-view="results">Resultados</button><button data-view="admin">Vida útil</button><button data-view="catalog">Base e conexão</button></nav>
+<nav aria-label="Seções"><button data-view="entry" class="active">Ficha e lançamentos</button><button data-view="results">Resultados</button><button data-view="admin">Vida útil</button><button data-view="reports">Relatórios / PDFs</button><button data-view="catalog">Base e conexão</button></nav>
 <main>
 <p id="message" role="status" aria-live="polite"></p>
 <section id="entry" class="view">
-<div class="toolbar"><h2>Ficha em análise</h2><div><button id="newSheet">Novo trabalhador</button><button id="saveSheet" class="primary">Salvar na planilha</button></div></div>
+<div class="toolbar"><h2>Ficha em análise</h2><div><button id="newSheet">Novo trabalhador</button><button id="saveSheet" class="primary">Salvar na planilha</button><span class="muted save-warning">Sem salvar na planilha, a ficha fica apenas neste navegador e pode se perder.</span></div></div>
 <p class="muted">Transcreva as entregas da ficha existente. As sequências são calculadas separadamente para cada trabalhador.</p>
 <form id="workerForm" class="grid" autocomplete="off">
-<label>Nome do trabalhador<input id="workerName" maxlength="200" required></label><label>Setor<input id="workerSector" maxlength="200" required></label><label>Cargo<input id="workerRole" maxlength="200" required></label><label>GES<input id="workerGes" maxlength="200" required></label>
+<label>Empresa<input id="workerCompany" maxlength="200" required></label><label>Nome do trabalhador<input id="workerName" maxlength="200" required></label><label>Setor<input id="workerSector" maxlength="200" required></label><label>Cargo<input id="workerRole" maxlength="200" required></label><label>GES<input id="workerGes" maxlength="200" required></label>
 <label>Situação da análise<select id="sheetState"><option value="draft">Em andamento</option><option value="complete">Concluída</option></select></label>
 </form>
-<div class="quick"><h3>Lançamento rápido</h3><form id="entryForm" autocomplete="off"><label>Número do CA<input id="ca" inputmode="numeric" maxlength="10" placeholder="Ex.: 12345" required></label><label>Data da entrega<input id="date" inputmode="numeric" maxlength="10" placeholder="DD/MM/AAAA" required></label><button id="addEntry" type="submit" class="primary">Adicionar</button><button id="cancelEdit" type="button" hidden>Cancelar edição</button></form><details><summary>Validade física do EPI (opcional)</summary><label>Informação do fabricante ou registro original<input id="physicalExpiry" inputmode="numeric" maxlength="10" placeholder="DD/MM/AAAA"></label><p class="muted">Preencha somente quando houver informação específica do equipamento. Não use a validade do CA.</p></details><p class="muted">CA → Enter → data → Enter. Consultas à base ocorrem apenas na análise.</p></div>
+<div class="quick"><h3>Lançamento rápido</h3><form id="entryForm" autocomplete="off"><label>Número do CA<input id="ca" inputmode="numeric" maxlength="10" placeholder="Ex.: 12345" required></label><label>Data da entrega<input id="date" inputmode="numeric" maxlength="10" placeholder="DD/MM/AAAA" required></label><label>Vida útil (dias totais, opcional)<input id="quickLifeDays" type="number" min="1" max="36500" step="1" placeholder="Ex.: 90"></label><button id="addEntry" type="submit" class="primary">Adicionar</button><button id="cancelEdit" type="button" hidden>Cancelar edição</button></form><p class="muted">CA → Enter → data → Enter. Ao adicionar com vida útil preenchida, o prazo é salvo no cadastro de vida útil desse CA. Consultas à base ocorrem apenas na análise.</p></div>
 <div class="toolbar"><h3>Lançamentos originais <span id="entryCount"></span></h3><button id="analyze" class="primary">Analisar periodicidade</button></div>
-<div class="table-wrap"><table><thead><tr><th>CA</th><th>Entrega</th><th>Ações</th></tr></thead><tbody id="entries"></tbody></table></div>
-<div class="toolbar"><h3>Fichas desta sessão / salvas</h3><div><button id="refreshSheets">Atualizar lista</button><button id="reloadSheet">Reabrir ficha da planilha</button></div></div><p class="muted">Agrupadas por GES para navegação; relatório consolidado será desenvolvido em etapa futura.</p><div id="sheetList"></div>
+<div class="table-wrap"><table><thead><tr><th>CA</th><th>Entrega</th><th>Salvo na planilha</th><th>Ações</th></tr></thead><tbody id="entries"></tbody></table></div>
+<div class="toolbar"><h3>Fichas desta sessão / salvas</h3><div><button id="refreshSheets">Atualizar lista</button><button id="reloadSheet">Reabrir ficha da planilha</button></div></div><p class="muted">Agrupadas por GES para navegação. Use Relatórios / PDFs para filtrar e consolidar fichas.</p><div id="sheetList"></div>
 <p class="privacy">Rascunhos ficam neste navegador. Em computador compartilhado, salve na planilha e use “Apagar dados locais” antes de sair.</p><button id="clearLocal" class="danger">Apagar dados locais</button>
 </section>
-<section id="results" class="view" hidden><h2>Resultado da análise</h2><div id="resultIntro"></div><div class="table-wrap"><table><thead><tr><th>Entrega</th><th>CA / EPI</th><th>Grupo</th><th>Intervalo</th><th>Limite</th><th>Resultado</th><th>Validade do CA</th><th>Validade física</th></tr></thead><tbody id="resultRows"></tbody></table></div><p class="muted">A validade do CA não determina a validade física do EPI. Esta análise não avalia adequação ao risco, uso efetivo ou proteção após a última entrega.</p></section>
+<section id="results" class="view" hidden><h2>Resultado da análise</h2><div id="resultIntro"></div><div class="table-wrap"><table><thead><tr><th>Entrega</th><th>CA / EPI</th><th>Grupo</th><th>Intervalo</th><th>Limite</th><th>Resultado</th><th>Validade do CA</th><th>Vida útil</th></tr></thead><tbody id="resultRows"></tbody></table></div><p class="muted">A validade do CA não determina a vida útil do EPI. O limite do intervalo usa a vida útil do CA da entrega anterior; para proteção dérmica química, 30 dias. Esta análise não avalia adequação ao risco, uso efetivo ou proteção após a última entrega.</p></section>
 <section id="admin" class="view" hidden><h2>Cadastro de vida útil</h2><p>Prazo técnico cadastrado por CA, independente da base oficial. A proteção dérmica química utiliza sempre 30 dias.</p><form id="lifeForm" class="inline"><label>CA<input id="lifeCa" inputmode="numeric" required maxlength="10"></label><label>Vida útil (dias)<input id="lifeDays" type="number" min="1" max="36500" step="1" required></label><button class="primary">Salvar prazo</button></form><div class="table-wrap"><table><thead><tr><th>CA</th><th>Dias</th><th>Ações</th></tr></thead><tbody id="lifeRows"></tbody></table></div><p class="muted">Nesta versão, o proprietário é também o administrador. A publicação deve permanecer restrita a você.</p></section>
+<section id="reports" class="view" hidden><div class="report-controls"><h2>Relatórios / PDFs</h2><p>Selecione a origem e os filtros, gere a prévia e use “Salvar como PDF” na janela de impressão. O período filtra datas de entrega, incluindo os dois limites. A análise considera a sequência completa de cada ficha antes de aplicar o período.</p><form id="reportForm" class="grid"><label>Origem<select id="reportSource"><option value="local">Fichas deste navegador</option><option value="google">Fichas salvas na planilha Google</option></select></label><label>Entrega a partir de<input id="reportStart" type="date"></label><label>Entrega até<input id="reportEnd" type="date"></label><label>Empresa<input id="reportCompany" maxlength="200"></label><label>GES<input id="reportGes" maxlength="200"></label><label>Funcionário<input id="reportWorker" maxlength="200"></label><label>Setor<input id="reportSector" maxlength="200"></label><label>Cargo<input id="reportRole" maxlength="200"></label><label>Situação<select id="reportState"><option value="">Todas</option><option value="draft">Em andamento</option><option value="complete">Concluída</option></select></label><button class="primary">Gerar prévia</button></form><button id="printReport" disabled>Imprimir / Salvar PDF</button><p id="reportStatus" role="status"></p></div><div id="reportPreview"></div></section>
 <section id="catalog" class="view" hidden>
 <div class="toolbar"><h2>Base de CAs e conexão Google</h2><button id="checkConnection">Verificar conexão</button></div>
 <p id="connectionSummary" role="status">Verificando configuração…</p>
@@ -44,7 +50,7 @@
 </form>
 <div class="toolbar"><div><button id="readCatalog">Ler arquivo</button><button id="previewCatalog" class="primary">Validar e gerar prévia</button></div><button id="commitCatalog" class="primary" hidden>Confirmar importação na planilha</button></div>
 <div id="catalogPreview" aria-live="polite"></div>
-<p class="muted">A origem informada é uma declaração do operador: use somente o arquivo oficial. O aplicativo valida conteúdo e formatos, mas não autentica o arquivo no Ministério. Não transforma a validade do CA em validade física do equipamento.</p>
+<p class="muted">A origem informada é uma declaração do operador: use somente o arquivo oficial. O aplicativo valida conteúdo e formatos, mas não autentica o arquivo no Ministério. Não transforma a validade do CA em vida útil do equipamento.</p>
 </section>
 </main><footer>Ferramenta de análise técnica • Dados oficiais precisam de fonte e data de referência.</footer>
 <script>/* Shared pure domain module: Node.js and Apps Script V8. */
@@ -83,6 +89,7 @@ var EpiDomain = (function () {
     ['name', 'sector', 'role', 'ges'].forEach(function (field) {
       if (typeof sheet.worker[field] !== 'string' || !sheet.worker[field].trim() || sheet.worker[field].length > 200) throw new Error('Preencha nome, setor, cargo e GES (até 200 caracteres).');
     });
+    if (sheet.worker.company != null && (typeof sheet.worker.company !== 'string' || sheet.worker.company.length > 200)) throw new Error('Empresa deve ter até 200 caracteres.');
     if (!Array.isArray(sheet.entries)) throw new Error('Lançamentos inválidos.');
     var seen = {};
     sheet.entries.forEach(function (entry) {
@@ -106,7 +113,7 @@ var EpiDomain = (function () {
       var entry = item.entry, number = ca(entry.ca), record = catalog[number], group = classify(record);
       var row = { id: entry.id, ca: number, date: entry.date, name: record ? record.name : 'CA não identificado', group: group,
         interval: null, limit: null, status: 'Sem análise de periodicidade', caExpiry: record && record.caExpiry || null,
-        physicalExpiry: entry.physicalExpiry || null, caStatus: 'Situação atual do CA precisa ser confirmada', source: metadata.source || 'Indisponível', referenceDate: metadata.referenceDate || null };
+        usefulLifeDays: group === GROUP.DERMICA ? 30 : validLife(lifetimes[number]) ? lifetimes[number] : null, savedAt: entry.savedAt || '', physicalExpiry: entry.physicalExpiry || null, caStatus: 'Situação atual do CA precisa ser confirmada', source: metadata.source || 'Indisponível', referenceDate: metadata.referenceDate || null };
       if (row.physicalExpiry) date(row.physicalExpiry);
       if (record && record.caExpiry) {
         try { row.caAtDelivery = item.time <= date(record.caExpiry) ? 'Dentro da validade informada do CA' : 'Após a validade informada do CA'; }
@@ -218,6 +225,35 @@ var EpiImport = (function () {
   return {parse:parse,suggest:suggest,prepare:prepare,fromCsv:fromCsv,MAX_ROWS:MAX_ROWS,MAX_CHARS:MAX_CHARS};
 })();
 if (typeof module !== 'undefined') module.exports = EpiImport;
+</script><script>if (typeof module !== 'undefined') var EpiDomain = require('./analysis');
+/* Shared reporting: analyze full sequences before selecting delivery dates. */
+var EpiReports = (function () {
+  function fold(v) { return String(v || '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim(); }
+  function iso(v) { if (!v) return null; if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) throw new Error('Período inválido.'); return EpiDomain.date(v.slice(8)+'/'+v.slice(5,7)+'/'+v.slice(0,4)); }
+  function validate(filters) {
+    filters = filters || {}; var start = iso(filters.start), end = iso(filters.end);
+    if (start !== null && end !== null && start > end) throw new Error('A data inicial deve ser anterior ou igual à final.');
+    if (filters.state && !['draft','complete'].includes(filters.state)) throw new Error('Situação inválida.');
+    return {start:start,end:end};
+  }
+  function matches(sheet, filters) {
+    var w = sheet.worker || {};
+    return (!filters.state || sheet.state === filters.state) && ['company','ges','sector','role'].every(function(k) { return fold(w[k]).includes(fold(filters[k])); }) && fold(w.name).includes(fold(filters.worker));
+  }
+  function create(sheets, catalog, lives, metadata, filters) {
+    filters = filters || {}; var range = validate(filters), reports = [];
+    sheets.filter(function(s) { return matches(s,filters); }).forEach(function(sheet) {
+      if (!sheet.entries.length) return;
+      var result = EpiDomain.analyze(sheet,catalog,lives,metadata);
+      result.rows = result.rows.filter(function(r) { var t = EpiDomain.date(r.date); return (range.start === null || t >= range.start) && (range.end === null || t <= range.end); });
+      if (result.rows.length) { result.state = sheet.state; result.updatedAt = sheet.updatedAt || ''; reports.push(result); }
+    });
+    reports.sort(function(a,b) { return String(a.worker.company || '').localeCompare(String(b.worker.company || ''),'pt-BR') || a.worker.ges.localeCompare(b.worker.ges,'pt-BR') || a.worker.name.localeCompare(b.worker.name,'pt-BR'); });
+    return {reports:reports,filters:filters,generatedAt:new Date().toISOString(),metadata:metadata};
+  }
+  return {validate:validate,matches:matches,create:create};
+})();
+if (typeof module !== 'undefined') module.exports = EpiReports;
 </script><script>(function () {
   'use strict';
   const $ = id => document.getElementById(id);
@@ -230,14 +266,14 @@ if (typeof module !== 'undefined') module.exports = EpiImport;
   function guard(fn) { return async e => { if (e) e.preventDefault(); if (busy) return; try { await fn(e); } catch (err) { notify(err.message || String(err), true); } }; }
   async function operation(fn) {
     busy = true; document.querySelectorAll('button').forEach(b => { b.disabled = true; });
-    try { return await fn(); } finally { busy = false; document.querySelectorAll('button').forEach(b => { b.disabled = false; }); }
+    try { return await fn(); } finally { busy = false; document.querySelectorAll('button').forEach(b => { b.disabled = b.id === 'printReport' && !reportReady; }); }
   }
   function cell(tr, value) { const td = document.createElement('td'); td.textContent = value == null ? '—' : value; tr.append(td); return td; }
   function button(label, fn) { const b = document.createElement('button'); b.type = 'button'; b.textContent = label; b.onclick = guard(fn); return b; }
   function view(name) { document.querySelectorAll('.view').forEach(v => { v.hidden = v.id !== name; }); document.querySelectorAll('nav button').forEach(b => b.classList.toggle('active', b.dataset.view === name)); }
   function capture() {
     if (!current) return;
-    current.worker.name = $('workerName').value; current.worker.sector = $('workerSector').value;
+    current.worker.company = $('workerCompany').value; current.worker.name = $('workerName').value; current.worker.sector = $('workerSector').value;
     current.worker.role = $('workerRole').value; current.worker.ges = $('workerGes').value; current.state = $('sheetState').value;
   }
   function persist() {
@@ -248,22 +284,22 @@ if (typeof module !== 'undefined') module.exports = EpiImport;
   function renderEntries() {
     $('entries').replaceChildren(); $('entryCount').textContent = '(' + current.entries.length + ')';
     current.entries.forEach(e => {
-      const tr = document.createElement('tr'); cell(tr, e.ca); cell(tr, e.date);
-      const actions = cell(tr, ''); actions.append(button('Editar', () => { editing = e.id; $('ca').value = e.ca; $('date').value = e.date; $('physicalExpiry').value = e.physicalExpiry || ''; $('addEntry').textContent = 'Atualizar'; $('cancelEdit').hidden = false; $('ca').focus(); }), button('Excluir', () => {
+      const tr = document.createElement('tr'); cell(tr, e.ca); cell(tr, e.date); cell(tr, timeLabel(e.savedAt));
+      const actions = cell(tr, ''); actions.append(button('Editar', () => { editing = e.id; $('ca').value = e.ca; $('date').value = e.date; $('quickLifeDays').value = lifetimes[e.ca] || ''; $('addEntry').textContent = 'Atualizar'; $('cancelEdit').hidden = false; $('ca').focus(); }), button('Excluir', () => {
         if (!confirm('Excluir este lançamento?')) return;
         current.entries = current.entries.filter(x => x.id !== e.id); if (editing === e.id) resetInput(); persist(); renderEntries();
       })); $('entries').append(tr);
     });
   }
-  function resetInput() { editing = null; $('entryForm').reset(); $('physicalExpiry').value = ''; $('addEntry').textContent = 'Adicionar'; $('cancelEdit').hidden = true; $('ca').focus(); }
+  function resetInput() { editing = null; $('entryForm').reset(); $('quickLifeDays').value = ''; $('addEntry').textContent = 'Adicionar'; $('cancelEdit').hidden = true; $('ca').focus(); }
   function open(sheet) {
     current = sheet;
-    $('workerName').value = sheet.worker.name; $('workerSector').value = sheet.worker.sector;
+    $('workerCompany').value = sheet.worker.company || ''; $('workerName').value = sheet.worker.name; $('workerSector').value = sheet.worker.sector;
     $('workerRole').value = sheet.worker.role; $('workerGes').value = sheet.worker.ges; $('sheetState').value = sheet.state;
     resetInput(); renderEntries(); renderSheets(); persist(); view('entry');
   }
   function newSheet() {
-    const sheet = { id: id(), worker: { id: id(), name: '', sector: '', role: '', ges: '' }, entries: [], state: 'draft', revision: 0 };
+    const sheet = { id: id(), worker: { id: id(), company: '', name: '', sector: '', role: '', ges: '' }, entries: [], state: 'draft', revision: 0 };
     sheets.push(sheet); open(sheet); $('workerName').focus();
   }
   function renderSheets() {
@@ -273,7 +309,7 @@ if (typeof module !== 'undefined') module.exports = EpiImport;
     merged.forEach(s => { const ges = s.worker && s.worker.ges || 'GES não informado'; (groups[ges] ||= []).push(s); });
     Object.keys(groups).sort().forEach(ges => {
       const section = document.createElement('div'), heading = document.createElement('h4'); heading.textContent = ges; section.append(heading);
-      groups[ges].forEach(s => section.append(button((s.worker && s.worker.name || 'Novo trabalhador') + ' · ' + (s.state === 'complete' ? 'Concluída' : 'Em andamento') + (sheets.some(x => x.id === s.id) ? ' · rascunho local' : ' · planilha'), async () => {
+      groups[ges].forEach(s => section.append(button((s.worker && s.worker.name || 'Novo trabalhador') + ' · ' + (s.state === 'complete' ? 'Concluída' : 'Em andamento') + ' · ' + (s.worker && s.worker.company || 'Empresa não informada') + (sheets.some(x => x.id === s.id) ? ' · rascunho local' : ' · planilha'), async () => {
         persist(); let local = sheets.find(x => x.id === s.id);
         if (!local) { local = await operation(() => rpc('epiLoadSheet', s.id)); sheets.push(local); }
         open(local);
@@ -294,14 +330,12 @@ if (typeof module !== 'undefined') module.exports = EpiImport;
   }
   function renderResult(result) {
     $('resultIntro').replaceChildren(); $('resultRows').replaceChildren();
-    [result.worker.name + ' • GES: ' + result.worker.ges,
-      'Fonte: ' + (result.metadata.source || 'Indisponível') + ' • Referência: ' + (result.metadata.referenceDate || 'Indisponível'),
-      result.stale ? 'Base indisponível ou com referência superior a 30 dias: confirme a situação atual dos CAs.' : 'Referência recente; confirme a situação atual na fonte oficial.', ...result.warnings].forEach(text => { const p = document.createElement('p'); p.textContent = text; $('resultIntro').append(p); });
+    [result.worker.name + ' • Setor: ' + result.worker.sector + ' • GES: ' + result.worker.ges].forEach(text => { const p = document.createElement('p'); p.textContent = text; $('resultIntro').append(p); });
     const names = { auditiva: 'Auditiva', dermica: 'Dérmica química', outros: 'Demais EPIs', revisao: 'Revisão manual' };
     result.rows.forEach(row => {
       const tr = document.createElement('tr'); cell(tr, row.date); cell(tr, row.ca + ' · ' + row.name); cell(tr, names[row.group]); cell(tr, row.interval == null ? '—' : row.interval + ' dias'); cell(tr, row.limit == null ? '—' : row.limit + ' dias');
       const td = cell(tr, ''); const tag = document.createElement('span'); tag.textContent = row.status; tag.className = 'status ' + (row.status === 'Dentro do prazo' ? 'ok' : row.status === 'Fora do prazo' ? 'bad' : 'warn'); td.append(tag);
-      cell(tr, (row.caExpiry || 'Indisponível') + ' · ' + row.caAtDelivery); cell(tr, row.physicalExpiry || 'Não informada'); $('resultRows').append(tr);
+      cell(tr, (row.caExpiry || 'Indisponível') + ' · ' + row.caAtDelivery); cell(tr, row.usefulLifeDays == null ? 'Não cadastrada' : row.usefulLifeDays + ' dias'); $('resultRows').append(tr);
     }); view('results');
   }
   document.querySelectorAll('nav button').forEach(b => b.onclick = () => view(b.dataset.view));
@@ -309,22 +343,29 @@ if (typeof module !== 'undefined') module.exports = EpiImport;
   $('workerForm').oninput = () => { persist(); renderSheets(); };
   $('ca').onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); $('date').focus(); } };
   $('date').oninput = () => { const v = $('date').value.replace(/\D/g,'').slice(0,8); $('date').value = v.slice(0,2) + (v.length>2 ? '/'+v.slice(2,4) : '') + (v.length>4 ? '/'+v.slice(4) : ''); };
-  $('entryForm').onsubmit = guard(() => {
-    const ca = EpiDomain.ca($('ca').value), date = $('date').value, physicalExpiry = $('physicalExpiry').value; EpiDomain.date(date); if (physicalExpiry) EpiDomain.date(physicalExpiry);
-    if (editing) { const e = current.entries.find(x => x.id === editing); e.ca = ca; e.date = date; e.physicalExpiry = physicalExpiry; }
-    else current.entries.push({ id: id(), ca, date, physicalExpiry });
-    persist(); renderEntries(); resetInput(); notify('Lançamento registrado no rascunho.');
+  $('entryForm').onsubmit = guard(async () => {
+    const ca = EpiDomain.ca($('ca').value), date = $('date').value, rawLife = $('quickLifeDays').value; EpiDomain.date(date);
+    const days = Number(rawLife);
+    if (rawLife && !EpiDomain.validLife(days)) throw new Error('Vida útil deve ser um inteiro entre 1 e 36500 dias.');
+    if (rawLife) {
+      if (lifetimes[ca] && lifetimes[ca] !== days && !confirm('Substituir a vida útil do CA ' + ca + ' de ' + lifetimes[ca] + ' para ' + days + ' dias? O prazo será usado em todas as fichas desse CA.')) return;
+      if (remote) await operation(() => rpc('epiSaveLifetime', ca, days));
+      lifetimes[ca] = days; renderLives();
+    }
+    if (editing) { const e = current.entries.find(x => x.id === editing); if (e.ca !== ca || e.date !== date) e.savedAt = ''; e.ca = ca; e.date = date; }
+    else current.entries.push({ id: id(), ca, date });
+    persist(); renderEntries(); resetInput(); notify(rawLife ? 'Lançamento no rascunho; vida útil salva no cadastro de prazos.' : 'Lançamento registrado no rascunho.');
   });
   $('cancelEdit').onclick = resetInput;
   $('newSheet').onclick = guard(() => { persist(); newSheet(); });
   $('saveSheet').onclick = guard(async () => {
-    persist(); if (!$('workerForm').reportValidity()) return; if (editing || $('ca').value || $('date').value || $('physicalExpiry').value) throw new Error('Adicione ou cancele o lançamento em edição antes de salvar.'); EpiDomain.validateSheet(current);
+    persist(); if (!$('workerForm').reportValidity()) return; if (editing || $('ca').value || $('date').value || $('quickLifeDays').value) throw new Error('Adicione ou cancele o lançamento em edição antes de salvar.'); EpiDomain.validateSheet(current);
     if (!remote) { notify('Modo local: rascunho salvo apenas neste navegador. Google Sheets exige implantação privada no Apps Script.'); return; }
-    const result = await operation(() => rpc('epiSaveSheet', current)); current.revision = result.revision; persist(); notify('Ficha salva na planilha.');
+    const result = await operation(() => rpc('epiSaveSheet', current)); current.revision = result.revision; current.updatedAt = result.updatedAt; result.entries.forEach(saved => { const entry = current.entries.find(e => e.id === saved.id); if (entry) entry.savedAt = saved.savedAt; }); persist(); renderEntries(); notify('Ficha salva na planilha.');
   });
   $('analyze').onclick = guard(async () => {
     persist(); if (!$('workerForm').reportValidity()) return;
-    if (editing || $('ca').value || $('date').value || $('physicalExpiry').value) throw new Error('Adicione ou cancele o lançamento em edição antes de analisar.');
+    if (editing || $('ca').value || $('date').value || $('quickLifeDays').value) throw new Error('Adicione ou cancele o lançamento em edição antes de analisar.');
     if (!current.entries.length) throw new Error('Adicione pelo menos uma entrega para analisar.');
     EpiDomain.validateSheet(current);
     const result = remote ? await operation(() => rpc('epiAnalyzeSheet', current)) : EpiDomain.analyze(current, catalog, lifetimes, metadata);
@@ -366,6 +407,45 @@ if (typeof module !== 'undefined') module.exports = EpiImport;
       catch (err) { notify('Conexão com a planilha falhou: ' + err.message + '. O rascunho local continua disponível.', true); }
     }
   }
+  function timeLabel(value) { return value ? new Date(value).toLocaleString('pt-BR', {timeZone:'America/Sao_Paulo'}) + ' (Brasília)' : 'Horário não registrado'; }
+  let reportReady = false, reportGeneration = 0;
+  function invalidateReport() { reportGeneration++; reportReady = false; $('printReport').disabled = true; $('reportPreview').replaceChildren(); $('reportStatus').textContent = 'Gere a prévia para usar os filtros atuais.'; }
+  $('reportForm').oninput = invalidateReport;
+  $('reportForm').onsubmit = guard(async () => {
+    invalidateReport(); const generation = reportGeneration; persist();
+    const filters = {start:$('reportStart').value,end:$('reportEnd').value,company:$('reportCompany').value,ges:$('reportGes').value,worker:$('reportWorker').value,sector:$('reportSector').value,role:$('reportRole').value,state:$('reportState').value};
+    EpiReports.validate(filters);
+    const fromGoogle = $('reportSource').value === 'google';
+    if (fromGoogle && !remote) throw new Error('Buscar fichas Google exige abrir a aplicação implantada no Apps Script.');
+    const local = fromGoogle ? null : sheets.filter(s => s.entries.length && EpiReports.matches(s,filters));
+    if (local) local.forEach(EpiDomain.validateSheet);
+    const result = remote ? await operation(() => rpc('epiGenerateReports', filters, local)) : EpiReports.create(local,catalog,lifetimes,metadata,filters);
+    if (generation !== reportGeneration) return;
+    const preview = $('reportPreview');
+    function paragraph(parent, text, tag = 'p') { const el = document.createElement(tag); el.textContent = text; parent.append(el); }
+    paragraph(preview,'Relatório de fichas de EPI','h2');
+    paragraph(preview,'Gerado em ' + timeLabel(result.generatedAt) + ' • Origem: ' + (fromGoogle ? 'Planilha Google' : 'Rascunhos deste navegador'));
+    paragraph(preview,'Filtros: ' + Object.entries(filters).filter(([,v]) => v).map(([k,v]) => ({start:'Entrega desde',end:'Entrega até',company:'Empresa',ges:'GES',worker:'Funcionário',sector:'Setor',role:'Cargo',state:'Situação'}[k]) + ': ' + v).join(' • '));
+    paragraph(preview,'Fonte de CAs: ' + (result.metadata.source || 'Indisponível') + ' • Referência: ' + (result.metadata.referenceDate || 'Não confirmada'));
+    if (!remote) paragraph(preview,'DEMONSTRAÇÃO COM CAs FICTÍCIOS — não usar para conclusões técnicas.');
+    result.reports.forEach(report => {
+      const section = document.createElement('article'); section.className = 'report-sheet'; preview.append(section);
+      const w = report.worker;
+      paragraph(section,(w.company || 'Empresa não informada') + ' • ' + w.name,'h3');
+      paragraph(section,'Setor: ' + w.sector + ' • Cargo: ' + w.role + ' • GES: ' + w.ges + ' • ' + (report.state === 'complete' ? 'Concluída' : 'Em andamento'));
+      paragraph(section,'Último salvamento da ficha: ' + timeLabel(report.updatedAt));
+      if (report.stale) paragraph(section,'Data de referência da base ausente ou desatualizada. Confirme a situação dos CAs na fonte oficial.');
+      report.warnings.forEach(warning => paragraph(section,warning));
+      const table = document.createElement('table'), head = document.createElement('thead'), header = document.createElement('tr'), body = document.createElement('tbody');
+      ['Entrega','CA / EPI','Grupo','Intervalo','Limite / CA anterior','Vida útil','Resultado','Validade do CA','Salvo na planilha'].forEach(label => { const th = document.createElement('th'); th.textContent = label; header.append(th); });
+      head.append(header); table.append(head,body); section.append(table);
+      report.rows.forEach(row => { const tr = document.createElement('tr'); [row.date,row.ca + ' • ' + row.name,{auditiva:'Auditiva',dermica:'Dérmica química',outros:'Demais EPIs',revisao:'Revisão manual'}[row.group],row.interval == null ? '—' : row.interval + ' dias',row.limit == null ? '—' : row.limit + ' dias / CA ' + row.previousCa,row.usefulLifeDays == null ? 'Não cadastrada' : row.usefulLifeDays + ' dias',row.status,(row.caExpiry || 'Indisponível') + ' • ' + row.caAtDelivery,timeLabel(row.savedAt)].forEach(value => cell(tr,value)); body.append(tr); });
+    });
+    paragraph(preview,'A validade do CA não determina a vida útil do EPI. O limite usa a vida útil do CA anterior; proteção dérmica química usa 30 dias. Esta análise não avalia adequação ao risco, uso efetivo ou proteção após a última entrega.');
+    $('reportStatus').textContent = result.reports.length + ' ficha(s), ' + result.reports.reduce((sum,r) => sum+r.rows.length,0) + ' lançamento(s).';
+    reportReady = result.reports.length > 0; $('printReport').disabled = !reportReady;
+  });
+  $('printReport').onclick = () => { if (reportReady) window.print(); };
   init();
 })();
 </script><script>(function () {

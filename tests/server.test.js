@@ -33,3 +33,12 @@ test('falha ao importar recupera catálogo e metadados anteriores',()=>{
  assert.throws(()=>c.epiImportCatalog(imported(),preview),/restaurada/);assert.equal(JSON.stringify(t),before);
 });
 test('base vazia bloqueia análise real, sem carregar catálogo fictício',()=>{const {context:c}=setup();assert.throws(()=>c.epiAnalyzeSheet(input()),/Base de CAs vazia/);});
+test('empresa e horário são persistidos; horário de entrada inalterada é preservado',()=>{
+ const {context:c,tables:t}=setup(),s=input();s.worker.company='Empresa fictícia';const result=c.epiSaveSheet(s);assert.equal(t.Workers[0].company,s.worker.company);assert.equal(c.epiLoadSheet(s.id).updatedAt,result.updatedAt);assert.equal(t.Entries[0].savedAt,result.entries[0].savedAt);assert.ok(/^\d{4}-/.test(t.Entries[0].savedAt));
+ t.Entries[0].savedAt='2020-01-01T00:00:00.000Z';s.revision=result.revision;s.entries[0].savedAt='forged';c.epiSaveSheet(s);assert.equal(t.Entries[0].savedAt,'2020-01-01T00:00:00.000Z');s.revision=2;s.entries[0].date='02/01/2026';c.epiSaveSheet(s);assert.notEqual(t.Entries[0].savedAt,'2020-01-01T00:00:00.000Z');
+});
+test('relatório Google usa dados persistidos e relatório local usa rascunhos sem gravar',()=>{
+ const {context:c,tables:t}=setup();c.EpiReports=require('../src/domain/reports');const s=input();s.worker.company='Empresa A';s.entries.push({id:'e2',ca:'1',date:'01/02/2026'});c.epiSaveSheet(s);c.epiSaveLifetime('1',30);t.CaIndex=imported().records;t.Metadata=[{source:'Fonte',referenceDate:'01/01/2026'}];
+ const before=JSON.stringify(t);const filter={start:'2026-02-01',end:'2026-02-01',company:'empresa a'};const result=c.epiGenerateReports(filter);assert.equal(result.reports[0].rows[0].interval,31);assert.ok(result.reports[0].rows[0].savedAt);
+ s.worker.company='Empresa B';assert.equal(c.epiGenerateReports({company:'B'},[s]).reports.length,1);assert.equal(c.epiGenerateReports({company:'B'}).reports.length,0);assert.equal(JSON.stringify(t),before);
+});

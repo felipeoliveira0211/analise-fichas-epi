@@ -1,12 +1,14 @@
 # Parte 2 — Google e base real de CAs
 
+Para uma aplicação já implantada, veja também [REPORTS.md](REPORTS.md) para atualizar empresa, vida útil rápida e PDFs.
+
 O código de conexão e importação está preparado. A ativação exige sua autorização na conta Google e o arquivo oficial. Nenhum teste local autoriza acesso à conta e nenhuma implantação real foi feita pelo Codex.
 
 ## Opção A: pelo navegador, sem instalar Node ou clasp
 
 1. Abra `https://script.google.com/` na sua conta e crie um **novo projeto**, dedicado à aplicação. Nome sugerido: **Análise Fichas EPI**.
-2. No GitHub, baixe **Code → Download ZIP** e extraia. Os arquivos prontos estão na pasta **google-apps-script/**. A versão com base padrão também exige os quatro novos scripts descritos em [DEFAULT-BASE.md](DEFAULT-BASE.md).
-3. No editor Google, remova apenas o arquivo inicial `Code.gs` vazio do projeto novo. Crie seis arquivos de script com os nomes **Domain**, **ImportDomain**, **Store**, **Catalog**, **Api** e **Setup**. Em cada um, cole o conteúdo do `.gs` correspondente da pasta baixada. Não cole arquivos do `src/` diretamente: a pasta exportada é o pacote completo.
+2. No GitHub, baixe **Code → Download ZIP** e extraia. Os arquivos prontos estão na pasta **google-apps-script/**. A versão com base padrão também exige os scripts adicionais descritos em [DEFAULT-BASE.md](DEFAULT-BASE.md).
+3. No editor Google, remova apenas o arquivo inicial `Code.gs` vazio do projeto novo. Crie os onze arquivos de script do pacote: **Domain**, **ReportDomain**, **ImportDomain**, **Store**, **Catalog**, **Api**, **Setup**, **DefaultData**, **DefaultCatalog**, **UpdateDomain** e **OfficialUpdates**. Em cada um, cole o conteúdo do `.gs` correspondente da pasta baixada. Não cole arquivos do `src/` diretamente: a pasta exportada é o pacote completo.
 4. Crie um arquivo **HTML** com o nome **Index**. Cole o conteúdo completo de `google-apps-script/Index.html`.
 5. Em **Configurações do projeto**, habilite a exibição do manifesto `appsscript.json`. Volte ao editor e substitua o manifesto pelo arquivo do pacote. Ele solicita acesso a planilhas e mantém `USER_ACCESSING` e `MYSELF`.
 6. Salve tudo. Selecione a função **initializeApplication** e clique em **Executar**. Autorize o acesso usando sua conta. Verifique nome, projeto e escopos na tela de autorização. Não compartilhe códigos OAuth, arquivos de token ou senhas no chat.
@@ -75,7 +77,7 @@ Para atualizar uma implantação existente, crie uma nova versão na tela de ger
 8. Clique em **Confirmar importação na planilha** e confirme a substituição. A função revalida no servidor, verifica que a prévia e o catálogo atual não mudaram, grava `CaIndex` e `Metadata` e preserva `Workers`, `Sheets`, `Entries` e `Lifetimes`.
 9. Confirme a contagem e a origem em **Verificar conexão**. Cadastre a vida útil técnica dos protetores auditivos na seção **Vida útil**; ela não é extraída da validade do certificado.
 
-Datas de validade aceitam `DD/MM/AAAA` ou `AAAA-MM-DD` e são normalizadas para o primeiro formato. Valores Excel em número serial e textos como “suspenso” não são datas de validade: precisam de preparação do arquivo, sem inventar uma data. Riscos de status atual e validade física permanecem distintos.
+Datas de validade aceitam `DD/MM/AAAA` ou `AAAA-MM-DD` e são normalizadas para o primeiro formato. Valores Excel em número serial e textos como “suspenso” não são datas de validade: precisam de preparação do arquivo, sem inventar uma data. A situação atual do CA e a vida útil do equipamento permanecem distintas.
 
 ## Verificação real antes de utilizar fichas pessoais
 
