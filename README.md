@@ -7,9 +7,11 @@ Primeira versão para transcrever fichas existentes e analisar os intervalos de 
 ```text
 src/
   domain/analysis.js       # Regras puras compartilhadas entre Node, navegador e GAS
+  domain/catalog-import.js # CSV, normalização e validação da base oficial
   server/api.js           # Funções RPC, análise e gravação de fichas
   server/store.js         # Adaptador Google Sheets, lock e recuperação de gravação
-  server/catalog.js       # Contrato da base de CA, separado do cadastro de vida útil
+  server/catalog.js       # Prévia/importação e leitura da base, separadas da vida útil
+  server/setup.js         # Criação privada da planilha e verificação da conexão
   web/Index.html          # Ficha, resultados e administração
   web/app.js              # Digitação rápida, rascunhos e integração google.script.run
   web/styles.css          # Layout responsivo
@@ -19,10 +21,12 @@ scripts/
   dev.js                  # Demonstração no próprio computador
   smoke-ui.js             # Verificação da interface com dados fictícios
 tests/                   # Testes de domínio e backend com serviços simulados
+google-apps-script/       # Arquivos gerados prontos para colar no editor Google
+docs/GOOGLE-SETUP.md      # Ativação da parte 2, pelo navegador ou clasp
 .clasp.example.json       # Modelo sem credenciais
 ```
 
-`dist/` é gerado e ignorado no Git. PDFs, relatório consolidado por GES e importador automático oficial são extensões futuras; não foram implementados. Os módulos de análise, catálogo e persistência permitem evoluí-los sem misturar a interface com regras técnicas.
+`dist/` é gerado e ignorado no Git. PDFs, relatório consolidado por GES e download/importação incremental da base oficial são extensões futuras. A parte 2 inclui importação de CSV local validado, sem scraping. Os módulos de análise, catálogo e persistência permitem evoluí-los sem misturar a interface com regras técnicas.
 
 ## Desenvolvimento local
 
@@ -72,7 +76,23 @@ O teste de navegador usa um servidor temporário e somente pessoas fictícias; v
 
 **Não verificado nesta entrega:** autenticação Google, acesso real ao Sheets, locks/quota de produção e implantação real. Os mocks não substituem essas verificações.
 
-## Configuração do Google Apps Script — acesso privado
+## Parte 2: Google e base real
+
+Siga o [guia de ativação](docs/GOOGLE-SETUP.md) para usar o editor Google sem instalar ferramentas ou para conectar pelo clasp. A função `initializeApplication` cria uma planilha privada e persiste o ID; é repetível e não substitui uma planilha existente por falha de acesso. A seção **Base e conexão** verifica a conexão, valida um CSV e importa o catálogo após confirmação.
+
+O pacote `google-apps-script/` é gerado com `npm run google:bundle`. Após modificar `src/`, atualize esse pacote e a demonstração (`npm run demo`); não edite os arquivos exportados manualmente. A inicialização/build padrão não envia arquivos ao Google.
+
+A importação valida origem declarada HTTPS governamental, data de referência, CAs duplicados, nomes e datas; preserva fichas e vida útil. Suporta até 10.000 CAs / 10 MB por substituição integral. A prévia não grava dados. Alterações no arquivo ou na revisão do catálogo exigem nova prévia. A aplicação não autentica a procedência do arquivo, que deve vir da fonte oficial.
+
+A demonstração e a aplicação Google usam espaços diferentes de rascunho local. Catálogo vazio na aplicação Google bloqueia a análise, sem recorrer aos CAs fictícios. O catálogo completo não é enviado ao navegador no bootstrap; as análises consultam somente os CAs lançados.
+
+```sh
+CHROMIUM_PATH=/usr/bin/chromium npm run test:google-ui
+```
+
+Esse teste verifica o fluxo de RPC com backend real e serviços Google **simulados**, incluindo importação, cadastro de prazo, salvar/retomar e base vazia. Não verifica a implantação Google.
+
+## Configuração manual alternativa — acesso privado
 
 Execute estes passos em sua própria conta Google. Nenhum projeto foi criado ou publicado automaticamente.
 
@@ -101,7 +121,7 @@ Nesta versão de uso pessoal, o proprietário também administra os prazos. Auto
 | CaIndex | ca, name, approvedProtection, caExpiry |
 | Metadata | source, referenceDate, updatedAt |
 
-A versão não inclui dados oficiais nem scraping. O adaptador `catalog.js` lê uma base já preparada em `CaIndex`. Para utilizar a planilha oficial do Ministério do Trabalho nesta etapa, faça a preparação **manual**: mapeie o número do CA para `ca`, o nome para `name`, a proteção aprovada para `approvedProtection` e a validade do certificado para `caExpiry`. O importador automático é uma etapa futura.
+A versão não inclui dados oficiais embutidos nem scraping. Use a tela **Base e conexão** para importar CSV exportado da planilha oficial. Se preferir a preparação manual, o adaptador `catalog.js` também lê a base em `CaIndex`: mapeie o número do CA para `ca`, o nome para `name`, a proteção aprovada para `approvedProtection` e a validade do certificado para `caExpiry`. Confira o arquivo oficial e a classificação antes do uso técnico.
 
 Antes de colar, formate essas colunas como **texto simples**, especialmente CA e datas. Datas devem ser `DD/MM/AAAA`; não cole objetos de data do Sheets ou fórmulas. Use uma linha por CA, sem duplicatas. Registre em uma única linha de `Metadata` a fonte oficial (URL ou identificação da publicação), a data de referência do conjunto em `referenceDate` e o instante da atualização em `updatedAt` (texto ISO). Não insira pessoas nem dados pessoais nessas abas de catálogo.
 
@@ -132,6 +152,6 @@ Rascunhos não são criptografados pela aplicação. Em computador compartilhado
 ## Próximas etapas
 
 1. Executar a validação real, pessoal e privada no Apps Script/Sheets.
-2. Implementar importador da planilha oficial com normalização de colunas, proveniência, deduplicação e validação dos termos de proteção.
+2. Validar o importador CSV com a planilha oficial fornecida pelo usuário e evoluir para XLSX, bases grandes e atualização incremental.
 3. Evoluir classificação assistida e resolução de CAs pendentes, com registro de justificativa.
 4. Adicionar PDFs e relatórios consolidados por GES, com governança de acesso antes do uso por equipe.

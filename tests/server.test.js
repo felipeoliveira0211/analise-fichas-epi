@@ -3,10 +3,12 @@ const assert = require('node:assert/strict');
 const vm = require('node:vm');
 const fs = require('node:fs');
 const D = require('../src/domain/analysis');
+const I = require('../src/domain/catalog-import');
+const crypto = require('node:crypto');
 function setup() {
  const tables={Workers:[],Sheets:[],Entries:[],Lifetimes:[],CaIndex:[],Metadata:[]};
- const context=vm.createContext({EpiDomain:D,EpiStore:{rows:n=>structuredClone(tables[n]),replace:(n,v)=>{tables[n]=structuredClone(v)},locked:fn=>fn()}});
- for(const file of ['catalog','api']) vm.runInContext(fs.readFileSync(`src/server/${file}.js`,'utf8'),context);
+ const context=vm.createContext({EpiDomain:D,EpiImport:I,Utilities:{DigestAlgorithm:{SHA_256:'sha256'},Charset:{UTF_8:'utf8'},computeDigest:(_,text)=>Array.from(crypto.createHash('sha256').update(text).digest())},EpiStore:{rows:n=>structuredClone(tables[n]),count:n=>tables[n].length,connection:()=>({connected:true,caCount:tables.CaIndex.length}),replace:(n,v)=>{tables[n]=structuredClone(v)},locked:fn=>fn()}});
+ for(const file of ['catalog','api','setup']) vm.runInContext(fs.readFileSync(`src/server/${file}.js`,'utf8'),context);
  return {context,tables};
 }
 const input=()=>({id:'s1',worker:{id:'w1',name:'Pessoa fictícia',sector:'Setor',role:'Cargo',ges:'GES A'},state:'draft',revision:0,entries:[{id:'e1',ca:'1',date:'01/01/2026'}]});
@@ -14,3 +16,20 @@ test('salvar parcialmente, retomar, atualizar sem duplicar',()=>{const {context:
 test('conflito de revisão não sobrescreve ficha',()=>{const {context:c,tables:t}=setup();c.epiSaveSheet(input());assert.throws(()=>c.epiSaveSheet(input()),/outra sessão/);assert.equal(t.Sheets[0].revision,1);});
 test('vida útil permanece independente da atualização da base',()=>{const {context:c,tables:t}=setup();c.epiSaveLifetime('0001',30);t.CaIndex=[{ca:'1',name:'CA fictício',approvedProtection:'Proteção auditiva'}];t.Metadata=[{source:'Fonte fictícia',referenceDate:'01/01/2026'}];c.epiSaveLifetime('1',60);assert.equal(t.Lifetimes.length,1);assert.equal(c.epiBootstrap().lifetimes['1'],60);c.epiDeleteLifetime('1');assert.equal(t.Lifetimes.length,0);});
 test('falha parcial restaura versão anterior (mock)',()=>{const {context:c,tables:t}=setup();c.epiSaveSheet(input());const original=JSON.stringify(t);const replace=c.EpiStore.replace;let once=true;c.EpiStore.replace=(n,v)=>{if(n==='Sheets' && once){once=false;throw new Error('falha simulada');}replace(n,v)};const s=input();s.revision=1;s.worker.name='Outra pessoa fictícia';assert.throws(()=>c.epiSaveSheet(s),/restaurada/);assert.equal(JSON.stringify(t),original);});
+const imported=()=>({records:[{ca:'1',name:'CA fictício',approvedProtection:'Proteção auditiva contra ruído',caExpiry:'31/12/2030'}],source:'https://www.gov.br/exemplo-ficticio',referenceDate:'01/01/2026'});
+test('prévia não grava; importação preserva trabalhadores, fichas e vida útil',()=>{
+ const {context:c,tables:t}=setup();c.epiSaveSheet(input());c.epiSaveLifetime('1',30);const before=JSON.stringify({workers:t.Workers,sheets:t.Sheets,entries:t.Entries,lifetimes:t.Lifetimes});
+ const preview=c.epiPreviewCatalog(imported());assert.equal(t.CaIndex.length,0);assert.equal(preview.count,1);
+ c.epiImportCatalog(imported(),preview);assert.equal(t.CaIndex[0].ca,'1');assert.equal(t.Metadata[0].source,'https://www.gov.br/exemplo-ficticio');assert.equal(JSON.stringify({workers:t.Workers,sheets:t.Sheets,entries:t.Entries,lifetimes:t.Lifetimes}),before);
+ assert.equal(c.epiAnalyzeSheet(input()).rows[0].group,'auditiva');assert.deepEqual(Object.keys(c.epiBootstrap().catalog),[]);
+});
+test('arquivo alterado ou revisão desatualizada exige nova prévia',()=>{
+ const {context:c,tables:t}=setup();const preview=c.epiPreviewCatalog(imported());const changed=imported();changed.records[0].name='Outro nome fictício';assert.throws(()=>c.epiImportCatalog(changed,preview),/Arquivo alterado/);
+ t.Metadata=[{updatedAt:'revision-changed'}];assert.throws(()=>c.epiImportCatalog(imported(),preview),/outra sessão/);assert.equal(t.CaIndex.length,0);
+});
+test('falha ao importar recupera catálogo e metadados anteriores',()=>{
+ const {context:c,tables:t}=setup();t.CaIndex=[{ca:'2',name:'Registro fictício anterior'}];t.Metadata=[{source:'Origem anterior',updatedAt:'old'}];const before=JSON.stringify(t);const preview=c.epiPreviewCatalog(imported());
+ const replace=c.EpiStore.replace;let fail=true;c.EpiStore.replace=(n,v)=>{if(n==='Metadata'&&fail){fail=false;throw new Error('erro simulado')}replace(n,v)};
+ assert.throws(()=>c.epiImportCatalog(imported(),preview),/restaurada/);assert.equal(JSON.stringify(t),before);
+});
+test('base vazia bloqueia análise real, sem carregar catálogo fictício',()=>{const {context:c}=setup();assert.throws(()=>c.epiAnalyzeSheet(input()),/Base de CAs vazia/);});

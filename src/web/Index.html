@@ -3,7 +3,7 @@
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Análise de fichas de EPI</title><style>/*__CSS__*/</style></head>
 <body>
 <header><div><span class="eyebrow">SEGURANÇA DO TRABALHO</span><h1>Análise de fichas de EPI</h1></div><span id="mode" class="badge"></span></header>
-<nav aria-label="Seções"><button data-view="entry" class="active">Ficha e lançamentos</button><button data-view="results">Resultados</button><button data-view="admin">Vida útil</button></nav>
+<nav aria-label="Seções"><button data-view="entry" class="active">Ficha e lançamentos</button><button data-view="results">Resultados</button><button data-view="admin">Vida útil</button><button data-view="catalog">Base e conexão</button></nav>
 <main>
 <p id="message" role="status" aria-live="polite"></p>
 <section id="entry" class="view">
@@ -21,6 +21,27 @@
 </section>
 <section id="results" class="view" hidden><h2>Resultado da análise</h2><div id="resultIntro"></div><div class="table-wrap"><table><thead><tr><th>Entrega</th><th>CA / EPI</th><th>Grupo</th><th>Intervalo</th><th>Limite</th><th>Resultado</th><th>Validade do CA</th><th>Validade física</th></tr></thead><tbody id="resultRows"></tbody></table></div><p class="muted">A validade do CA não determina a validade física do EPI. Esta análise não avalia adequação ao risco, uso efetivo ou proteção após a última entrega.</p></section>
 <section id="admin" class="view" hidden><h2>Cadastro de vida útil</h2><p>Prazo técnico cadastrado por CA, independente da base oficial. A proteção dérmica química utiliza sempre 30 dias.</p><form id="lifeForm" class="inline"><label>CA<input id="lifeCa" inputmode="numeric" required maxlength="10"></label><label>Vida útil (dias)<input id="lifeDays" type="number" min="1" max="36500" step="1" required></label><button class="primary">Salvar prazo</button></form><div class="table-wrap"><table><thead><tr><th>CA</th><th>Dias</th><th>Ações</th></tr></thead><tbody id="lifeRows"></tbody></table></div><p class="muted">Nesta versão, o proprietário é também o administrador. A publicação deve permanecer restrita a você.</p></section>
+<section id="catalog" class="view" hidden>
+<div class="toolbar"><h2>Base de CAs e conexão Google</h2><button id="checkConnection">Verificar conexão</button></div>
+<p id="connectionSummary" role="status">Verificando configuração…</p>
+<p class="muted">Na aplicação Google, execute initializeApplication no editor do Apps Script para criar as tabelas e conectar uma planilha privada. A demonstração local não acessa sua conta.</p>
+<h3>Importar dados oficiais</h3><p>Selecione um CSV exportado da planilha oficial. Identifique as colunas, confira a prévia e confirme a substituição do catálogo. Fichas, trabalhadores e vida útil serão preservados.</p>
+<p class="muted">Limite desta etapa: 10.000 CAs / 10 MB. Para arquivos maiores, exporte um recorte que inclua os CAs das fichas. A importação substitui o catálogo inteiro; não use um segundo lote para completar o primeiro. Não há consulta ao portal durante a digitação.</p>
+<form id="catalogForm" class="grid">
+<label>Arquivo CSV<input id="catalogFile" type="file" accept=".csv,text/csv" required></label>
+<label>Separador<select id="catalogDelimiter"><option value=";">Ponto e vírgula (;)</option><option value=",">Vírgula (,)</option><option value="tab">Tabulação</option></select></label>
+<label>Codificação<select id="catalogEncoding"><option value="utf-8">UTF-8</option><option value="windows-1252">Windows-1252 / Excel antigo</option></select></label>
+<label>Origem oficial (URL HTTPS)<input id="catalogSource" type="url" placeholder="https://www.gov.br/…" required maxlength="1000"></label>
+<label>Data de referência da base<input id="catalogReference" placeholder="DD/MM/AAAA" maxlength="10" required></label>
+<label>Coluna de número do CA<select id="columnCa" required><option value="">Leia o arquivo primeiro</option></select></label>
+<label>Coluna de nome do EPI<select id="columnName" required><option value="">Leia o arquivo primeiro</option></select></label>
+<label>Coluna de proteção aprovada<select id="columnProtection" required><option value="">Leia o arquivo primeiro</option></select></label>
+<label>Coluna de validade do CA<select id="columnExpiry" required><option value="">Leia o arquivo primeiro</option></select></label>
+</form>
+<div class="toolbar"><div><button id="readCatalog">Ler arquivo</button><button id="previewCatalog" class="primary">Validar e gerar prévia</button></div><button id="commitCatalog" class="primary" hidden>Confirmar importação na planilha</button></div>
+<div id="catalogPreview" aria-live="polite"></div>
+<p class="muted">A origem informada é uma declaração do operador: use somente o arquivo oficial. O aplicativo valida conteúdo e formatos, mas não autentica o arquivo no Ministério. Não transforma a validade do CA em validade física do equipamento.</p>
+</section>
 </main><footer>Ferramenta de análise técnica • Dados oficiais precisam de fonte e data de referência.</footer>
-<script>/*__DOMAIN__*/</script><script>/*__APP__*/</script>
+<script>/*__DOMAIN__*/</script><script>/*__IMPORT__*/</script><script>/*__APP__*/</script><script>/*__CATALOG_UI__*/</script>
 </body></html>

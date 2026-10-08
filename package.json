@@ -10,7 +10,9 @@
     "check": "npm test && npm run build",
     "clasp": "clasp",
     "test:ui": "node scripts/smoke-ui.js",
-    "demo": "node scripts/export-demo.js"
+    "demo": "node scripts/export-demo.js",
+    "google:bundle": "node scripts/export-google.js",
+    "test:google-ui": "node scripts/smoke-google-ui.js"
   },
   "engines": {
     "node": ">=22"

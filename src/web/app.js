@@ -2,7 +2,7 @@
   'use strict';
   const $ = id => document.getElementById(id);
   const remote = typeof google !== 'undefined' && google.script && google.script.run;
-  const KEY = 'epi.analysis.v1';
+  const KEY = remote ? 'epi.analysis.google.v1' : 'epi.analysis.v1';
   let sheets = [], savedSheets = [], current, editing = null, catalog = {}, lifetimes = {}, metadata = {}, busy = false;
   const id = () => crypto.randomUUID();
   function notify(text, error = false) { $('message').textContent = text; $('message').className = error ? 'error' : ''; }
@@ -61,6 +61,7 @@
       $('sheetList').append(section);
     });
   }
+  document.addEventListener('epi:catalog-updated', e => { metadata = e.detail; });
   function renderLives() {
     $('lifeRows').replaceChildren();
     Object.keys(lifetimes).sort((a,b) => Number(a)-Number(b)).forEach(ca => {
@@ -141,7 +142,7 @@
     if (sheets.length) open(sheets.find(s => s.id === cache.currentId) || sheets[0]); else newSheet();
     renderLives();
     if (remote) {
-      try { const data = await operation(() => rpc('epiBootstrap')); catalog = data.catalog; metadata = data.metadata; lifetimes = data.lifetimes; savedSheets = data.sheets; renderLives(); renderSheets(); notify('Planilha conectada.'); }
+      try { const data = await operation(() => rpc('epiBootstrap')); catalog = data.catalog; metadata = data.metadata; lifetimes = data.lifetimes; savedSheets = data.sheets; document.dispatchEvent(new CustomEvent('epi:connection',{detail:data.connection})); renderLives(); renderSheets(); notify('Planilha conectada.'); }
       catch (err) { notify('Conexão com a planilha falhou: ' + err.message + '. O rascunho local continua disponível.', true); }
     }
   }

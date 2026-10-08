@@ -4,9 +4,9 @@ const vm=require('node:vm');
 const fs=require('node:fs');
 function setup() {
  const tabs=new Map(); let locked=false;
- const db={getSheetByName:n=>tabs.get(n),insertSheet:n=>{
-  const tab={cells:[],setFrozenRows(){},getLastRow(){return this.cells.length},getRange(row,col,height,width){
-   return {getValues:()=>Array.from({length:height},(_,r)=>Array.from({length:width},(_,c)=>tab.cells[row+r-1]?.[col+c-1]??'')),
+ const db={getUrl:()=> 'https://docs.google.com/spreadsheets/d/fake-id',getSheetByName:n=>tabs.get(n),insertSheet:n=>{
+  const tab={cells:[],maxRows:1000,getMaxRows(){return this.maxRows},insertRowsAfter(_,count){this.maxRows+=count},setFrozenRows(){},getLastRow(){return this.cells.length},getRange(row,col,height,width){
+   return {getDisplayValues:()=>Array.from({length:height},(_,r)=>Array.from({length:width},(_,c)=>String(tab.cells[row+r-1]?.[col+c-1]??'').replace(/^'/,''))),getValues:()=>Array.from({length:height},(_,r)=>Array.from({length:width},(_,c)=>tab.cells[row+r-1]?.[col+c-1]??'')),
     setValues:values=>values.forEach((cells,r)=>{tab.cells[row+r-1] ||= [];cells.forEach((v,c)=>{tab.cells[row+r-1][col+c-1]=v})}),
     clearContent:()=>{for(let r=row-1;r<row+height-1;r++)for(let c=col-1;c<col+width-1;c++)tab.cells[r][c]=''}};
   }};tabs.set(n,tab);return tab;
@@ -27,3 +27,4 @@ test('text sent to spreadsheet is escaped, number of days remains numeric; remov
  s.replace('Lifetimes',[{ca:'123',days:30}]);assert.equal(tabs.get('Lifetimes').cells[1][1],30);
 });
 test('lock always released on failure',()=>{const {store:s,isLocked}=setup();assert.throws(()=>s.locked(()=>{assert.equal(isLocked(),true);throw new Error('fake error')}));assert.equal(isLocked(),false);});
+test('catálogo expande a capacidade da aba além das mil linhas iniciais',()=>{const {store:s,tabs}=setup();s.initialize();s.replace('CaIndex',Array.from({length:1200},(_,i)=>({ca:String(i+1),name:'EPI fictício',approvedProtection:'Proteção fictícia',caExpiry:''})));assert.equal(tabs.get('CaIndex').maxRows,1201);assert.equal(s.count('CaIndex'),1200);});

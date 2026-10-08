@@ -4,9 +4,9 @@ function doGet() {
 function setupDatabase() { return EpiStore.locked(function () { EpiStore.initialize(); return 'Tabelas inicializadas'; }); }
 function epiBootstrap() { return EpiStore.locked(epiBootstrap_); }
 function epiBootstrap_() {
-  var catalog = EpiCatalog.load(EpiStore), lives = {};
+  var meta = EpiCatalog.metadata(EpiStore), lives = {};
   EpiStore.rows('Lifetimes').forEach(function (r) { lives[EpiDomain.ca(r.ca)] = Number(r.days); });
-  return { catalog: catalog.index, metadata: catalog.metadata, lifetimes: lives, sheets: epiListSheets_() };
+  return { catalog: {}, metadata: meta, lifetimes: lives, sheets: epiListSheets_(), connection: EpiStore.connection() };
 }
 function epiListSheets() { return EpiStore.locked(epiListSheets_); }
 function epiListSheets_() {
@@ -65,6 +65,11 @@ function epiDeleteLifetime(number) {
   return EpiStore.locked(function () { EpiStore.replace('Lifetimes', EpiStore.rows('Lifetimes').filter(function(r) { return String(r.ca) !== number; })); return number; });
 }
 function epiAnalyzeSheet(input) {
-  var data = epiBootstrap();
-  return EpiDomain.analyze(input, data.catalog, data.lifetimes, data.metadata);
+  EpiDomain.validateSheet(input);
+  return EpiStore.locked(function () {
+    var data = EpiCatalog.load(EpiStore,input.entries.map(function(e) { return e.ca; })), lives = {};
+    EpiStore.rows('Lifetimes').forEach(function(r) { lives[EpiDomain.ca(r.ca)] = Number(r.days); });
+    if (!EpiStore.count('CaIndex')) throw new Error('Base de CAs vazia. Importe os dados oficiais na seção Base e conexão.');
+    return EpiDomain.analyze(input,data.index,lives,data.metadata);
+  });
 }

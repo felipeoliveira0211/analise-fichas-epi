@@ -46,6 +46,15 @@ require('./build');
     assert.match(await page.locator('#message').innerText(),/Data inexistente/);assert.equal(await page.locator('#entries tr').count(),1);
     await page.setViewportSize({width:390,height:844});
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),true);
+    await page.locator('[data-view="catalog"]').click();
+    assert.match(await page.locator('#connectionSummary').innerText(),/sem conexão Google/);
+    await page.locator('#catalogFile').setInputFiles({name:'base-ficticia.csv',mimeType:'text/csv',buffer:Buffer.from('CA;Equipamento;Aprovado para;Data de validade\n123;Auditivo fictício;Proteção auditiva contra ruído;31/12/2030\n')});
+    await page.locator('#readCatalog').click();
+    await page.locator('#catalogSource').fill('https://www.gov.br/exemplo-ficticio');
+    await page.locator('#catalogReference').fill('01/01/2026');
+    await page.locator('#previewCatalog').click();
+    assert.match(await page.locator('#catalogPreview').innerText(),/1 CAs validados/);
+    assert.equal(await page.locator('#commitCatalog').isHidden(),true);
     assert.deepEqual(errors,[]);
     console.log('Smoke de interface passou: teclado, máscara, correção, exclusão, análise, rascunho após reload, múltiplos trabalhadores, vida útil, data inválida e viewport móvel.');
   } finally { if(browser) await browser.close(); await new Promise(resolve=>server.close(resolve)); }

@@ -31,7 +31,7 @@ var EpiStore = (function () {
   function rows(name) {
     var tab = table(name), count = tab.getLastRow() - 1;
     if (count < 1) return [];
-    return tab.getRange(2, 1, count, schema[name].length).getValues().map(function (cells) {
+    return tab.getRange(2, 1, count, schema[name].length).getDisplayValues().map(function (cells) {
       var obj = {}; schema[name].forEach(function (key, i) { obj[key] = cells[i]; }); return obj;
     });
   }
@@ -42,6 +42,8 @@ var EpiStore = (function () {
   function replace(name, objects) {
     var tab = table(name), oldCount = Math.max(0, tab.getLastRow() - 1);
     var values = objects.map(function(obj) { return schema[name].map(function(key) { return text(obj[key]); }); });
+    var requiredRows = values.length + 1, maxRows = tab.getMaxRows();
+    if (requiredRows > maxRows) tab.insertRowsAfter(maxRows, requiredRows - maxRows);
     if (values.length) tab.getRange(2, 1, values.length, schema[name].length).setValues(values);
     if (oldCount > values.length) tab.getRange(values.length + 2, 1, oldCount - values.length, schema[name].length).clearContent();
   }
@@ -50,5 +52,12 @@ var EpiStore = (function () {
     lock.waitLock(30000);
     try { return fn(); } finally { lock.releaseLock(); }
   }
-  return { initialize: initialize, rows: rows, replace: replace, locked: locked };
+  function count(name) { return Math.max(0, table(name).getLastRow() - 1); }
+  function connection() {
+    var db = database();
+    Object.keys(schema).forEach(table);
+    var meta = rows('Metadata')[0] || {};
+    return {connected:true,spreadsheetUrl:db.getUrl(),caCount:count('CaIndex'),source:meta.source || '',referenceDate:meta.referenceDate || '',updatedAt:meta.updatedAt || ''};
+  }
+  return { count:count,connection:connection, initialize: initialize, rows: rows, replace: replace, locked: locked };
 })();
