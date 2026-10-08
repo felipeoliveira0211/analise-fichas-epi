@@ -28,6 +28,16 @@ docs/GOOGLE-SETUP.md      # Ativação da parte 2, pelo navegador ou clasp
 
 `dist/` é gerado e ignorado no Git. PDFs, relatório consolidado por GES e download/importação incremental da base oficial são extensões futuras. A parte 2 inclui importação de CSV local validado, sem scraping. Os módulos de análise, catálogo e persistência permitem evoluí-los sem misturar a interface com regras técnicas.
 
+## Base padrão enviada e atualização da aplicação
+
+O arquivo `cadastro-EPI-final.xlsx` enviado pelo usuário foi projetado em uma base de **36.136 CAs**, já incluída no pacote Google. O carregamento em etapas começa em um catálogo vazio, pode ser retomado e preserva fichas e vida útil. Um catálogo existente só é substituído mediante confirmação na interface.
+
+Há **16.359 CAs com proteção pendente de revisão** e **19 com validade conflitante**, devido a inconsistências no arquivo. A referência oficial da base não é conhecida; a data interna de modificação em 2022 não é tratada como atualização oficial. A aplicação sinaliza a necessidade de confirmação.
+
+O campo **Buscar atualizações** consulta páginas HTTPS em `www.gov.br`, `caepi.mte.gov.br` ou `caepi.trabalho.gov.br`, identifica links de arquivos e informa bloqueios/indisponibilidade. Não garante que um arquivo encontrado seja mais recente, não importa automaticamente e não contorna 403.
+
+Siga o [guia de atualização da implantação existente](docs/DEFAULT-BASE.md). Foram adicionados quatro scripts ao pacote (`DefaultData`, `DefaultCatalog`, `UpdateDomain`, `OfficialUpdates`) e a permissão Google de consulta externa. A validação da nova versão em sua conta e a consulta ao conteúdo do portal CAEPI permanecem pendentes. A página de EPI do Ministério foi consultada com HTTP 200 e indica o portal atual.
+
 ## Desenvolvimento local
 
 ### Testar agora, sem Node.js ou conta Google
@@ -120,8 +130,10 @@ Nesta versão de uso pessoal, o proprietário também administra os prazos. Auto
 | Lifetimes | ca, days |
 | CaIndex | ca, name, approvedProtection, caExpiry |
 | Metadata | source, referenceDate, updatedAt |
+| CaDefaultStage | ca, name, approvedProtection, caExpiry |
+| CaDefaultBackup | ca, name, approvedProtection, caExpiry |
 
-A versão não inclui dados oficiais embutidos nem scraping. Use a tela **Base e conexão** para importar CSV exportado da planilha oficial. Se preferir a preparação manual, o adaptador `catalog.js` também lê a base em `CaIndex`: mapeie o número do CA para `ca`, o nome para `name`, a proteção aprovada para `approvedProtection` e a validade do certificado para `caExpiry`. Confira o arquivo oficial e a classificação antes do uso técnico.
+A versão inclui a projeção do arquivo fornecido pelo usuário, com procedência online e referência temporal não autenticadas; não implementa scraping. Use a tela **Base e conexão** para importar CSV exportado da planilha oficial. Se preferir a preparação manual, o adaptador `catalog.js` também lê a base em `CaIndex`: mapeie o número do CA para `ca`, o nome para `name`, a proteção aprovada para `approvedProtection` e a validade do certificado para `caExpiry`. Confira o arquivo oficial e a classificação antes do uso técnico.
 
 Antes de colar, formate essas colunas como **texto simples**, especialmente CA e datas. Datas devem ser `DD/MM/AAAA`; não cole objetos de data do Sheets ou fórmulas. Use uma linha por CA, sem duplicatas. Registre em uma única linha de `Metadata` a fonte oficial (URL ou identificação da publicação), a data de referência do conjunto em `referenceDate` e o instante da atualização em `updatedAt` (texto ISO). Não insira pessoas nem dados pessoais nessas abas de catálogo.
 

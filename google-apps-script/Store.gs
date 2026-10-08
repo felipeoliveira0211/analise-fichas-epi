@@ -5,6 +5,8 @@ var EpiStore = (function () {
     Entries: ['id', 'sheetId', 'ca', 'date', 'physicalExpiry', 'position'],
     Lifetimes: ['ca', 'days'],
     CaIndex: ['ca', 'name', 'approvedProtection', 'caExpiry'],
+    CaDefaultStage: ['ca', 'name', 'approvedProtection', 'caExpiry'],
+    CaDefaultBackup: ['ca', 'name', 'approvedProtection', 'caExpiry'],
     Metadata: ['source', 'referenceDate', 'updatedAt']
   };
   function database() {
@@ -44,8 +46,15 @@ var EpiStore = (function () {
     var values = objects.map(function(obj) { return schema[name].map(function(key) { return text(obj[key]); }); });
     var requiredRows = values.length + 1, maxRows = tab.getMaxRows();
     if (requiredRows > maxRows) tab.insertRowsAfter(maxRows, requiredRows - maxRows);
-    if (values.length) tab.getRange(2, 1, values.length, schema[name].length).setValues(values);
+    for (var offset = 0; offset < values.length; offset += 1000) tab.getRange(offset + 2, 1, Math.min(1000, values.length - offset), schema[name].length).setValues(values.slice(offset, offset + 1000));
     if (oldCount > values.length) tab.getRange(values.length + 2, 1, oldCount - values.length, schema[name].length).clearContent();
+  }
+  function writeAt(name, offset, objects) {
+    if (name !== 'CaDefaultStage') throw new Error('Escrita em preparação inválida.');
+    var tab = table(name), values = objects.map(function(obj) { return schema[name].map(function(key) { return text(obj[key]); }); });
+    var end = offset + values.length + 1, maxRows = tab.getMaxRows();
+    if (end > maxRows) tab.insertRowsAfter(maxRows, end - maxRows);
+    if (values.length) tab.getRange(offset + 2, 1, values.length, schema[name].length).setValues(values);
   }
   function locked(fn) {
     var lock = LockService.getScriptLock();
@@ -57,7 +66,7 @@ var EpiStore = (function () {
     var db = database();
     Object.keys(schema).forEach(table);
     var meta = rows('Metadata')[0] || {};
-    return {connected:true,spreadsheetUrl:db.getUrl(),caCount:count('CaIndex'),source:meta.source || '',referenceDate:meta.referenceDate || '',updatedAt:meta.updatedAt || ''};
+    return {defaultBase:typeof EpiDefaultCatalog !== 'undefined' ? EpiDefaultCatalog.status(EpiStore) : null,connected:true,spreadsheetUrl:db.getUrl(),caCount:count('CaIndex'),source:meta.source || '',referenceDate:meta.referenceDate || '',updatedAt:meta.updatedAt || ''};
   }
-  return { count:count,connection:connection, initialize: initialize, rows: rows, replace: replace, locked: locked };
+  return { writeAt:writeAt, count:count,connection:connection, initialize: initialize, rows: rows, replace: replace, locked: locked };
 })();

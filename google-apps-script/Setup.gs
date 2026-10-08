@@ -9,6 +9,7 @@ function initializeApplication() {
     }
     // An inaccessible existing ID is an error, never an excuse to replace the database.
     EpiStore.initialize();
+    if (typeof EpiDefaultCatalog !== 'undefined') EpiDefaultCatalog.load(EpiStore);
     var result = EpiStore.connection();
     result.created = created;
     console.log(JSON.stringify(result));
@@ -20,4 +21,4 @@ function verifyApplicationConnection() {
 }
 function epiConnectionStatus() { return EpiStore.locked(function () { return EpiStore.connection(); }); }
 function epiPreviewCatalog(payload) { return EpiStore.locked(function () { return EpiCatalog.preview(EpiStore,payload); }); }
-function epiImportCatalog(payload, confirmation) { return EpiStore.locked(function () { return EpiCatalog.commit(EpiStore,payload,confirmation); }); }
+function epiImportCatalog(payload, confirmation) { return EpiStore.locked(function () { if (typeof EpiDefaultCatalog !== 'undefined' && EpiDefaultCatalog.active()) throw new Error('Conclua o carregamento padrão antes de importar outro catálogo.'); return EpiCatalog.commit(EpiStore,payload,confirmation); }); }

@@ -16,7 +16,7 @@ function setup() {
  return {store:c.EpiStore,tabs,isLocked:()=>locked};
 }
 test('initialisation repeatable preserves existing table data and rejects unexpected headers',()=>{
- const {store:s,tabs}=setup();s.initialize();assert.equal(tabs.size,6);
+ const {store:s,tabs}=setup();s.initialize();assert.equal(tabs.size,8);
  s.replace('Lifetimes',[{ca:'123',days:30}]);const before=JSON.stringify(tabs.get('Lifetimes').cells);s.initialize();assert.equal(JSON.stringify(tabs.get('Lifetimes').cells),before);
  tabs.get('Workers').cells[0][0]='wrong';assert.throws(()=>s.initialize(),/Cabeçalho inesperado/);
 });

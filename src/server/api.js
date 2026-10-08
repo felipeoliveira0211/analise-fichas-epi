@@ -67,6 +67,7 @@ function epiDeleteLifetime(number) {
 function epiAnalyzeSheet(input) {
   EpiDomain.validateSheet(input);
   return EpiStore.locked(function () {
+    if (typeof EpiDefaultCatalog !== 'undefined' && EpiDefaultCatalog.active()) throw new Error('A base padrão ainda está carregando. Aguarde a conclusão em Base e conexão.');
     var data = EpiCatalog.load(EpiStore,input.entries.map(function(e) { return e.ca; })), lives = {};
     EpiStore.rows('Lifetimes').forEach(function(r) { lives[EpiDomain.ca(r.ca)] = Number(r.days); });
     if (!EpiStore.count('CaIndex')) throw new Error('Base de CAs vazia. Importe os dados oficiais na seção Base e conexão.');

@@ -5,14 +5,14 @@ O código de conexão e importação está preparado. A ativação exige sua aut
 ## Opção A: pelo navegador, sem instalar Node ou clasp
 
 1. Abra `https://script.google.com/` na sua conta e crie um **novo projeto**, dedicado à aplicação. Nome sugerido: **Análise Fichas EPI**.
-2. No GitHub, baixe **Code → Download ZIP** e extraia. Os arquivos prontos estão na pasta **google-apps-script/**.
+2. No GitHub, baixe **Code → Download ZIP** e extraia. Os arquivos prontos estão na pasta **google-apps-script/**. A versão com base padrão também exige os quatro novos scripts descritos em [DEFAULT-BASE.md](DEFAULT-BASE.md).
 3. No editor Google, remova apenas o arquivo inicial `Code.gs` vazio do projeto novo. Crie seis arquivos de script com os nomes **Domain**, **ImportDomain**, **Store**, **Catalog**, **Api** e **Setup**. Em cada um, cole o conteúdo do `.gs` correspondente da pasta baixada. Não cole arquivos do `src/` diretamente: a pasta exportada é o pacote completo.
 4. Crie um arquivo **HTML** com o nome **Index**. Cole o conteúdo completo de `google-apps-script/Index.html`.
 5. Em **Configurações do projeto**, habilite a exibição do manifesto `appsscript.json`. Volte ao editor e substitua o manifesto pelo arquivo do pacote. Ele solicita acesso a planilhas e mantém `USER_ACCESSING` e `MYSELF`.
 6. Salve tudo. Selecione a função **initializeApplication** e clique em **Executar**. Autorize o acesso usando sua conta. Verifique nome, projeto e escopos na tela de autorização. Não compartilhe códigos OAuth, arquivos de token ou senhas no chat.
-7. A função cria **uma planilha privada**, salva seu ID em `SPREADSHEET_ID` e cria as seis tabelas. O registro da execução mostra o link da planilha, o número de CAs e o status. Executar novamente reutiliza a planilha; nunca substitui um ID já configurado apenas porque houve erro de acesso.
+7. A função cria **uma planilha privada**, salva seu ID em `SPREADSHEET_ID` e cria as tabelas do aplicativo e as duas tabelas auxiliares da base padrão. O registro da execução mostra o link da planilha, o número de CAs e o status da preparação padrão; a interface continua o carregamento em etapas. Executar novamente reutiliza a planilha; nunca substitui um ID já configurado apenas porque houve erro de acesso.
 8. Para usar uma planilha dedicada que já existe, defina primeiro seu ID em **Configurações → Propriedades do script → SPREADSHEET_ID** e só depois execute a função. Faça backup se a planilha já contém tabelas da aplicação. Cabeçalhos incompatíveis bloqueiam a inicialização.
-9. Selecione **verifyApplicationConnection** e execute. O resultado deve indicar `connected: true`, o link da planilha e `caCount: 0` antes da primeira importação. Isso confirma a conexão executada na sua conta.
+9. Selecione **verifyApplicationConnection** e execute. O resultado deve indicar `connected: true`, o link da planilha e `caCount` correspondente ao catálogo quando a preparação estiver concluída. Isso confirma a conexão executada na sua conta.
 10. Em **Implantar → Nova implantação → Aplicativo da Web**, escolha **executar como usuário que acessa** e **acesso somente você**. Confirme essas opções no diálogo e abra a URL privada fornecida pelo Google. Não selecione acesso público/anônimo.
 11. Abra **Base e conexão** e clique em **Verificar conexão**. A base inicialmente vazia bloqueia análises reais; a aplicação não usa CAs fictícios como substituto.
 
@@ -65,7 +65,7 @@ Para atualizar uma implantação existente, crie uma nova versão na tela de ger
 
 ## Importar a base oficial
 
-1. Obtenha a planilha oficial do Ministério do Trabalho em uma fonte governamental. Nenhum arquivo real foi fornecido nesta etapa; o aplicativo não inclui uma cópia oficial embutida. Não use os CAs de demonstração.
+1. Obtenha a planilha oficial do Ministério do Trabalho em uma fonte governamental. O usuário forneceu posteriormente cadastro-EPI-final.xlsx; a projeção dessa base está incluída no pacote, com referência temporal desconhecida. Consulte DEFAULT-BASE.md antes do uso. Não use os CAs de demonstração.
 2. Se o arquivo vier em XLSX, abra-o no Google Sheets ou Excel e exporte a aba de dados como **CSV**. Não há leitura direta de XLSX nesta versão nem scraping do CAEPI.
 3. Use um recorte com até **10.000 CAs / 10 MB**, incluindo os CAs das fichas que você pretende analisar. A importação **substitui o catálogo inteiro**, não adiciona um lote ao anterior. Bases maiores exigirão importação incremental em uma evolução posterior.
 4. Na aplicação privada, abra **Base e conexão**, selecione o arquivo, o separador e a codificação (UTF-8 ou Windows-1252) e clique em **Ler arquivo**.

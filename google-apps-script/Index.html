@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="pt-BR">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Análise de fichas de EPI</title><style>:root{font-family:system-ui,-apple-system,sans-serif;color:#18312d;background:#f3f6f5;line-height:1.5;--green:#146350}*{box-sizing:border-box}body{margin:0}header{background:#153f35;color:white;padding:26px max(24px,calc((100vw - 1280px)/2));display:flex;align-items:center;justify-content:space-between;gap:20px}h1{font-size:28px;margin:5px 0}h2{font-size:22px}h3{font-size:18px}.eyebrow{font-size:12px;letter-spacing:2px;color:#bbd8cf}.badge{border:1px solid #a5c5ba;padding:6px 12px;border-radius:20px;font-size:13px}nav{max-width:1280px;margin:20px auto 0;display:flex;gap:8px;padding:0 20px}main{max-width:1280px;margin:0 auto;padding:0 20px 30px}.view{background:white;border:1px solid #d9e3df;border-radius:12px;padding:24px;box-shadow:0 3px 12px #153f3508}button{cursor:pointer;border:1px solid #afc5bd;background:white;color:#183e32;padding:10px 16px;border-radius:6px;font:inherit;font-size:14px}button:hover{background:#e8f1ed}button.primary,nav button.active{background:var(--green);color:white;border-color:var(--green)}button:disabled{opacity:.5;cursor:wait}.danger{color:#a12626}.toolbar{display:flex;align-items:center;justify-content:space-between;gap:15px;flex-wrap:wrap}.toolbar>div{display:flex;gap:8px}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin:24px 0}label{display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:600}input,select{font:inherit;font-size:18px;border:1px solid #9bb5aa;border-radius:6px;padding:12px;width:100%;background:white;color:#18312d}input:focus,button:focus-visible,select:focus{outline:3px solid #78b9a4;outline-offset:2px}.quick{background:#edf5f1;border-radius:8px;padding:18px;margin:24px 0}.quick h3{margin-top:0}.quick form,.inline{display:flex;align-items:end;gap:14px;flex-wrap:wrap}.quick input{font-size:24px;max-width:280px}.muted,.privacy{font-size:14px;color:#51675f}.table-wrap{overflow:auto}table{border-collapse:collapse;width:100%;font-size:14px;margin:12px 0 24px}th{text-align:left;background:#eff4f1;color:#496257;font-size:12px}th,td{padding:12px;border-bottom:1px solid #dce6e0;vertical-align:top}td button{padding:5px 10px;margin-right:5px}.status{display:inline-block;padding:3px 7px;border-radius:4px;background:#edf1f0}.ok{background:#e1f3e7;color:#206338}.bad{background:#fde6e3;color:#9e2b21}.warn{background:#fff1cc;color:#755a10}#message{min-height:25px;padding:8px 0}#message.error{color:#9e2b21}#sheetList button{margin:4px 8px 8px 0}footer{text-align:center;color:#62756d;font-size:12px;padding:20px}[hidden]{display:none!important}@media(max-width:800px){header{padding:20px;align-items:start;flex-direction:column}h1{font-size:23px}.grid{grid-template-columns:repeat(2,1fr)}nav{flex-wrap:wrap}.view{padding:16px}.toolbar>div{flex-wrap:wrap}.quick form label{flex:1;min-width:150px}}@media(max-width:480px){.grid{grid-template-columns:1fr}main{padding:0 10px 20px}nav{padding:0 10px}button{font-size:13px}}
+#connectionSummary,#defaultBaseSummary,#officialUpdateResults{overflow-wrap:anywhere}
 </style></head>
 <body>
 <header><div><span class="eyebrow">SEGURANÇA DO TRABALHO</span><h1>Análise de fichas de EPI</h1></div><span id="mode" class="badge"></span></header>
@@ -25,6 +26,8 @@
 <section id="catalog" class="view" hidden>
 <div class="toolbar"><h2>Base de CAs e conexão Google</h2><button id="checkConnection">Verificar conexão</button></div>
 <p id="connectionSummary" role="status">Verificando configuração…</p>
+<div class="quick"><h3>Base padrão incluída</h3><p id="defaultBaseSummary">Arquivo cadastro-EPI-final.xlsx fornecido pelo usuário. A data de referência oficial não está confirmada.</p><button id="loadDefaultBase">Carregar ou retomar base padrão</button><p class="muted">O carregamento é feito em etapas e pode ser retomado. Substituir um catálogo existente exige confirmação e preserva fichas e vida útil. Registros com proteção não confiável precisam de revisão manual.</p></div>
+<div class="quick"><h3>Buscar bases nas fontes oficiais</h3><label>Página oficial de publicação ou pesquisa<input id="officialPage" type="url" value="https://www.gov.br/trabalho-e-emprego/pt-br/assuntos/inspecao-do-trabalho/seguranca-e-saude-no-trabalho/equipamentos-de-protecao-individual" maxlength="2000"></label><button id="checkOfficialUpdates">Buscar atualizações</button><div id="officialUpdateResults" aria-live="polite"></div><p class="muted">A consulta busca arquivos e o portal de exportação indicado na página oficial. Encontrar um arquivo não confirma que ele seja mais recente. Confira a data de referência antes de importar; a aplicação não substitui a base automaticamente nem contorna bloqueios do portal.</p></div>
 <p class="muted">Na aplicação Google, execute initializeApplication no editor do Apps Script para criar as tabelas e conectar uma planilha privada. A demonstração local não acessa sua conta.</p>
 <h3>Importar dados oficiais</h3><p>Selecione um CSV exportado da planilha oficial. Identifique as colunas, confira a prévia e confirme a substituição do catálogo. Fichas, trabalhadores e vida útil serão preservados.</p>
 <p class="muted">Limite desta etapa: 10.000 CAs / 10 MB. Para arquivos maiores, exporte um recorte que inclua os CAs das fichas. A importação substitui o catálogo inteiro; não use um segundo lote para completar o primeiro. Não há consulta ao portal durante a digitação.</p>
@@ -369,7 +372,7 @@ if (typeof module !== 'undefined') module.exports = EpiImport;
   'use strict';
   const $ = id => document.getElementById(id);
   const remote = typeof google !== 'undefined' && google.script && google.script.run;
-  let parsed = null, payload = null, confirmation = null, busy = false;
+  let parsed = null, payload = null, confirmation = null, busy = false, autoAttempted = false, currentConnection = null;
   const fields = {ca:'columnCa',name:'columnName',approvedProtection:'columnProtection',caExpiry:'columnExpiry'};
   const labels = {auditiva:'Proteção auditiva',dermica:'Proteção dérmica química',outros:'Demais EPIs',revisao:'Revisão manual'};
   function rpc(method,...args) { return new Promise((resolve,reject) => google.script.run.withSuccessHandler(resolve).withFailureHandler(reject)[method](...args)); }
@@ -381,12 +384,37 @@ if (typeof module !== 'undefined') module.exports = EpiImport;
     try {await fn();}catch(err){notice(err.message||String(err),true);}finally{busy=false;controls.forEach(el=>el.disabled=false);}
   }
   function connection(data) {
-    const p=$('connectionSummary');
+    const p=$('connectionSummary'); currentConnection=data||null;
     if(!remote){p.textContent='Demonstração local: sem conexão Google e sem base oficial carregada.';return;}
+    if(data&&data.defaultBase){const b=data.defaultBase;$('defaultBaseSummary').textContent='Pacote: '+b.fileName+' • '+b.total+' CAs • '+b.statistics.casWithoutReliableProtection+' com proteção pendente de revisão. '+b.referenceNote+(b.status==='pending'?' Preparação: '+b.loaded+'/'+b.total+'.':'');}
     if(data && data.connected){p.textContent='Planilha conectada • '+data.caCount+' CAs • Fonte: '+(data.source||'não informada')+' • Referência: '+(data.referenceDate||'não informada');}
     else p.textContent='Conexão não verificada. Execute initializeApplication no editor do Apps Script e verifique o acesso à planilha.';
   }
-  document.addEventListener('epi:connection',e=>connection(e.detail));connection();
+  document.addEventListener('epi:connection',e=>{connection(e.detail);if(remote&&e.detail&&e.detail.defaultBase&&e.detail.defaultBase.status==='pending'&&!autoAttempted){autoAttempted=true;act(()=>loadDefault(false));}});connection();
+  async function loadDefault(replaceExisting){
+    if(!remote)throw new Error('A base padrão é carregada na planilha pela aplicação Google. A demonstração continua usando CAs fictícios.');
+    let result;
+    do{
+      result=await rpc('epiLoadDefaultBase',replaceExisting);replaceExisting=false;connection(result.connection);
+      notice(result.status==='pending'?'Carregando base padrão: '+result.base.loaded+'/'+result.base.total+' CAs. Mantenha a aba aberta; se houver erro, o botão permite retomar.':result.status==='preserved'?'Catálogo existente preservado.':'Base padrão carregada. Confirme a situação atual dos CAs; a referência oficial está indisponível.');
+    }while(result.status==='pending');
+    if(result.connection)document.dispatchEvent(new CustomEvent('epi:catalog-updated',{detail:{source:result.connection.source,referenceDate:result.connection.referenceDate,updatedAt:result.connection.updatedAt}}));
+  }
+  $('loadDefaultBase').onclick=()=>act(async()=>{
+    let replace=false;
+    if(remote&&currentConnection&&currentConnection.caCount>0&&(!currentConnection.defaultBase||currentConnection.defaultBase.status!=='pending')){
+      if(!confirm('Substituir o catálogo atual pela base padrão incluída? Ela contém registros pendentes de revisão e não tem data de referência oficial confirmada. Fichas e vida útil serão preservadas.'))return;replace=true;
+    }
+    await loadDefault(replace);
+  });
+  $('checkOfficialUpdates').onclick=()=>act(async()=>{
+    if(!remote)throw new Error('A consulta oficial exige abrir a aplicação Google e autorizar o acesso externo.');
+    const result=await rpc('epiCheckOfficialUpdates',$('officialPage').value),container=$('officialUpdateResults');container.replaceChildren();
+    const p=document.createElement('p');p.textContent=result.message+' • Consulta: '+new Date(result.checkedAt).toLocaleString('pt-BR');container.append(p);
+    function link(url,label){const a=document.createElement('a');a.href=url;a.textContent=label;a.target='_blank';a.rel='noopener noreferrer';const row=document.createElement('p');row.append(a);container.append(row);}
+    link(result.pageUrl,'Abrir página oficial');result.candidates.forEach(item=>{link(item.url,item.label);const note=document.createElement('p');note.textContent=item.freshness;container.append(note);});
+    notice(result.freshnessConfirmed?'Atualização confirmada.':'Consulta concluída; a existência de uma base mais recente precisa ser confirmada.',result.status==='blocked'||result.status==='unavailable');
+  });
   $('catalogForm').onsubmit=e=>e.preventDefault();
   $('catalogForm').oninput=invalid;
   ['catalogFile','catalogDelimiter','catalogEncoding'].forEach(id=>$(id).addEventListener('change',()=>{parsed=null;invalid();}));

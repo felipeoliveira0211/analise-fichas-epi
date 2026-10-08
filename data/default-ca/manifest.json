@@ -1,0 +1,387 @@
+{
+  "version": "8987491b7ca6a3e921d9",
+  "fileName": "cadastro-EPI-final.xlsx",
+  "fileSha256": "8987491b7ca6a3e921d9bbc27a2d91e5951eb7c1d48baeddf5bd2f91fea41265",
+  "source": "Arquivo fornecido pelo usuário: cadastro-EPI-final.xlsx (origem online ainda não confirmada)",
+  "referenceDate": "",
+  "fileModifiedAt": "2022-08-16T16:15:51",
+  "referenceNote": "Data de referência oficial não informada. Data de modificação interna do XLSX não comprova atualização da base.",
+  "statistics": {
+    "inputRows": 106198,
+    "rowsRequiringAlignmentReview": 46769,
+    "casWithoutReliableProtection": 16359,
+    "casWithSourceAlignmentWarnings": 16370,
+    "casWithConflictingExpiry": 19,
+    "casWithMultipleNames": 6,
+    "casWithMultipleApprovedTexts": 7,
+    "uniqueCas": 36136,
+    "duplicateRowsConsolidated": 70062
+  },
+  "chunks": [
+    {
+      "file": "chunk-000.json.gz",
+      "records": 500,
+      "sha256": "bf09ab5ed116037cb35e83b74ad551d7d8f2b329dc931ad8309f71099c89b6e1"
+    },
+    {
+      "file": "chunk-001.json.gz",
+      "records": 500,
+      "sha256": "8ca1ec94a566c6821f8f21f61ff623410163422560015e6b149c020e13b81b5e"
+    },
+    {
+      "file": "chunk-002.json.gz",
+      "records": 500,
+      "sha256": "3f104f3fb0ab7774611f03c7f1e651ffd538b08e3c6d9e96d8d38befaef8c190"
+    },
+    {
+      "file": "chunk-003.json.gz",
+      "records": 500,
+      "sha256": "eeac77e1598aec1bfe79c6396505e2b89e1901a8538956ca8a783df79f771d92"
+    },
+    {
+      "file": "chunk-004.json.gz",
+      "records": 500,
+      "sha256": "8949beaf87fe3fda6b34359602499c82342b1aadc1585baa7d1907d36c2fe052"
+    },
+    {
+      "file": "chunk-005.json.gz",
+      "records": 500,
+      "sha256": "1ef338fdc29bcae1d1e3d72229c357987f5da016be5cf1804eec00e84166c767"
+    },
+    {
+      "file": "chunk-006.json.gz",
+      "records": 500,
+      "sha256": "2916b559cd6c9a68274a76cb62404c07b39384309118e92ec2db496a2fbd60c0"
+    },
+    {
+      "file": "chunk-007.json.gz",
+      "records": 500,
+      "sha256": "eb4222a4ef5d31959d153b697a8a3a57c5d8116ebf6b11b03afa2f296fd4aed8"
+    },
+    {
+      "file": "chunk-008.json.gz",
+      "records": 500,
+      "sha256": "4b63a8ed40a483ff5f6a815e671e49cb20cd390e2406531bd8c04359acc56ff1"
+    },
+    {
+      "file": "chunk-009.json.gz",
+      "records": 500,
+      "sha256": "368a9a82ca755040ef25ffef417e1c8d149181971725055f891d7f6aeb4030f4"
+    },
+    {
+      "file": "chunk-010.json.gz",
+      "records": 500,
+      "sha256": "482928dcdc33a280339e93297081d235ae7f4739350e180ba16a74ac4459467a"
+    },
+    {
+      "file": "chunk-011.json.gz",
+      "records": 500,
+      "sha256": "734a773b5f326240779ccafe5dc0e1c4221cc211c2ba40eece08214ec9ada311"
+    },
+    {
+      "file": "chunk-012.json.gz",
+      "records": 500,
+      "sha256": "373e6bf9f5d38da46af34944fec24b6c104416facfe87c1cf88a9581e7d891fb"
+    },
+    {
+      "file": "chunk-013.json.gz",
+      "records": 500,
+      "sha256": "38b0da3273382f59df8e69935e2e0f50a8050120d4d7a076648e661c74de3469"
+    },
+    {
+      "file": "chunk-014.json.gz",
+      "records": 500,
+      "sha256": "6a34de0c2df54845497dd1fc76a3764ec2eef3059d3061e3f11a783eb4668d75"
+    },
+    {
+      "file": "chunk-015.json.gz",
+      "records": 500,
+      "sha256": "6561236de048da720a4e8e8a8368a0a40309e48d9d130ab04c0b1fce4da17528"
+    },
+    {
+      "file": "chunk-016.json.gz",
+      "records": 500,
+      "sha256": "7721daad841f21a07945f42f57d2a5c10af396426da636499299d75931efe777"
+    },
+    {
+      "file": "chunk-017.json.gz",
+      "records": 500,
+      "sha256": "59479c42bd812c6470f42e1080bac6b3c1cd893bc6123b0a5d8924b69ef72e17"
+    },
+    {
+      "file": "chunk-018.json.gz",
+      "records": 500,
+      "sha256": "bf9943930b6339aa2041cd69e3dda0ded7436d083f1d89850f07a62f13427bd6"
+    },
+    {
+      "file": "chunk-019.json.gz",
+      "records": 500,
+      "sha256": "2ff06f1f7b66335f228de6723e51d952bb01b587c2ce1876c3f854c21d605a41"
+    },
+    {
+      "file": "chunk-020.json.gz",
+      "records": 500,
+      "sha256": "cfa7033d3094b0e0e6824a6207c17e0f6559f82da5224d4eaba6502c6100e9dd"
+    },
+    {
+      "file": "chunk-021.json.gz",
+      "records": 500,
+      "sha256": "dd5c099b2ef0373cd07f76bdd703af2332af56c777f26c5c6abf43d06e6127fd"
+    },
+    {
+      "file": "chunk-022.json.gz",
+      "records": 500,
+      "sha256": "50e2ebaccb0141ea1a3481d0ef677c20035c562978a5ad49cdb6b2c6122e2ff0"
+    },
+    {
+      "file": "chunk-023.json.gz",
+      "records": 500,
+      "sha256": "e9a2f11234f80cae8549d6128d7f8b5bf5fee4db6580b46612e722ca03c40bd1"
+    },
+    {
+      "file": "chunk-024.json.gz",
+      "records": 500,
+      "sha256": "542c47c8796dac0807d3effa3c2e1545821944f0d453463f2dd35c732f284683"
+    },
+    {
+      "file": "chunk-025.json.gz",
+      "records": 500,
+      "sha256": "91adfb128e7c6cd067d334c65bf6ae0eec101485a57ab085220a6ff6d23d3386"
+    },
+    {
+      "file": "chunk-026.json.gz",
+      "records": 500,
+      "sha256": "1e9443e238ed9ee6f365be3ef4ec604d16e8d3f8ceb59c7ab0d349ef6cb26311"
+    },
+    {
+      "file": "chunk-027.json.gz",
+      "records": 500,
+      "sha256": "1751f751acd3c65303030239db0b779c07e29f820da4458407b1a54bb69aa4fb"
+    },
+    {
+      "file": "chunk-028.json.gz",
+      "records": 500,
+      "sha256": "842da31ea8cd4b5fba002a9688758b602ca21b12461d860eca5b84503100d429"
+    },
+    {
+      "file": "chunk-029.json.gz",
+      "records": 500,
+      "sha256": "0136c71aca5070d4f3ef2a433020fe5c76aa9bd1c5f5cda6a3ad46c7a7f626a9"
+    },
+    {
+      "file": "chunk-030.json.gz",
+      "records": 500,
+      "sha256": "3d02fb555ab8b5b5405b7887a17b6a5c4e8266b2b62c23ad8e2bb18dfa0447b6"
+    },
+    {
+      "file": "chunk-031.json.gz",
+      "records": 500,
+      "sha256": "2c22fe56732a651680e3ced6b6638378cea0a0208c3c78ec304df9156ae7a551"
+    },
+    {
+      "file": "chunk-032.json.gz",
+      "records": 500,
+      "sha256": "0aa84d56c9636aa9efccaad77a405dcaab40deb1b8fce63ea42310a4f8ff36b6"
+    },
+    {
+      "file": "chunk-033.json.gz",
+      "records": 500,
+      "sha256": "b8106dbfe415a6c38862fd89753b59f0355742261a9d81af59c66386fe1cb07e"
+    },
+    {
+      "file": "chunk-034.json.gz",
+      "records": 500,
+      "sha256": "0f18bd4a3040c92b8ef4c50e0ba9d3b5ec7778b0e3298a00b8db249a30792c96"
+    },
+    {
+      "file": "chunk-035.json.gz",
+      "records": 500,
+      "sha256": "3699d63f2c9fdee781f471b74d93231352ef860847fb2d94ac23fda240bf9c8d"
+    },
+    {
+      "file": "chunk-036.json.gz",
+      "records": 500,
+      "sha256": "0c7c946f3b0dc974215f311ca794d0847a395e33671347c2658ff585feaf6191"
+    },
+    {
+      "file": "chunk-037.json.gz",
+      "records": 500,
+      "sha256": "1dc82140d47bc486bedb77b57c2943325062e1247de62f091f17b60465b73a4d"
+    },
+    {
+      "file": "chunk-038.json.gz",
+      "records": 500,
+      "sha256": "0552bfaa25f0d6e2708c35d79e8d9b0f10c4ad9cc971b33b3813d80e879687a4"
+    },
+    {
+      "file": "chunk-039.json.gz",
+      "records": 500,
+      "sha256": "6579da358307acdb6cea3f3cfb22118e31c24631a214ad6629625b6e4c724205"
+    },
+    {
+      "file": "chunk-040.json.gz",
+      "records": 500,
+      "sha256": "f201b5414526b16da2d93320f1676114e09a6d60b49addc225b8c0898cf42b19"
+    },
+    {
+      "file": "chunk-041.json.gz",
+      "records": 500,
+      "sha256": "74097823cbc339fa3d9779126b4c8d80d28bd4c7b2325d6b4a720f2dc731e68e"
+    },
+    {
+      "file": "chunk-042.json.gz",
+      "records": 500,
+      "sha256": "2466c1bfd13daf5cdf7a2059df1f9911896888ed9b4f50e61efa6a13c489c6e2"
+    },
+    {
+      "file": "chunk-043.json.gz",
+      "records": 500,
+      "sha256": "66ff54b4773746b663225284989c4f372fb2295ac966904fc72b2672288a63dd"
+    },
+    {
+      "file": "chunk-044.json.gz",
+      "records": 500,
+      "sha256": "6e197e384900f3bf3ca06dfc4f793cb704fda5967d7ce29bb573a6ac675b5382"
+    },
+    {
+      "file": "chunk-045.json.gz",
+      "records": 500,
+      "sha256": "9028192802d61d04e42554b74037b57a2e1efaecd70dedd713cef7a3ccfd17b6"
+    },
+    {
+      "file": "chunk-046.json.gz",
+      "records": 500,
+      "sha256": "87bde149ac6e59a67950f115434f71b71813e1a40cbcc2ff219eaa18a6a8d8db"
+    },
+    {
+      "file": "chunk-047.json.gz",
+      "records": 500,
+      "sha256": "e5b3c0191fb2e5490174c5a0250f9341711d5cf6d612e70f6f9c1f7ac2653664"
+    },
+    {
+      "file": "chunk-048.json.gz",
+      "records": 500,
+      "sha256": "873e88fd769612f1b31eea5420e46fabe553bd47968b4118ebb8a1c9b58e120c"
+    },
+    {
+      "file": "chunk-049.json.gz",
+      "records": 500,
+      "sha256": "133468cb741927f02d5e04b8d8ee1c9b4806a0730c99c14de8ef8a2cfe6beb87"
+    },
+    {
+      "file": "chunk-050.json.gz",
+      "records": 500,
+      "sha256": "b6aed7150744464f8427b8c46bbf14004244c3f91e408f54999c4575a069ae59"
+    },
+    {
+      "file": "chunk-051.json.gz",
+      "records": 500,
+      "sha256": "4d05903003bf305c890b6bf1f2602e105c619d61e2f81d2c72909e164c4fecbd"
+    },
+    {
+      "file": "chunk-052.json.gz",
+      "records": 500,
+      "sha256": "8525ea73d8cc465f771ac2254ce637ebe4ef294d163a26b4d30d39a3c357d84f"
+    },
+    {
+      "file": "chunk-053.json.gz",
+      "records": 500,
+      "sha256": "477e4f4d198f01c7bedee2865a237e463afed533df00fffec49a8bf5055b6a43"
+    },
+    {
+      "file": "chunk-054.json.gz",
+      "records": 500,
+      "sha256": "ef4312323bd42029cf607818dcb82e3d5aae4e3f45e1d6362531055e256c41c8"
+    },
+    {
+      "file": "chunk-055.json.gz",
+      "records": 500,
+      "sha256": "149fff4cdfdf84abc7fc18cca0b3e15155e1f95f4167015303f8c3ab0b59c0b0"
+    },
+    {
+      "file": "chunk-056.json.gz",
+      "records": 500,
+      "sha256": "360728cdcdb03555128a83fc1e0b2694a0abf0009ae064ed880d651baf8852c1"
+    },
+    {
+      "file": "chunk-057.json.gz",
+      "records": 500,
+      "sha256": "376c82ca39374501bbff3c89c903536850e581a0ac08ea72b3bdf0c4d9399632"
+    },
+    {
+      "file": "chunk-058.json.gz",
+      "records": 500,
+      "sha256": "3791a52bba54dbd1231d0523548c8f91158a15e2022c780fbdb29bca4c280eb9"
+    },
+    {
+      "file": "chunk-059.json.gz",
+      "records": 500,
+      "sha256": "bdf47dd260213cce061fb9f373a82f88c4433e364ba9580f70de245039108901"
+    },
+    {
+      "file": "chunk-060.json.gz",
+      "records": 500,
+      "sha256": "c46a7bdbe24e196ff6b24d469e37175f5244ad32c367f5d6eabf193787692f2c"
+    },
+    {
+      "file": "chunk-061.json.gz",
+      "records": 500,
+      "sha256": "cff06624c2c5b127ef9733e427b1428d16022931b148ada401e31415d6926dc4"
+    },
+    {
+      "file": "chunk-062.json.gz",
+      "records": 500,
+      "sha256": "7faf74d78165f004a8f78b91f0b7a17a7d5c7c3165c215883a7fd0e25bced359"
+    },
+    {
+      "file": "chunk-063.json.gz",
+      "records": 500,
+      "sha256": "0925f1f74296ebedc30f2f1db1d665c5d58d5cbc4745540d5ce16d1b2924daef"
+    },
+    {
+      "file": "chunk-064.json.gz",
+      "records": 500,
+      "sha256": "c089e3f70e7deac8b3587eade659b0ea4d9d15a29970669c6af80b360123d0db"
+    },
+    {
+      "file": "chunk-065.json.gz",
+      "records": 500,
+      "sha256": "ea669cf411fce173581d593364993839f7ab1ab0dfab79da04cad2b596006b92"
+    },
+    {
+      "file": "chunk-066.json.gz",
+      "records": 500,
+      "sha256": "819336a15877fc2766feabefac998c69d37c214046bc6b366033f6bb9570e19a"
+    },
+    {
+      "file": "chunk-067.json.gz",
+      "records": 500,
+      "sha256": "56d1171a3671466b648bc8cc6d632d04b2d51e2b1ebaa3f258eb0cc70ae7830f"
+    },
+    {
+      "file": "chunk-068.json.gz",
+      "records": 500,
+      "sha256": "1837b42fd33347a2172625ba12b92ebed101ca47caf2057c3f8df79395d6d70a"
+    },
+    {
+      "file": "chunk-069.json.gz",
+      "records": 500,
+      "sha256": "a5e4a1a0c63c275b074f65430eecc7a086643d05bea9faba97f20b308190bce5"
+    },
+    {
+      "file": "chunk-070.json.gz",
+      "records": 500,
+      "sha256": "e1159fd5fe7094c3e85fa46b8f9205c0b024186fbdea2f13796b1009e532a2d9"
+    },
+    {
+      "file": "chunk-071.json.gz",
+      "records": 500,
+      "sha256": "fd3b9e1d66b3436731840b7000e0c216b40a7e70f88353397cac9fcbffa1207e"
+    },
+    {
+      "file": "chunk-072.json.gz",
+      "records": 136,
+      "sha256": "235bc37f30e63c2b5b98a9fbe28247675ad77f3e494bf1730335f57bbd89356a"
+    }
+  ]
+}

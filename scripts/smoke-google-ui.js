@@ -3,12 +3,25 @@ const assert=require('node:assert/strict'),http=require('node:http'),fs=require(
 const {chromium}=require('playwright');
 require('./build');
 (async()=>{
- const tables={Workers:[],Sheets:[],Entries:[],Lifetimes:[],CaIndex:[],Metadata:[]};
+ const useDefault=process.env.SMOKE_DEFAULT_BASE==='1';
+ const tables={Workers:[],Sheets:[],Entries:[],Lifetimes:[],CaIndex:[],Metadata:[],CaDefaultStage:[],CaDefaultBackup:[]};
+ const props={};
  const c=vm.createContext({EpiDomain:require('../src/domain/analysis'),EpiImport:require('../src/domain/catalog-import'),
   Utilities:{DigestAlgorithm:{SHA_256:'sha256'},Charset:{UTF_8:'utf8'},computeDigest:(_,text)=>Array.from(crypto.createHash('sha256').update(text).digest())},
   EpiStore:{rows:n=>structuredClone(tables[n]),count:n=>tables[n].length,replace:(n,v)=>{tables[n]=structuredClone(v)},locked:fn=>fn(),connection:()=>({connected:true,caCount:tables.CaIndex.length,...tables.Metadata[0]})}});
  for(const name of ['catalog','api','setup'])vm.runInContext(fs.readFileSync(path.join(__dirname,`../src/server/${name}.js`),'utf8'),c);
- const allowed=new Set(['epiBootstrap','epiListSheets','epiLoadSheet','epiSaveSheet','epiSaveLifetime','epiDeleteLifetime','epiAnalyzeSheet','epiConnectionStatus','epiPreviewCatalog','epiImportCatalog']);
+ if(useDefault){
+  c.PropertiesService={getScriptProperties:()=>({getProperty:k=>props[k],setProperty:(k,v)=>{props[k]=v}})};
+  c.Utilities.base64Decode=s=>Buffer.from(s,'base64');c.Utilities.newBlob=b=>b;
+  c.Utilities.ungzip=b=>({getDataAsString:()=>require('node:zlib').gunzipSync(b).toString('utf8')});
+  c.EpiStore.writeAt=(n,offset,rows)=>rows.forEach((r,i)=>{tables[n][offset+i]=structuredClone(r)});
+  c.EpiStore.connection=()=>({connected:true,caCount:tables.CaIndex.length,...tables.Metadata[0],defaultBase:c.EpiDefaultCatalog.status(c.EpiStore)});
+  vm.runInContext(fs.readFileSync(path.join(__dirname,'../dist/DefaultData.gs'),'utf8'),c);
+  for(const name of ['default-catalog','official-updates'])vm.runInContext(fs.readFileSync(path.join(__dirname,`../src/server/${name}.js`),'utf8'),c);
+  c.EpiUpdates=require('../src/domain/official-updates');
+  c.UrlFetchApp={fetch:()=>({getResponseCode:()=>200,getAllHeaders:()=>({'Content-Type':'text/html'}),getContentText:()=>'<a href="/cadastro-EPI-ficticio.xlsx">Arquivo fictício para teste</a>'})};
+ }
+ const allowed=new Set(['epiLoadDefaultBase','epiCheckOfficialUpdates','epiBootstrap','epiListSheets','epiLoadSheet','epiSaveSheet','epiSaveLifetime','epiDeleteLifetime','epiAnalyzeSheet','epiConnectionStatus','epiPreviewCatalog','epiImportCatalog']);
  const server=http.createServer((req,res)=>{res.setHeader('Content-Type','text/html; charset=utf-8');res.end(fs.readFileSync(path.join(__dirname,'../dist/Index.html')))});
  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));let browser;
  try{
@@ -23,7 +36,21 @@ require('./build');
    window.google={script:{run:runner()}};
    localStorage.setItem('epi.analysis.v1',JSON.stringify({sheets:[],demoLifetimes:{90001:999}}));
   });
-  await page.goto(`http://127.0.0.1:${server.address().port}`);await page.waitForFunction(()=>document.getElementById('message').textContent==='Planilha conectada.');
+  await page.goto(`http://127.0.0.1:${server.address().port}`);
+  if(useDefault){
+   await page.waitForFunction(()=>document.getElementById('message').textContent.includes('Base padrão carregada'),null,{timeout:60000});
+   assert.equal(tables.CaIndex.length,36136);assert.equal(tables.Workers.length,0);
+   await page.locator('[data-view="catalog"]').click();assert.match(await page.locator('#connectionSummary').innerText(),/36136 CAs/);assert.match(await page.locator('#defaultBaseSummary').innerText(),/16359/);
+   await page.locator('#checkOfficialUpdates').click();await page.waitForFunction(()=>document.getElementById('officialUpdateResults').textContent.includes('Arquivos ou portal'));
+   assert.equal(await page.locator('#officialUpdateResults a').count(),2);assert.match(await page.locator('#officialUpdateResults').innerText(),/não confirmadas/);
+   c.UrlFetchApp.fetch=()=>({getResponseCode:()=>403,getAllHeaders:()=>({})});
+   await page.locator('#checkOfficialUpdates').click();await page.waitForFunction(()=>document.getElementById('officialUpdateResults').textContent.includes('bloqueou a consulta'));
+   assert.equal(await page.locator('#officialUpdateResults a').count(),1);
+   await page.setViewportSize({width:390,height:844});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),true);assert.deepEqual(errors,[]);
+   console.log('Interface SIMULADA passou: carregamento automático dos 36136 CAs, alertas da base, busca oficial de candidatos e bloqueio 403 sem dados antigos na tela.');
+   return;
+  }
+  await page.waitForFunction(()=>document.getElementById('message').textContent==='Planilha conectada.');
   await page.locator('[data-view="catalog"]').click();assert.match(await page.locator('#connectionSummary').innerText(),/0 CAs/);
   await page.locator('[data-view="entry"]').click();
   for(const [name,value]of[['workerName','Pessoa fictícia Google'],['workerSector','Setor fictício'],['workerRole','Cargo fictício'],['workerGes','GES teste']])await page.locator('#'+name).fill(value);

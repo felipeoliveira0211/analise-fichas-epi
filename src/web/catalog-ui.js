@@ -2,7 +2,7 @@
   'use strict';
   const $ = id => document.getElementById(id);
   const remote = typeof google !== 'undefined' && google.script && google.script.run;
-  let parsed = null, payload = null, confirmation = null, busy = false;
+  let parsed = null, payload = null, confirmation = null, busy = false, autoAttempted = false, currentConnection = null;
   const fields = {ca:'columnCa',name:'columnName',approvedProtection:'columnProtection',caExpiry:'columnExpiry'};
   const labels = {auditiva:'Proteção auditiva',dermica:'Proteção dérmica química',outros:'Demais EPIs',revisao:'Revisão manual'};
   function rpc(method,...args) { return new Promise((resolve,reject) => google.script.run.withSuccessHandler(resolve).withFailureHandler(reject)[method](...args)); }
@@ -14,12 +14,37 @@
     try {await fn();}catch(err){notice(err.message||String(err),true);}finally{busy=false;controls.forEach(el=>el.disabled=false);}
   }
   function connection(data) {
-    const p=$('connectionSummary');
+    const p=$('connectionSummary'); currentConnection=data||null;
     if(!remote){p.textContent='Demonstração local: sem conexão Google e sem base oficial carregada.';return;}
+    if(data&&data.defaultBase){const b=data.defaultBase;$('defaultBaseSummary').textContent='Pacote: '+b.fileName+' • '+b.total+' CAs • '+b.statistics.casWithoutReliableProtection+' com proteção pendente de revisão. '+b.referenceNote+(b.status==='pending'?' Preparação: '+b.loaded+'/'+b.total+'.':'');}
     if(data && data.connected){p.textContent='Planilha conectada • '+data.caCount+' CAs • Fonte: '+(data.source||'não informada')+' • Referência: '+(data.referenceDate||'não informada');}
     else p.textContent='Conexão não verificada. Execute initializeApplication no editor do Apps Script e verifique o acesso à planilha.';
   }
-  document.addEventListener('epi:connection',e=>connection(e.detail));connection();
+  document.addEventListener('epi:connection',e=>{connection(e.detail);if(remote&&e.detail&&e.detail.defaultBase&&e.detail.defaultBase.status==='pending'&&!autoAttempted){autoAttempted=true;act(()=>loadDefault(false));}});connection();
+  async function loadDefault(replaceExisting){
+    if(!remote)throw new Error('A base padrão é carregada na planilha pela aplicação Google. A demonstração continua usando CAs fictícios.');
+    let result;
+    do{
+      result=await rpc('epiLoadDefaultBase',replaceExisting);replaceExisting=false;connection(result.connection);
+      notice(result.status==='pending'?'Carregando base padrão: '+result.base.loaded+'/'+result.base.total+' CAs. Mantenha a aba aberta; se houver erro, o botão permite retomar.':result.status==='preserved'?'Catálogo existente preservado.':'Base padrão carregada. Confirme a situação atual dos CAs; a referência oficial está indisponível.');
+    }while(result.status==='pending');
+    if(result.connection)document.dispatchEvent(new CustomEvent('epi:catalog-updated',{detail:{source:result.connection.source,referenceDate:result.connection.referenceDate,updatedAt:result.connection.updatedAt}}));
+  }
+  $('loadDefaultBase').onclick=()=>act(async()=>{
+    let replace=false;
+    if(remote&&currentConnection&&currentConnection.caCount>0&&(!currentConnection.defaultBase||currentConnection.defaultBase.status!=='pending')){
+      if(!confirm('Substituir o catálogo atual pela base padrão incluída? Ela contém registros pendentes de revisão e não tem data de referência oficial confirmada. Fichas e vida útil serão preservadas.'))return;replace=true;
+    }
+    await loadDefault(replace);
+  });
+  $('checkOfficialUpdates').onclick=()=>act(async()=>{
+    if(!remote)throw new Error('A consulta oficial exige abrir a aplicação Google e autorizar o acesso externo.');
+    const result=await rpc('epiCheckOfficialUpdates',$('officialPage').value),container=$('officialUpdateResults');container.replaceChildren();
+    const p=document.createElement('p');p.textContent=result.message+' • Consulta: '+new Date(result.checkedAt).toLocaleString('pt-BR');container.append(p);
+    function link(url,label){const a=document.createElement('a');a.href=url;a.textContent=label;a.target='_blank';a.rel='noopener noreferrer';const row=document.createElement('p');row.append(a);container.append(row);}
+    link(result.pageUrl,'Abrir página oficial');result.candidates.forEach(item=>{link(item.url,item.label);const note=document.createElement('p');note.textContent=item.freshness;container.append(note);});
+    notice(result.freshnessConfirmed?'Atualização confirmada.':'Consulta concluída; a existência de uma base mais recente precisa ser confirmada.',result.status==='blocked'||result.status==='unavailable');
+  });
   $('catalogForm').onsubmit=e=>e.preventDefault();
   $('catalogForm').oninput=invalid;
   ['catalogFile','catalogDelimiter','catalogEncoding'].forEach(id=>$(id).addEventListener('change',()=>{parsed=null;invalid();}));
