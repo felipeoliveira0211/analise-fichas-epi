@@ -45,3 +45,16 @@ test('validade antiga não comprova CA atualmente vencido ou ausência de renova
  const result=D.analyze(s,old,{},{});assert.equal(result.stale,true);assert.match(result.rows[0].caAtDelivery,/confirmar renovação/);assert.equal(result.rows[0].status,'Sem análise de periodicidade');
  const updated=D.analyze(s,{'13990':{name:'PERNEIRA',caExpiry:'22/08/2028'}},{},{});assert.match(updated.rows[0].caAtDelivery,/Entrega até/);assert.equal(updated.rows[0].caExpiry,'22/08/2028');
 });
+test('validade de CA aceita 3031 sem ampliar o intervalo permitido nas entregas',()=>{assert.equal(D.certificateDate('26/05/3031'),Date.UTC(3031,4,26));assert.throws(()=>D.date('26/05/3031'),/2100/);assert.throws(()=>D.certificateDate('31/02/3031'),/inexistente/);});
+test('CA vencido usa hoje e não a data histórica da entrega',()=>{
+ const result=D.analyze(sheet([[1,'01/01/2020']]),{'1':{name:'Capacete',caExpiry:'12/10/2026',caSituation:'VÁLIDO'}},{},{},Date.UTC(2026,9,13,15));assert.equal(result.rows[0].caStatus,'CA vencido');assert.equal(result.rows[0].caTone,'bad');assert.equal(result.rows[0].status,'Sem análise de periodicidade');
+});
+test('vencimento próximo inclui dias zero a trinta, com limite no fuso de Brasília',()=>{
+ const now=Date.UTC(2026,9,13,15);
+ for(const [expiry,label]of[['13/10/2026','Próximo ao vencimento'],['12/11/2026','Próximo ao vencimento'],['13/11/2026','CA válido'],['12/10/2026','CA vencido']])assert.equal(D.certificateStatus({caExpiry:expiry,caSituation:'VÁLIDO'},now).label,label);
+ assert.equal(D.certificateStatus({caExpiry:'13/10/2026',caSituation:'VENCIDO'},now).label,'Próximo ao vencimento');
+ assert.equal(D.certificateStatus({caExpiry:'12/10/2026',caSituation:'VÁLIDO'},Date.UTC(2026,9,13,1)).label,'Próximo ao vencimento');
+});
+test('situação suspensa e cancelada prevalece sobre validade futura e aviso de proximidade',()=>{
+ const now=Date.UTC(2026,9,13,15);assert.equal(D.certificateStatus({caExpiry:'13/01/2030',caSituation:'SUSPENSO'},now).label,'CA suspenso');assert.equal(D.certificateStatus({caExpiry:'14/10/2026',caSituation:'CANCELADO'},now).label,'CA cancelado');assert.equal(D.certificateStatus({caExpiry:'26/05/3031',caSituation:'VÁLIDO'},now).label,'CA válido');
+});

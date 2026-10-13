@@ -3,7 +3,7 @@
   const $ = id => document.getElementById(id);
   const remote = typeof google !== 'undefined' && google.script && google.script.run;
   const KEY = remote ? 'epi.analysis.google.v1' : 'epi.analysis.v1';
-  let sheets = [], savedSheets = [], current, editing = null, catalog = {}, lifetimes = {}, metadata = {}, busy = false;
+  let sheets = [], savedSheets = [], current, editing = null, catalog = {}, lifetimes = {}, metadata = {}, busy = false, livesLoaded = !remote, quickLifeManual = false;
   const id = () => crypto.randomUUID();
   function notify(text, error = false) { $('message').textContent = text; $('message').className = error ? 'error' : ''; }
   function rpc(method, ...args) { return new Promise((resolve, reject) => google.script.run.withSuccessHandler(resolve).withFailureHandler(reject)[method](...args)); }
@@ -22,7 +22,7 @@
   }
   function persist() {
     capture();
-    try { localStorage.setItem(KEY, JSON.stringify({ sheets, currentId: current && current.id, demoLifetimes: remote ? undefined : lifetimes })); }
+    try { localStorage.setItem(KEY, JSON.stringify({ sheets, currentId: current && current.id, lifetimes: lifetimes })); }
     catch (_) { notify('Não foi possível guardar o rascunho no navegador. Mantenha esta aba aberta e salve na planilha.', true); }
   }
   function renderEntries() {
@@ -35,7 +35,7 @@
       })); $('entries').append(tr);
     });
   }
-  function resetInput() { editing = null; $('entryForm').reset(); $('quickLifeDays').value = ''; $('addEntry').textContent = 'Adicionar'; $('cancelEdit').hidden = true; $('ca').focus(); }
+  function resetInput() { editing = null; quickLifeManual = false; $('entryForm').reset(); $('quickLifeDays').value = ''; $('addEntry').textContent = 'Adicionar'; $('cancelEdit').hidden = true; $('ca').focus(); }
   function open(sheet) {
     current = sheet;
     $('workerCompany').value = sheet.worker.company || ''; $('workerName').value = sheet.worker.name; $('workerSector').value = sheet.worker.sector;
@@ -61,8 +61,17 @@
       $('sheetList').append(section);
     });
   }
-  document.addEventListener('epi:catalog-updated', e => { metadata = e.detail; });
+  function showBaseUpdated() {
+    $('baseUpdated').textContent = 'Última atualização da base: ' + (metadata.updatedAt ? new Date(metadata.updatedAt).toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo'}) : 'não informada');
+  }
+  document.addEventListener('epi:catalog-updated', e => { metadata = e.detail; showBaseUpdated(); });
+  function fillQuickLife() {
+    if (quickLifeManual) return;
+    const raw = $('ca').value.trim();
+    $('quickLifeDays').value = /^\d+$/.test(raw) ? lifetimes[String(Number(raw))] || '' : '';
+  }
   function renderLives() {
+    fillQuickLife();
     $('lifeRows').replaceChildren();
     Object.keys(lifetimes).sort((a,b) => Number(a)-Number(b)).forEach(ca => {
       const tr = document.createElement('tr'); cell(tr, ca); cell(tr, lifetimes[ca]); const td = cell(tr, '');
@@ -75,16 +84,13 @@
   function renderResult(result) {
     $('resultIntro').replaceChildren(); $('resultRows').replaceChildren();
     [result.worker.name + ' • Setor: ' + result.worker.sector + ' • GES: ' + result.worker.ges].forEach(text => { const p = document.createElement('p'); p.textContent = text; $('resultIntro').append(p); });
-    const names = { auditiva: 'Auditiva', dermica: 'Dérmica química', outros: 'Demais EPIs', revisao: 'Revisão manual' };
-    result.rows.forEach(row => {
-      const tr = document.createElement('tr'); cell(tr, row.date); cell(tr, row.ca + ' · ' + row.name); cell(tr, names[row.group]); cell(tr, row.interval == null ? '—' : row.interval + ' dias'); cell(tr, row.limit == null ? '—' : row.limit + ' dias');
-      const td = cell(tr, ''); const tag = document.createElement('span'); tag.textContent = row.status; tag.className = 'status ' + (row.status === 'Dentro do prazo' ? 'ok' : row.status === 'Fora do prazo' ? 'bad' : 'warn'); td.append(tag);
-      cell(tr, (row.caExpiry || 'Indisponível') + ' · ' + row.caAtDelivery); cell(tr, row.usefulLifeDays == null ? 'Não cadastrada' : row.usefulLifeDays + ' dias'); $('resultRows').append(tr);
-    }); view('results');
+    EpiResultUi.rows($('resultRows'),result.rows); view('results');
   }
   document.querySelectorAll('nav button').forEach(b => b.onclick = () => view(b.dataset.view));
   $('workerForm').onsubmit = e => e.preventDefault();
   $('workerForm').oninput = () => { persist(); renderSheets(); };
+  $('ca').oninput = () => { quickLifeManual = false; fillQuickLife(); };
+  $('quickLifeDays').oninput = () => { quickLifeManual = true; };
   $('ca').onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); $('date').focus(); } };
   $('date').oninput = () => { const v = $('date').value.replace(/\D/g,'').slice(0,8); $('date').value = v.slice(0,2) + (v.length>2 ? '/'+v.slice(2,4) : '') + (v.length>4 ? '/'+v.slice(4) : ''); };
   $('entryForm').onsubmit = guard(async () => {
@@ -93,7 +99,7 @@
     if (rawLife && !EpiDomain.validLife(days)) throw new Error('Vida útil deve ser um inteiro entre 1 e 36500 dias.');
     if (rawLife) {
       if (lifetimes[ca] && lifetimes[ca] !== days && !confirm('Substituir a vida útil do CA ' + ca + ' de ' + lifetimes[ca] + ' para ' + days + ' dias? O prazo será usado em todas as fichas desse CA.')) return;
-      if (remote) await operation(() => rpc('epiSaveLifetime', ca, days));
+      if (remote && (!livesLoaded || lifetimes[ca] !== days)) await operation(() => rpc('epiSaveLifetime', ca, days));
       lifetimes[ca] = days; renderLives();
     }
     if (editing) { const e = current.entries.find(x => x.id === editing); if (e.ca !== ca || e.date !== date) e.savedAt = ''; e.ca = ca; e.date = date; }
@@ -113,7 +119,7 @@
     if (!current.entries.length) throw new Error('Adicione pelo menos uma entrega para analisar.');
     EpiDomain.validateSheet(current);
     const result = remote ? await operation(() => rpc('epiAnalyzeSheet', current)) : EpiDomain.analyze(current, catalog, lifetimes, metadata);
-    renderResult(result); notify(remote ? 'Análise calculada com a base da planilha.' : 'Demonstração com CAs fictícios; não utilize para conclusões técnicas.');
+    renderResult(result); notify(remote ? '' : 'Demonstração com CAs fictícios; não utilize para conclusões técnicas.');
   });
   $('lifeForm').onsubmit = guard(async () => {
     const ca = EpiDomain.ca($('lifeCa').value), days = Number($('lifeDays').value);
@@ -135,19 +141,20 @@
     localStorage.removeItem(KEY); sheets = []; newSheet(); notify('Dados locais anteriores apagados.');
   });
   async function init() {
-    $('mode').textContent = remote ? 'Google Sheets · acesso privado' : 'Demonstração local · dados fictícios';
+    $('mode').textContent = remote ? 'Uso privado' : 'Demonstração local · dados fictícios';
     let cache = {};
     try { cache = JSON.parse(localStorage.getItem(KEY) || '{}'); sheets = Array.isArray(cache.sheets) ? cache.sheets : []; }
     catch (_) { notify('Rascunho local ilegível; não foi recuperado.', true); }
     if (!remote) {
-      catalog = { '90001': { name: 'Protetor auditivo fictício', approvedProtection: 'Proteção auditiva contra ruído', caExpiry: '31/12/2030' }, '90002': { name: 'Luva química fictícia', approvedProtection: 'Proteção das mãos contra agentes químicos', caExpiry: '31/12/2030' }, '90003': { name: 'Creme fictício', approvedProtection: 'Proteção da pele contra agentes químicos', caExpiry: '31/12/2030' }, '90004': { name: 'Luva mecânica fictícia', approvedProtection: 'Proteção das mãos contra agentes abrasivos', caExpiry: '31/12/2030' } };
-      lifetimes = cache.demoLifetimes || { '90001': 90 }; metadata = { source: 'DADOS FICTÍCIOS — somente demonstração', referenceDate: '01/01/2020' };
+      catalog = { '90001': { name: 'Protetor auditivo fictício', approvedProtection: 'Proteção auditiva contra ruído', caExpiry: '31/12/2030', caSituation:'VÁLIDO' }, '90002': { name: 'Luva química fictícia', approvedProtection: 'Proteção das mãos contra agentes químicos', caExpiry: '31/12/2030', caSituation:'VÁLIDO' }, '90003': { name: 'Creme fictício', approvedProtection: 'Proteção da pele contra agentes químicos', caExpiry: '31/12/2030', caSituation:'VÁLIDO' }, '90004': { name: 'Luva mecânica fictícia', approvedProtection: 'Proteção das mãos contra agentes abrasivos', caExpiry: '31/12/2030', caSituation:'VÁLIDO' } };
+      lifetimes = cache.lifetimes || cache.demoLifetimes || { '90001': 90 }; metadata = { source: 'DADOS FICTÍCIOS — somente demonstração', referenceDate: '01/01/2020' };
       notify('Demonstração: CAs 90001 (auditivo), 90002 (luva química), 90003 (creme), 90004 (mecânico).');
     }
+    if (remote) lifetimes = cache.lifetimes || {};
     if (sheets.length) open(sheets.find(s => s.id === cache.currentId) || sheets[0]); else newSheet();
     renderLives();
     if (remote) {
-      try { const data = await operation(() => rpc('epiBootstrap')); catalog = data.catalog; metadata = data.metadata; lifetimes = data.lifetimes; savedSheets = data.sheets; document.dispatchEvent(new CustomEvent('epi:connection',{detail:data.connection})); renderLives(); renderSheets(); notify('Planilha conectada.'); }
+      try { const data = await operation(() => rpc('epiBootstrap')); catalog = data.catalog; metadata = data.metadata; lifetimes = data.lifetimes; livesLoaded = true; savedSheets = data.sheets; persist(); showBaseUpdated(); fillQuickLife(); renderLives(); renderSheets(); notify('Dados carregados.'); }
       catch (err) { notify('Conexão com a planilha falhou: ' + err.message + '. O rascunho local continua disponível.', true); }
     }
   }
@@ -167,25 +174,22 @@
     if (generation !== reportGeneration) return;
     const preview = $('reportPreview');
     function paragraph(parent, text, tag = 'p') { const el = document.createElement(tag); el.textContent = text; parent.append(el); }
-    paragraph(preview,'Relatório de fichas de EPI','h2');
-    paragraph(preview,'Gerado em ' + timeLabel(result.generatedAt) + ' • Origem: ' + (fromGoogle ? 'Planilha Google' : 'Rascunhos deste navegador'));
+    const reportHeader = document.createElement('div'); reportHeader.className = 'report-header';
+    if (EpiBrand.logo) { const logo = document.createElement('img'); logo.src = EpiBrand.logo; logo.alt = 'SESI — Serviço Social da Indústria'; logo.className = 'report-logo'; reportHeader.append(logo); }
+    const title = document.createElement('div'); reportHeader.append(title); preview.append(reportHeader);
+    paragraph(title,'Relatório de fichas de EPI','h2');
+    paragraph(title,'Gerado em ' + timeLabel(result.generatedAt));
     paragraph(preview,'Filtros: ' + Object.entries(filters).filter(([,v]) => v).map(([k,v]) => ({start:'Entrega desde',end:'Entrega até',company:'Empresa',ges:'GES',worker:'Funcionário',sector:'Setor',role:'Cargo',state:'Situação'}[k]) + ': ' + v).join(' • '));
-    paragraph(preview,'Fonte de CAs: ' + (result.metadata.source || 'Indisponível') + ' • Referência: ' + (result.metadata.referenceDate || 'Não confirmada'));
     if (!remote) paragraph(preview,'DEMONSTRAÇÃO COM CAs FICTÍCIOS — não usar para conclusões técnicas.');
     result.reports.forEach(report => {
       const section = document.createElement('article'); section.className = 'report-sheet'; preview.append(section);
       const w = report.worker;
       paragraph(section,(w.company || 'Empresa não informada') + ' • ' + w.name,'h3');
       paragraph(section,'Setor: ' + w.sector + ' • Cargo: ' + w.role + ' • GES: ' + w.ges + ' • ' + (report.state === 'complete' ? 'Concluída' : 'Em andamento'));
-      paragraph(section,'Último salvamento da ficha: ' + timeLabel(report.updatedAt));
-      if (report.stale) paragraph(section,'Data de referência da base ausente ou desatualizada. Confirme a situação dos CAs na fonte oficial.');
       report.warnings.forEach(warning => paragraph(section,warning));
-      const table = document.createElement('table'), head = document.createElement('thead'), header = document.createElement('tr'), body = document.createElement('tbody');
-      ['Entrega','CA / EPI','Grupo','Intervalo','Limite / CA anterior','Vida útil','Resultado','Validade do CA (base)','Salvo na planilha'].forEach(label => { const th = document.createElement('th'); th.textContent = label; header.append(th); });
-      head.append(header); table.append(head,body); section.append(table);
-      report.rows.forEach(row => { const tr = document.createElement('tr'); [row.date,row.ca + ' • ' + row.name,{auditiva:'Auditiva',dermica:'Dérmica química',outros:'Demais EPIs',revisao:'Revisão manual'}[row.group],row.interval == null ? '—' : row.interval + ' dias',row.limit == null ? '—' : row.limit + ' dias / CA ' + row.previousCa,row.usefulLifeDays == null ? 'Não cadastrada' : row.usefulLifeDays + ' dias',row.status,(row.caExpiry || 'Indisponível') + ' • ' + row.caAtDelivery,timeLabel(row.savedAt)].forEach(value => cell(tr,value)); body.append(tr); });
+      section.append(EpiResultUi.table(report.rows));
     });
-    paragraph(preview,'A validade exibida vem da base cadastrada; confirme renovações na fonte oficial. A validade do CA não determina a vida útil do EPI. O limite usa a vida útil do CA anterior; proteção dérmica química usa 30 dias. Esta análise não avalia adequação ao risco, uso efetivo ou proteção após a última entrega.');
+    paragraph(preview,'A validade do CA não determina a vida útil do EPI. O limite usa a vida útil do CA anterior; proteção dérmica química usa 30 dias. Esta análise não avalia adequação ao risco, uso efetivo ou proteção após a última entrega.');
     $('reportStatus').textContent = result.reports.length + ' ficha(s), ' + result.reports.reduce((sum,r) => sum+r.rows.length,0) + ' lançamento(s).';
     reportReady = result.reports.length > 0; $('printReport').disabled = !reportReady;
   });

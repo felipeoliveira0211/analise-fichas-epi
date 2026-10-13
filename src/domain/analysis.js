@@ -7,14 +7,35 @@ var EpiDomain = (function () {
     if (!/^\d{1,10}$/.test(v) || Number(v) === 0) throw new Error('CA inválido: informe apenas números positivos.');
     return String(Number(v));
   }
-  function date(value) {
+  function parseDate(value, maxYear) {
     var m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(String(value));
     if (!m) throw new Error('Data inválida. Use DD/MM/AAAA.');
     var d = Number(m[1]), month = Number(m[2]), y = Number(m[3]);
-    if (y < 1900 || y > 2100) throw new Error('Ano deve estar entre 1900 e 2100.');
+    if (y < 1900 || y > maxYear) throw new Error('Ano deve estar entre 1900 e ' + maxYear + '.');
     var time = Date.UTC(y, month - 1, d), parsed = new Date(time);
     if (parsed.getUTCFullYear() !== y || parsed.getUTCMonth() !== month - 1 || parsed.getUTCDate() !== d) throw new Error('Data inexistente.');
     return time;
+  }
+  function date(value) { return parseDate(value,2100); }
+  function certificateDate(value) { return parseDate(value,9999); }
+  function today(now) {
+    var parts = new Intl.DateTimeFormat('en-US',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date(now));
+    var values = {}; parts.forEach(function(p) { values[p.type] = p.value; });
+    return Date.UTC(Number(values.year),Number(values.month)-1,Number(values.day));
+  }
+  function certificateStatus(record, now) {
+    if (!record) return {label:'CA não identificado',tone:'warn',days:null};
+    var situation = fold(record.caSituation).trim();
+    if (situation === 'suspenso') return {label:'CA suspenso',tone:'bad',days:null};
+    if (situation === 'cancelado') return {label:'CA cancelado',tone:'bad',days:null};
+    var days;
+    try { days = (certificateDate(record.caExpiry)-today(now))/86400000; }
+    catch (_) { return {label:'Validade não informada',tone:'warn',days:null}; }
+    if (days < 0) return {label:'CA vencido',tone:'bad',days:days};
+    // The official export and portal disagree on expiry day; show proximity on day zero.
+    if (days >= 0 && days <= 30 && (situation === 'valido' || !situation || days === 0)) return {label:'Próximo ao vencimento',tone:'warn',days:days};
+    if (situation === 'vencido') return {label:'CA vencido',tone:'bad',days:days};
+    return {label:situation === 'valido' ? 'CA válido' : 'Situação não informada',tone:situation === 'valido' ? 'ok' : 'warn',days:days};
   }
   function fold(v) { return String(v || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); }
   // Names may identify equipment outside the periodicity scope; they do not
@@ -65,16 +86,16 @@ var EpiDomain = (function () {
     var rows = sheet.entries.map(function (entry, index) {
       return { entry: entry, index: index, time: date(entry.date) };
     }).sort(function (a, b) { return a.time - b.time || a.index - b.index; }).map(function (item) {
-      var entry = item.entry, number = ca(entry.ca), record = catalog[number], group = classify(record);
+      var entry = item.entry, number = ca(entry.ca), record = catalog[number], group = classify(record), currentCa = certificateStatus(record,now);
       var row = { id: entry.id, ca: number, date: entry.date, name: record ? record.name : 'CA não identificado', group: group,
         interval: null, limit: null, status: 'Sem análise de periodicidade', caExpiry: record && record.caExpiry || null,
-        usefulLifeDays: group === GROUP.DERMICA ? 30 : validLife(lifetimes[number]) ? lifetimes[number] : null, savedAt: entry.savedAt || '', physicalExpiry: entry.physicalExpiry || null, caStatus: 'Situação atual do CA precisa ser confirmada', source: metadata.source || 'Indisponível', referenceDate: metadata.referenceDate || null };
+        usefulLifeDays: group === GROUP.DERMICA ? 30 : validLife(lifetimes[number]) ? lifetimes[number] : null, savedAt: entry.savedAt || '', physicalExpiry: entry.physicalExpiry || null, caStatus: currentCa.label, caTone: currentCa.tone, caDaysRemaining: currentCa.days, source: metadata.source || 'Indisponível', referenceDate: metadata.referenceDate || null };
       if (row.physicalExpiry) date(row.physicalExpiry);
       if (record && record.caExpiry) {
-        try { row.caAtDelivery = item.time <= date(record.caExpiry) ? 'Entrega até a validade registrada na base' : stale ? 'Entrega posterior à validade da base; confirmar renovação na fonte oficial' : 'Entrega posterior à validade registrada; confirmar situação na fonte oficial'; }
+        try { row.caAtDelivery = item.time <= certificateDate(record.caExpiry) ? 'Entrega até a validade registrada na base' : stale ? 'Entrega posterior à validade da base; confirmar renovação na fonte oficial' : 'Entrega posterior à validade registrada; confirmar situação na fonte oficial'; }
         catch (_) { row.caAtDelivery = 'Validade do CA indisponível'; }
       } else row.caAtDelivery = 'Validade do CA indisponível';
-      if (!stale && record) row.caStatus = 'Consultar a fonte para confirmar situação atual; referência recente';
+
       if (group === GROUP.REVISAO) row.status = 'Revisão manual necessária';
       if (group === GROUP.AUDITIVA || group === GROUP.DERMICA) {
         var prev = previous[group];
@@ -91,6 +112,6 @@ var EpiDomain = (function () {
     });
     return { sheetId: sheet.id, worker: sheet.worker, rows: rows, warnings: rows.some(function(r) { return r.group === GROUP.REVISAO; }) ? ['CAs pendentes de revisão podem alterar as sequências e os intervalos. A análise é parcial.'] : [], metadata: metadata, stale: stale };
   }
-  return { GROUP: GROUP, ca: ca, date: date, classify: classify, validLife: validLife, validateSheet: validateSheet, analyze: analyze };
+  return { GROUP: GROUP, ca: ca, date: date, certificateDate: certificateDate, certificateStatus: certificateStatus, classify: classify, validLife: validLife, validateSheet: validateSheet, analyze: analyze };
 })();
 if (typeof module !== 'undefined') module.exports = EpiDomain;

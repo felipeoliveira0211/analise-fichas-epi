@@ -45,7 +45,7 @@ var EpiImport = (function () {
     value = String(value || '').trim();
     if (!value) return '';
     if (/^\d{4}-\d{2}-\d{2}$/.test(value)) value = value.slice(8,10) + '/' + value.slice(5,7) + '/' + value.slice(0,4);
-    domain().date(value); return value;
+    domain().certificateDate(value); return value;
   }
   function prepare(payload, now) {
     var D = domain();
@@ -64,7 +64,7 @@ var EpiImport = (function () {
         if (!name || name.length > 1000) throw new Error('Nome do EPI ausente ou maior que 1000 caracteres.');
         if (approved.length > 10000) throw new Error('Proteção aprovada maior que 10000 caracteres.');
         if (seen.has(ca)) throw new Error('CA duplicado: ' + ca + '.'); seen.add(ca);
-        var r = {ca:ca,name:name,approvedProtection:approved,caExpiry:expiry(input.caExpiry)};
+        var r = {ca:ca,name:name,approvedProtection:approved,caExpiry:expiry(input.caExpiry),caSituation:String(input.caSituation || '').trim().toUpperCase()};
         groups[D.classify(r)]++;
         if (D.classify(r) === 'revisao' || !r.caExpiry) warnings.push('CA ' + ca + ': ' + (D.classify(r) === 'revisao' ? 'proteção aprovada ausente ou insuficiente para classificação; revisão manual. ' : '') + (!r.caExpiry ? 'validade do CA indisponível.' : ''));
         return r;

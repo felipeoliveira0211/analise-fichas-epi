@@ -9,7 +9,7 @@ function initializeApplication() {
     }
     // An inaccessible existing ID is an error, never an excuse to replace the database.
     EpiStore.initialize();
-    if (typeof EpiDefaultCatalog !== 'undefined') EpiDefaultCatalog.load(EpiStore);
+
     var result = EpiStore.connection();
     result.created = created;
     console.log(JSON.stringify(result));
@@ -22,3 +22,19 @@ function verifyApplicationConnection() {
 function epiConnectionStatus() { return EpiStore.locked(function () { return EpiStore.connection(); }); }
 function epiPreviewCatalog(payload) { return EpiStore.locked(function () { return EpiCatalog.preview(EpiStore,payload); }); }
 function epiImportCatalog(payload, confirmation) { return EpiStore.locked(function () { if (typeof EpiDefaultCatalog !== 'undefined' && EpiDefaultCatalog.active()) throw new Error('Conclua o carregamento padrão antes de importar outro catálogo.'); return EpiCatalog.commit(EpiStore,payload,confirmation); }); }
+
+// Administrator operation in the private Apps Script project editor.
+// Re-run this function to resume; it never modifies workers, entries or lifetimes.
+function adminUpdateOfficialBase() {
+  return EpiStore.locked(function () {
+    EpiStore.initialize();
+    var current = EpiDefaultCatalog.status(EpiStore);
+    if (current.status === 'ready' && current.loadedVersion === current.version) { console.log('Base oficial já atualizada.'); return {status:'ready',base:current,connection:EpiStore.connection()}; }
+    var deadline = Date.now() + 240000, result;
+    do {
+      result = EpiDefaultCatalog.load(EpiStore,!EpiDefaultCatalog.active());
+    } while (result.status === 'pending' && Date.now() < deadline);
+    console.log(JSON.stringify({status:result.status,loaded:result.base.loaded,total:result.base.total,updatedAt:result.connection.updatedAt}));
+    return result;
+  });
+}

@@ -17,7 +17,7 @@ var EpiDefaultCatalog = (function () {
     var blob=Utilities.newBlob(bytes,'application/x-gzip','chunk.json.gz');
     var tuples=JSON.parse(Utilities.ungzip(blob).getDataAsString('UTF-8'));
     if(tuples.length!==EpiBundledBase.manifest.chunks[index].records)throw new Error('Quantidade inesperada no pacote padrão.');
-    return tuples.map(function(r){EpiDomain.ca(r[0]);if(r[3])EpiDomain.date(r[3]);return {ca:r[0],name:r[1],approvedProtection:r[2],caExpiry:r[3]};});
+    return tuples.map(function(r){EpiDomain.ca(r[0]);if(r[3])EpiDomain.certificateDate(r[3]);return {ca:r[0],name:r[1],approvedProtection:r[2],caExpiry:r[3],caSituation:r[4]||''};});
   }
   function load(store,replaceExisting){
     var m=EpiBundledBase.manifest,s=state();

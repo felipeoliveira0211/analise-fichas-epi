@@ -26,23 +26,21 @@ docs/GOOGLE-SETUP.md      # Ativação da parte 2, pelo navegador ou clasp
 .clasp.example.json       # Modelo sem credenciais
 ```
 
-`dist/` é gerado e ignorado no Git. A tela Relatórios / PDFs consolida fichas com filtros e gera PDFs pela impressão local do navegador. Download/importação incremental da base oficial é uma extensão futura. A parte 2 inclui importação de CSV local validado, sem scraping. Os módulos de análise, catálogo e persistência permitem evoluí-los sem misturar a interface com regras técnicas.
+`dist/` é gerado e ignorado no Git. A tela Relatórios / PDFs consolida fichas com filtros e gera PDFs pela impressão local do navegador, com o logo SESI incorporado. A atualização administrativa prepara o arquivo oficial `.csv.gz` validado. Os módulos de análise, catálogo e persistência permitem evoluí-los sem misturar a interface com regras técnicas.
 
 ## Empresa, vida útil rápida e PDFs
 
 Consulte [REPORTS.md](docs/REPORTS.md) para atualizar a aplicação já implantada, preservar os dados e usar os filtros de relatórios. A atualização adiciona colunas de empresa/horário e o script ReportDomain.
 
-## Base padrão enviada e atualização da aplicação
+## Base oficial e atualização pelo administrador
 
-O arquivo `cadastro-EPI-final.xlsx` enviado pelo usuário foi projetado em uma base de **36.136 CAs**, já incluída no pacote Google. O carregamento em etapas começa em um catálogo vazio, pode ser retomado e preserva fichas e vida útil. Um catálogo existente só é substituído mediante confirmação na interface.
+O pacote inclui **42.478 CAs** da exportação oficial `RelatorioCA_20261013_150911.csv.gz`, com validade e situação oficial. A maior validade é selecionada junto com nome, proteção e situação das linhas correspondentes, sem misturar versões históricas. O CA 40355 mantém 26/05/3031.
 
-Há **16.359 CAs sem proteção aprovada confiável no arquivo**. EPIs reconhecidos pelo nome como fora do escopo dispensam esse campo: **1.406 CAs permanecem pendentes para periodicidade**. Para os **19 CAs com validades divergentes**, o pacote usa a maior data válida, conforme regra definida pelo usuário. A referência oficial da base não é conhecida; a data interna de modificação em 2022 não é tratada como atualização oficial. A aplicação sinaliza a necessidade de confirmação.
+Use [UPDATE-OFFICIAL-BASE.md](docs/UPDATE-OFFICIAL-BASE.md) para atualizar a implantação existente em uma única versão. O administrador executa `adminUpdateOfficialBase` no editor Apps Script; a função prepara em lotes, guarda a base anterior e preserva fichas e vidas úteis. Uma execução posterior com o mesmo pacote é idempotente. A abertura normal do sistema não carrega nem substitui o catálogo.
 
-O CA **13990** recebeu uma correção documentada para **22/08/2028** a partir dos prints fornecidos pelo usuário. A data **22/08/2023** registrada no XLSX coincide com a expedição mostrada no histórico atual. Não há conversão geral de emissão em validade nem soma automática de cinco anos; detalhes e correção pontual na planilha em [DEFAULT-BASE.md](docs/DEFAULT-BASE.md).
+O usuário vê apenas a data da última atualização concluída, sem a seção Base e conexão. Os próximos arquivos podem permanecer `.csv.gz`: `scripts/prepare-official-base.py` valida gzip/CRC e CSV, separa o HTML extra do download e gera os blocos do catálogo. O script usa a biblioteca padrão do Python e não precisa de Excel.
 
-O campo **Buscar atualizações** consulta páginas HTTPS em `www.gov.br`, `caepi.mte.gov.br` ou `caepi.trabalho.gov.br`, identifica links de arquivos e informa bloqueios/indisponibilidade. Não garante que um arquivo encontrado seja mais recente, não importa automaticamente e não contorna 403.
-
-Siga o [guia de atualização da implantação existente](docs/DEFAULT-BASE.md). Foram adicionados quatro scripts ao pacote (`DefaultData`, `DefaultCatalog`, `UpdateDomain`, `OfficialUpdates`) e a permissão Google de consulta externa. A validação da nova versão em sua conta e a consulta ao conteúdo do portal CAEPI permanecem pendentes. A página de EPI do Ministério foi consultada com HTTP 200 e indica o portal atual.
+Resultados e PDF compartilham grupos e ordem cronológica, com Resultado na última coluna, Marco inicial no intervalo e símbolos/cores para periodicidade. CAs vencidos ficam vermelhos; vencimento entre hoje e 30 dias recebe aviso amarelo. Suspensão/cancelamento continuam explícitos mesmo com data futura. O PDF mantém filtros e geração, sem origem, referência da base ou horários de salvamento.
 
 ## Desenvolvimento local
 
@@ -94,11 +92,11 @@ O teste de navegador usa um servidor temporário e somente pessoas fictícias; v
 
 ## Parte 2: Google e base real
 
-Siga o [guia de ativação](docs/GOOGLE-SETUP.md) para usar o editor Google sem instalar ferramentas ou para conectar pelo clasp. A função `initializeApplication` cria uma planilha privada e persiste o ID; é repetível e não substitui uma planilha existente por falha de acesso. A seção **Base e conexão** verifica a conexão, valida um CSV e importa o catálogo após confirmação.
+Siga o [guia de ativação](docs/GOOGLE-SETUP.md) para usar o editor Google sem instalar ferramentas ou para conectar pelo clasp. A função `initializeApplication` cria uma planilha privada e persiste o ID; é repetível e não substitui uma planilha existente por falha de acesso. A administração da base acontece no editor, por `adminUpdateOfficialBase`; a tela de uso apresenta apenas a última atualização.
 
 O pacote `google-apps-script/` é gerado com `npm run google:bundle`. Após modificar `src/`, atualize esse pacote e a demonstração (`npm run demo`); não edite os arquivos exportados manualmente. A inicialização/build padrão não envia arquivos ao Google.
 
-A importação valida origem declarada HTTPS governamental, data de referência, CAs duplicados, nomes e datas; preserva fichas e vida útil. Suporta até 10.000 CAs / 10 MB por substituição integral. A prévia não grava dados. Alterações no arquivo ou na revisão do catálogo exigem nova prévia. A aplicação não autentica a procedência do arquivo, que deve vir da fonte oficial.
+A preparação oficial valida o formato completo da exportação, preserva situação e aceita validade de CA até 9999. Repetições são consolidadas pela maior validade com campos associados. Os metadados registram origem, geração, atualização e SHA-256; os blocos têm checksum verificado no build e no servidor.
 
 A demonstração e a aplicação Google usam espaços diferentes de rascunho local. Catálogo vazio na aplicação Google bloqueia a análise, sem recorrer aos CAs fictícios. O catálogo completo não é enviado ao navegador no bootstrap; as análises consultam somente os CAs lançados.
 
@@ -134,12 +132,12 @@ Nesta versão de uso pessoal, o proprietário também administra os prazos. Auto
 | Sheets | id, workerId, state, updatedAt, revision |
 | Entries | id, sheetId, ca, date, physicalExpiry (legado), position, savedAt |
 | Lifetimes | ca, days |
-| CaIndex | ca, name, approvedProtection, caExpiry |
+| CaIndex | ca, name, approvedProtection, caExpiry, caSituation |
 | Metadata | source, referenceDate, updatedAt |
-| CaDefaultStage | ca, name, approvedProtection, caExpiry |
-| CaDefaultBackup | ca, name, approvedProtection, caExpiry |
+| CaDefaultStage | ca, name, approvedProtection, caExpiry, caSituation |
+| CaDefaultBackup | ca, name, approvedProtection, caExpiry, caSituation |
 
-A versão inclui a projeção do arquivo fornecido pelo usuário, com procedência online e referência temporal não autenticadas; não implementa scraping. Use a tela **Base e conexão** para importar CSV exportado da planilha oficial. Se preferir a preparação manual, o adaptador `catalog.js` também lê a base em `CaIndex`: mapeie o número do CA para `ca`, o nome para `name`, a proteção aprovada para `approvedProtection` e a validade do certificado para `caExpiry`. Confira o arquivo oficial e a classificação antes do uso técnico.
+O arquivo oficial bruto fica fora do Git. O catálogo compactado publica somente CA, nome, proteção, validade e situação, sem CNPJ ou dados de fabricantes/laboratórios. A atualização administrativa migra cabeçalhos antigos conhecidos sem apagar registros.
 
 Antes de colar, formate essas colunas como **texto simples**, especialmente CA e datas. Datas devem ser `DD/MM/AAAA`; não cole objetos de data do Sheets ou fórmulas. Use uma linha por CA, sem duplicatas. Registre em uma única linha de `Metadata` a fonte oficial (URL ou identificação da publicação), a data de referência do conjunto em `referenceDate` e o instante da atualização em `updatedAt` (texto ISO). Não insira pessoas nem dados pessoais nessas abas de catálogo.
 
@@ -157,11 +155,11 @@ A inclusão nos grupos com análise de periodicidade considera **proteção apro
 - Validade do CA, vida útil e validade física são campos distintos. A comparação com a validade informada do CA não comprova aquisição irregular, inadequação ou validade física.
 - Referência superior a 30 dias, futura ou ausente gera aviso de confirmação. Esse corte é uma política informativa desta versão, **não um prazo legal**. Mesmo dados recentes não garantem a situação atual do CA.
 - Não há cálculo de cobertura após a última entrega, conclusão automática de conformidade global nem avaliação de adequação do equipamento aos riscos.
-- Datas são comparadas em UTC por dias de calendário, sem efeito de horário de verão; anos aceitos de 1900 a 2100. Vida útil aceita inteiros de 1 a 36500 dias.
+- Entregas são comparadas em UTC por dias de calendário, com anos de 1900 a 2100. Validades de CA admitem anos de 1900 a 9999. Avisos de vencimento usam o dia atual em Brasília. Vida útil aceita inteiros de 1 a 36500 dias.
 
 ## Persistência, privacidade e limitações
 
-As fichas ficam em `localStorage` no navegador e, quando solicitada a gravação, no Sheets. Não existe sincronização automática do rascunho; a confirmação “salva na planilha” ocorre somente após resposta do servidor. Conflitos de revisão impedem sobrescrita silenciosa. Leitura e escrita usam lock do script. As gravações possuem recuperação da versão anterior em caso de erro capturável, mas **Google Sheets não oferece transações entre abas**: interrupção abrupta ou falha de recuperação pode exigir intervenção manual. Faça backup da planilha antes de atualizações relevantes.
+Vidas úteis são mantidas no cadastro local e recuperadas de `Lifetimes`, com autopreenchimento nos próximos lançamentos. As fichas ficam em `localStorage` no navegador e, quando solicitada a gravação, no Sheets. Não existe sincronização automática do rascunho; a confirmação “salva na planilha” ocorre somente após resposta do servidor. Conflitos de revisão impedem sobrescrita silenciosa. Leitura e escrita usam lock do script. As gravações possuem recuperação da versão anterior em caso de erro capturável, mas **Google Sheets não oferece transações entre abas**: interrupção abrupta ou falha de recuperação pode exigir intervenção manual. Faça backup da planilha antes de atualizações relevantes.
 
 O armazenamento regrava tabelas inteiras: adequado a uma primeira versão pequena, sujeito às quotas do Apps Script. Paginação, otimização incremental, trilha de auditoria e backups automáticos são melhorias futuras. A vida útil atual é aplicada a toda análise; não existe histórico de vigência dos parâmetros. Nome e GES não deduplicam pessoas; os IDs identificam a ficha e o trabalhador.
 
@@ -170,6 +168,6 @@ Rascunhos não são criptografados pela aplicação. Em computador compartilhado
 ## Próximas etapas
 
 1. Executar a validação real, pessoal e privada no Apps Script/Sheets.
-2. Validar o importador CSV com a planilha oficial fornecida pelo usuário e evoluir para XLSX, bases grandes e atualização incremental.
+2. Evoluir atualização incremental e ferramentas de administração da base oficial.
 3. Evoluir classificação assistida e resolução de CAs pendentes, com registro de justificativa.
 4. Evoluir a governança de acesso aos relatórios antes do uso por equipe.

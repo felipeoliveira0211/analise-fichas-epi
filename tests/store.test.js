@@ -33,3 +33,7 @@ test('migração adiciona empresa e savedAt preservando IDs, dados e abas',()=>{
  tabs.get('Workers').cells.forEach(r=>r.splice(5));tabs.get('Entries').cells.forEach(r=>r.splice(6));
  s.initialize();assert.equal(s.rows('Workers')[0].name,'Legado');assert.equal(s.rows('Workers')[0].company,'');assert.equal(s.rows('Entries')[0].id,'e1');assert.equal(s.rows('Entries')[0].savedAt,'');s.initialize();assert.equal(tabs.size,8);
 });
+
+test('migração acrescenta situação às três tabelas de CA e mantém todos os registros',()=>{
+ const {store:s,tabs}=setup();s.initialize();for(const name of ['CaIndex','CaDefaultStage','CaDefaultBackup']){s.replace(name,[{ca:'13990',name:'PERNEIRA',caExpiry:'22/08/2028'}]);tabs.get(name).cells.forEach(r=>r.splice(4));}s.initialize();for(const name of ['CaIndex','CaDefaultStage','CaDefaultBackup']){assert.equal(s.rows(name)[0].ca,'13990');assert.equal(s.rows(name)[0].caSituation,'');}s.initialize();
+});

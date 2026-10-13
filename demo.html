@@ -7,11 +7,18 @@
  @page{size:A4 landscape;margin:12mm}
  body{background:white;color:black;font-size:10pt}header,nav,footer,#message,.report-controls,.view{display:none!important}main{max-width:none;padding:0;margin:0}#reports{display:block!important;border:0;box-shadow:none;padding:0}#reportPreview{overflow:visible}#reportPreview table{font-size:8pt;table-layout:fixed;width:100%}#reportPreview th,#reportPreview td{padding:5px;min-width:0;overflow-wrap:anywhere}thead{display:table-header-group}tr{break-inside:avoid}.report-sheet{break-before:page}.report-sheet:first-of-type{break-before:auto}h3{break-after:avoid}
 }
+.group-heading th{background:#dcece5;color:#153f35;font-size:15px;padding:12px}.delivery-row td:nth-child(2){min-width:180px;max-width:320px;overflow-wrap:anywhere}.delivery-row .status{font-weight:600}.status.ok{color:#14532d;background:#e8f5ec}.status.bad{color:#991b1b;background:#fdecec}.status.warn{color:#715000;background:#fff3cd}
+@media print{#baseUpdated{display:none!important}#reportPreview .status{print-color-adjust:exact;-webkit-print-color-adjust:exact}#reportPreview .group-heading th{print-color-adjust:exact;-webkit-print-color-adjust:exact}#reportPreview .delivery-row td:nth-child(2){min-width:0;max-width:none}#reportPreview .group-heading{break-after:avoid}}
+/* Interface palette: vivid blue for actions; semantic colors remain in results. */
+:root{--primary:#245ce6;--green:var(--primary);color:#172b4d;background:#edf3ff}body{background:linear-gradient(135deg,#eef4ff 0%,#f7faff 55%,#e6f5ff 100%);min-height:100vh}header{background:linear-gradient(115deg,#163bc0,#2865ec 62%,#087fb7);border-bottom:5px solid #4dd6e7;box-shadow:0 5px 22px #1743b526}.eyebrow{color:#c9f5ff}.badge{border-color:#96caff;background:#ffffff15}nav{gap:10px;margin-top:24px}nav button{border-color:#bfd0f7;color:#244a9b;font-weight:650;box-shadow:0 2px 5px #173e7910}nav button.active{box-shadow:0 4px 10px #245ce62e}.view{border-color:#d3def5;box-shadow:0 8px 28px #214a8910}h2{color:#173f9f}h3{color:#244b91}button{border-color:#b8cbef;color:#234981}button:hover{background:#e7efff}button.primary:hover{background:#174bcc}.quick{background:linear-gradient(100deg,#e6efff,#f2f7ff);border:1px solid #c6d8ff;border-left:5px solid #2865ec}.quick h3{color:#194cae}input,select{border-color:#adc3eb;color:#152e53}input:focus,button:focus-visible,select:focus{outline-color:#7bacff}.muted,.privacy{color:#4f6384}#baseUpdated{display:inline-block;background:#e0edff;border:1px solid #b8d3ff;color:#224e95;border-radius:20px;padding:6px 14px;font-size:13px;margin-bottom:6px}th{background:#eaf1ff;color:#345689}th,td{border-bottom-color:#dce6f8}.group-heading th{background:#dbe9ff;color:#194385}.group-heading[data-group="dermica"] th{background:#eee4ff;color:#5d2a98;border-top:3px solid #9062d5}.group-heading[data-group="auditiva"] th{background:#dceaff;color:#194aa2;border-top:3px solid #3872e0}.group-heading[data-group="outros"] th{background:#edf2f8;color:#395474;border-top:3px solid #829cba}footer{color:#526c96}
+@media print{body{background:white;color:black}h2,h3{color:#172b4d}}
+.report-header{display:flex;align-items:center;justify-content:space-between;gap:24px;border-bottom:2px solid #b9cdec;padding:8px 0 14px;margin-bottom:16px}.report-header h2{margin:0 0 6px}.report-header p{margin:0;font-size:13px;color:#526580}.report-logo{width:224px;height:auto;max-height:76px;object-fit:contain;flex-shrink:0}@media(max-width:600px){.report-header{flex-direction:column;align-items:flex-start;gap:12px}}@media print{.report-header{flex-direction:row;align-items:center;break-inside:avoid}.report-logo{width:200px;max-height:66px}}
 </style></head>
 <body>
 <header><div><span class="eyebrow">SEGURANÇA DO TRABALHO</span><h1>Análise de fichas de EPI</h1></div><span id="mode" class="badge"></span></header>
-<nav aria-label="Seções"><button data-view="entry" class="active">Ficha e lançamentos</button><button data-view="results">Resultados</button><button data-view="admin">Vida útil</button><button data-view="reports">Relatórios / PDFs</button><button data-view="catalog">Base e conexão</button></nav>
+<nav aria-label="Seções"><button data-view="entry" class="active">Ficha e lançamentos</button><button data-view="results">Resultados</button><button data-view="admin">Vida útil</button><button data-view="reports">Relatórios / PDFs</button></nav>
 <main>
+<p id="baseUpdated" class="muted">Última atualização da base: não informada</p>
 <p id="message" role="status" aria-live="polite"></p>
 <section id="entry" class="view">
 <div class="toolbar"><h2>Ficha em análise</h2><div><button id="newSheet">Novo trabalhador</button><button id="saveSheet" class="primary">Salvar na planilha</button><span class="muted save-warning">Sem salvar na planilha, a ficha fica apenas neste navegador e pode se perder.</span></div></div>
@@ -20,39 +27,17 @@
 <label>Empresa<input id="workerCompany" maxlength="200" required></label><label>Nome do trabalhador<input id="workerName" maxlength="200" required></label><label>Setor<input id="workerSector" maxlength="200" required></label><label>Cargo<input id="workerRole" maxlength="200" required></label><label>GES<input id="workerGes" maxlength="200" required></label>
 <label>Situação da análise<select id="sheetState"><option value="draft">Em andamento</option><option value="complete">Concluída</option></select></label>
 </form>
-<div class="quick"><h3>Lançamento rápido</h3><form id="entryForm" autocomplete="off"><label>Número do CA<input id="ca" inputmode="numeric" maxlength="10" placeholder="Ex.: 12345" required></label><label>Data da entrega<input id="date" inputmode="numeric" maxlength="10" placeholder="DD/MM/AAAA" required></label><label>Vida útil (dias totais, opcional)<input id="quickLifeDays" type="number" min="1" max="36500" step="1" placeholder="Ex.: 90"></label><button id="addEntry" type="submit" class="primary">Adicionar</button><button id="cancelEdit" type="button" hidden>Cancelar edição</button></form><p class="muted">CA → Enter → data → Enter. Ao adicionar com vida útil preenchida, o prazo é salvo no cadastro de vida útil desse CA. Consultas à base ocorrem apenas na análise.</p></div>
+<div class="quick"><h3>Lançamento rápido</h3><form id="entryForm" autocomplete="off"><label>Número do CA<input id="ca" inputmode="numeric" maxlength="10" placeholder="Ex.: 12345" required></label><label>Data da entrega<input id="date" inputmode="numeric" maxlength="10" placeholder="DD/MM/AAAA" required></label><label>Vida útil (dias totais, opcional)<input id="quickLifeDays" type="number" min="1" max="36500" step="1" placeholder="Ex.: 90"></label><button id="addEntry" type="submit" class="primary">Adicionar</button><button id="cancelEdit" type="button" hidden>Cancelar edição</button></form><p class="muted">CA → Enter → data → Enter. Ao adicionar com vida útil preenchida, o prazo é salvo no cadastro de vida útil desse CA.</p></div>
 <div class="toolbar"><h3>Lançamentos originais <span id="entryCount"></span></h3><button id="analyze" class="primary">Analisar periodicidade</button></div>
 <div class="table-wrap"><table><thead><tr><th>CA</th><th>Entrega</th><th>Salvo na planilha</th><th>Ações</th></tr></thead><tbody id="entries"></tbody></table></div>
 <div class="toolbar"><h3>Fichas desta sessão / salvas</h3><div><button id="refreshSheets">Atualizar lista</button><button id="reloadSheet">Reabrir ficha da planilha</button></div></div><p class="muted">Agrupadas por GES para navegação. Use Relatórios / PDFs para filtrar e consolidar fichas.</p><div id="sheetList"></div>
 <p class="privacy">Rascunhos ficam neste navegador. Em computador compartilhado, salve na planilha e use “Apagar dados locais” antes de sair.</p><button id="clearLocal" class="danger">Apagar dados locais</button>
 </section>
-<section id="results" class="view" hidden><h2>Resultado da análise</h2><div id="resultIntro"></div><div class="table-wrap"><table><thead><tr><th>Entrega</th><th>CA / EPI</th><th>Grupo</th><th>Intervalo</th><th>Limite</th><th>Resultado</th><th>Validade do CA (base)</th><th>Vida útil</th></tr></thead><tbody id="resultRows"></tbody></table></div><p class="muted">A validade exibida vem da base cadastrada; confirme renovações na fonte oficial. A validade do CA não determina a vida útil do EPI. O limite do intervalo usa a vida útil do CA da entrega anterior; para proteção dérmica química, 30 dias. Esta análise não avalia adequação ao risco, uso efetivo ou proteção após a última entrega.</p></section>
-<section id="admin" class="view" hidden><h2>Cadastro de vida útil</h2><p>Prazo técnico cadastrado por CA, independente da base oficial. A proteção dérmica química utiliza sempre 30 dias.</p><form id="lifeForm" class="inline"><label>CA<input id="lifeCa" inputmode="numeric" required maxlength="10"></label><label>Vida útil (dias)<input id="lifeDays" type="number" min="1" max="36500" step="1" required></label><button class="primary">Salvar prazo</button></form><div class="table-wrap"><table><thead><tr><th>CA</th><th>Dias</th><th>Ações</th></tr></thead><tbody id="lifeRows"></tbody></table></div><p class="muted">Nesta versão, o proprietário é também o administrador. A publicação deve permanecer restrita a você.</p></section>
+<section id="results" class="view" hidden><h2>Resultado da análise</h2><div id="resultIntro"></div><div class="table-wrap"><table><thead><tr><th>Entrega</th><th>CA / EPI</th><th>Intervalo</th><th>Limite</th><th>Vida útil</th><th>Validade do CA</th><th>Resultado</th></tr></thead><tbody id="resultRows"></tbody></table></div><p class="muted">A validade do CA não determina a vida útil do EPI. O limite do intervalo usa a vida útil do CA da entrega anterior; para proteção dérmica química, 30 dias. Esta análise não avalia adequação ao risco, uso efetivo ou proteção após a última entrega.</p></section>
+<section id="admin" class="view" hidden><h2>Cadastro de vida útil</h2><p>Prazo técnico cadastrado por CA, independente da base oficial. A proteção dérmica química utiliza sempre 30 dias.</p><form id="lifeForm" class="inline"><label>CA<input id="lifeCa" inputmode="numeric" required maxlength="10"></label><label>Vida útil (dias)<input id="lifeDays" type="number" min="1" max="36500" step="1" required></label><button class="primary">Salvar prazo</button></form><div class="table-wrap"><table><thead><tr><th>CA</th><th>Dias</th><th>Ações</th></tr></thead><tbody id="lifeRows"></tbody></table></div></section>
 <section id="reports" class="view" hidden><div class="report-controls"><h2>Relatórios / PDFs</h2><p>Selecione a origem e os filtros, gere a prévia e use “Salvar como PDF” na janela de impressão. O período filtra datas de entrega, incluindo os dois limites. A análise considera a sequência completa de cada ficha antes de aplicar o período.</p><form id="reportForm" class="grid"><label>Origem<select id="reportSource"><option value="local">Fichas deste navegador</option><option value="google">Fichas salvas na planilha Google</option></select></label><label>Entrega a partir de<input id="reportStart" type="date"></label><label>Entrega até<input id="reportEnd" type="date"></label><label>Empresa<input id="reportCompany" maxlength="200"></label><label>GES<input id="reportGes" maxlength="200"></label><label>Funcionário<input id="reportWorker" maxlength="200"></label><label>Setor<input id="reportSector" maxlength="200"></label><label>Cargo<input id="reportRole" maxlength="200"></label><label>Situação<select id="reportState"><option value="">Todas</option><option value="draft">Em andamento</option><option value="complete">Concluída</option></select></label><button class="primary">Gerar prévia</button></form><button id="printReport" disabled>Imprimir / Salvar PDF</button><p id="reportStatus" role="status"></p></div><div id="reportPreview"></div></section>
-<section id="catalog" class="view" hidden>
-<div class="toolbar"><h2>Base de CAs e conexão Google</h2><button id="checkConnection">Verificar conexão</button></div>
-<p id="connectionSummary" role="status">Verificando configuração…</p>
-<div class="quick"><h3>Base padrão incluída</h3><p id="defaultBaseSummary">Arquivo cadastro-EPI-final.xlsx fornecido pelo usuário. A data de referência oficial não está confirmada.</p><button id="loadDefaultBase">Carregar ou retomar base padrão</button><p class="muted">O carregamento é feito em etapas e pode ser retomado. Substituir um catálogo existente exige confirmação e preserva fichas e vida útil. A proteção aprovada é necessária para os grupos analisados. Demais EPIs reconhecidos pelo nome dispensam esse campo. Para CAs repetidos no arquivo padrão, é usada a maior data de validade.</p></div>
-<div class="quick"><h3>Buscar bases nas fontes oficiais</h3><label>Página oficial de publicação ou pesquisa<input id="officialPage" type="url" value="https://www.gov.br/trabalho-e-emprego/pt-br/assuntos/inspecao-do-trabalho/seguranca-e-saude-no-trabalho/equipamentos-de-protecao-individual" maxlength="2000"></label><button id="checkOfficialUpdates">Buscar atualizações</button><div id="officialUpdateResults" aria-live="polite"></div><p class="muted">A consulta busca arquivos e o portal de exportação indicado na página oficial. Encontrar um arquivo não confirma que ele seja mais recente. Confira a data de referência antes de importar; a aplicação não substitui a base automaticamente nem contorna bloqueios do portal.</p></div>
-<p class="muted">Na aplicação Google, execute initializeApplication no editor do Apps Script para criar as tabelas e conectar uma planilha privada. A demonstração local não acessa sua conta.</p>
-<h3>Importar dados oficiais</h3><p>Selecione um CSV exportado da planilha oficial. Identifique as colunas, confira a prévia e confirme a substituição do catálogo. Fichas, trabalhadores e vida útil serão preservados.</p>
-<p class="muted">Limite desta etapa: 10.000 CAs / 10 MB. Para arquivos maiores, exporte um recorte que inclua os CAs das fichas. A importação substitui o catálogo inteiro; não use um segundo lote para completar o primeiro. Não há consulta ao portal durante a digitação.</p>
-<form id="catalogForm" class="grid">
-<label>Arquivo CSV<input id="catalogFile" type="file" accept=".csv,text/csv" required></label>
-<label>Separador<select id="catalogDelimiter"><option value=";">Ponto e vírgula (;)</option><option value=",">Vírgula (,)</option><option value="tab">Tabulação</option></select></label>
-<label>Codificação<select id="catalogEncoding"><option value="utf-8">UTF-8</option><option value="windows-1252">Windows-1252 / Excel antigo</option></select></label>
-<label>Origem oficial (URL HTTPS)<input id="catalogSource" type="url" placeholder="https://www.gov.br/…" required maxlength="1000"></label>
-<label>Data de referência da base<input id="catalogReference" placeholder="DD/MM/AAAA" maxlength="10" required></label>
-<label>Coluna de número do CA<select id="columnCa" required><option value="">Leia o arquivo primeiro</option></select></label>
-<label>Coluna de nome do EPI<select id="columnName" required><option value="">Leia o arquivo primeiro</option></select></label>
-<label>Coluna de proteção aprovada<select id="columnProtection" required><option value="">Leia o arquivo primeiro</option></select></label>
-<label>Coluna de validade do CA<select id="columnExpiry" required><option value="">Leia o arquivo primeiro</option></select></label>
-</form>
-<div class="toolbar"><div><button id="readCatalog">Ler arquivo</button><button id="previewCatalog" class="primary">Validar e gerar prévia</button></div><button id="commitCatalog" class="primary" hidden>Confirmar importação na planilha</button></div>
-<div id="catalogPreview" aria-live="polite"></div>
-<p class="muted">A origem informada é uma declaração do operador: use somente o arquivo oficial. O aplicativo valida conteúdo e formatos, mas não autentica o arquivo no Ministério. Não transforma a validade do CA em vida útil do equipamento.</p>
-</section>
-</main><footer>Ferramenta de análise técnica • Dados oficiais precisam de fonte e data de referência.</footer>
+
+</main><footer>Ferramenta de análise técnica de fichas de EPI</footer>
 <script>/* Shared pure domain module: Node.js and Apps Script V8. */
 var EpiDomain = (function () {
   'use strict';
@@ -62,14 +47,35 @@ var EpiDomain = (function () {
     if (!/^\d{1,10}$/.test(v) || Number(v) === 0) throw new Error('CA inválido: informe apenas números positivos.');
     return String(Number(v));
   }
-  function date(value) {
+  function parseDate(value, maxYear) {
     var m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(String(value));
     if (!m) throw new Error('Data inválida. Use DD/MM/AAAA.');
     var d = Number(m[1]), month = Number(m[2]), y = Number(m[3]);
-    if (y < 1900 || y > 2100) throw new Error('Ano deve estar entre 1900 e 2100.');
+    if (y < 1900 || y > maxYear) throw new Error('Ano deve estar entre 1900 e ' + maxYear + '.');
     var time = Date.UTC(y, month - 1, d), parsed = new Date(time);
     if (parsed.getUTCFullYear() !== y || parsed.getUTCMonth() !== month - 1 || parsed.getUTCDate() !== d) throw new Error('Data inexistente.');
     return time;
+  }
+  function date(value) { return parseDate(value,2100); }
+  function certificateDate(value) { return parseDate(value,9999); }
+  function today(now) {
+    var parts = new Intl.DateTimeFormat('en-US',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date(now));
+    var values = {}; parts.forEach(function(p) { values[p.type] = p.value; });
+    return Date.UTC(Number(values.year),Number(values.month)-1,Number(values.day));
+  }
+  function certificateStatus(record, now) {
+    if (!record) return {label:'CA não identificado',tone:'warn',days:null};
+    var situation = fold(record.caSituation).trim();
+    if (situation === 'suspenso') return {label:'CA suspenso',tone:'bad',days:null};
+    if (situation === 'cancelado') return {label:'CA cancelado',tone:'bad',days:null};
+    var days;
+    try { days = (certificateDate(record.caExpiry)-today(now))/86400000; }
+    catch (_) { return {label:'Validade não informada',tone:'warn',days:null}; }
+    if (days < 0) return {label:'CA vencido',tone:'bad',days:days};
+    // The official export and portal disagree on expiry day; show proximity on day zero.
+    if (days >= 0 && days <= 30 && (situation === 'valido' || !situation || days === 0)) return {label:'Próximo ao vencimento',tone:'warn',days:days};
+    if (situation === 'vencido') return {label:'CA vencido',tone:'bad',days:days};
+    return {label:situation === 'valido' ? 'CA válido' : 'Situação não informada',tone:situation === 'valido' ? 'ok' : 'warn',days:days};
   }
   function fold(v) { return String(v || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); }
   // Names may identify equipment outside the periodicity scope; they do not
@@ -120,16 +126,16 @@ var EpiDomain = (function () {
     var rows = sheet.entries.map(function (entry, index) {
       return { entry: entry, index: index, time: date(entry.date) };
     }).sort(function (a, b) { return a.time - b.time || a.index - b.index; }).map(function (item) {
-      var entry = item.entry, number = ca(entry.ca), record = catalog[number], group = classify(record);
+      var entry = item.entry, number = ca(entry.ca), record = catalog[number], group = classify(record), currentCa = certificateStatus(record,now);
       var row = { id: entry.id, ca: number, date: entry.date, name: record ? record.name : 'CA não identificado', group: group,
         interval: null, limit: null, status: 'Sem análise de periodicidade', caExpiry: record && record.caExpiry || null,
-        usefulLifeDays: group === GROUP.DERMICA ? 30 : validLife(lifetimes[number]) ? lifetimes[number] : null, savedAt: entry.savedAt || '', physicalExpiry: entry.physicalExpiry || null, caStatus: 'Situação atual do CA precisa ser confirmada', source: metadata.source || 'Indisponível', referenceDate: metadata.referenceDate || null };
+        usefulLifeDays: group === GROUP.DERMICA ? 30 : validLife(lifetimes[number]) ? lifetimes[number] : null, savedAt: entry.savedAt || '', physicalExpiry: entry.physicalExpiry || null, caStatus: currentCa.label, caTone: currentCa.tone, caDaysRemaining: currentCa.days, source: metadata.source || 'Indisponível', referenceDate: metadata.referenceDate || null };
       if (row.physicalExpiry) date(row.physicalExpiry);
       if (record && record.caExpiry) {
-        try { row.caAtDelivery = item.time <= date(record.caExpiry) ? 'Entrega até a validade registrada na base' : stale ? 'Entrega posterior à validade da base; confirmar renovação na fonte oficial' : 'Entrega posterior à validade registrada; confirmar situação na fonte oficial'; }
+        try { row.caAtDelivery = item.time <= certificateDate(record.caExpiry) ? 'Entrega até a validade registrada na base' : stale ? 'Entrega posterior à validade da base; confirmar renovação na fonte oficial' : 'Entrega posterior à validade registrada; confirmar situação na fonte oficial'; }
         catch (_) { row.caAtDelivery = 'Validade do CA indisponível'; }
       } else row.caAtDelivery = 'Validade do CA indisponível';
-      if (!stale && record) row.caStatus = 'Consultar a fonte para confirmar situação atual; referência recente';
+
       if (group === GROUP.REVISAO) row.status = 'Revisão manual necessária';
       if (group === GROUP.AUDITIVA || group === GROUP.DERMICA) {
         var prev = previous[group];
@@ -146,95 +152,9 @@ var EpiDomain = (function () {
     });
     return { sheetId: sheet.id, worker: sheet.worker, rows: rows, warnings: rows.some(function(r) { return r.group === GROUP.REVISAO; }) ? ['CAs pendentes de revisão podem alterar as sequências e os intervalos. A análise é parcial.'] : [], metadata: metadata, stale: stale };
   }
-  return { GROUP: GROUP, ca: ca, date: date, classify: classify, validLife: validLife, validateSheet: validateSheet, analyze: analyze };
+  return { GROUP: GROUP, ca: ca, date: date, certificateDate: certificateDate, certificateStatus: certificateStatus, classify: classify, validLife: validLife, validateSheet: validateSheet, analyze: analyze };
 })();
 if (typeof module !== 'undefined') module.exports = EpiDomain;
-</script><script>/* Pure CSV preparation shared by browser, Apps Script and Node. No portal requests. */
-var EpiImport = (function () {
-  'use strict';
-  var MAX_ROWS = 10000, MAX_CHARS = 10 * 1024 * 1024;
-  function domain() { return typeof EpiDomain !== 'undefined' ? EpiDomain : require('./analysis'); }
-  function fold(value) { return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, ''); }
-  function parse(text, delimiter) {
-    if (typeof text !== 'string' || text.length > MAX_CHARS) throw new Error('CSV deve ter no máximo 10 MB de texto.');
-    if (![',',';','\t'].includes(delimiter)) throw new Error('Separador inválido.');
-    text = text.replace(/^\uFEFF/, '');
-    var rows = [], row = [], value = '', quoted = false, closed = false;
-    function field() { row.push(value); value = ''; closed = false; }
-    function line() { field(); if (row.some(function(v) { return v.trim(); })) rows.push(row); row = []; }
-    for (var i = 0; i < text.length; i++) {
-      var ch = text[i];
-      if (quoted) {
-        if (ch === '"') { if (text[i+1] === '"') { value += '"'; i++; } else { quoted = false; closed = true; } }
-        else value += ch;
-      } else if (ch === delimiter) field();
-      else if (ch === '\r' || ch === '\n') { line(); if (ch === '\r' && text[i+1] === '\n') i++; }
-      else if (ch === '"') { if (value || closed) throw new Error('Aspas inválidas no CSV.'); quoted = true; }
-      else { if (closed) throw new Error('Conteúdo após o fechamento de aspas no CSV.'); value += ch; }
-      if (rows.length > MAX_ROWS + 1) throw new Error('Limite: 10.000 CAs por importação. Exporte um recorte dos CAs necessários.');
-    }
-    if (quoted) throw new Error('Aspas não fechadas no CSV.');
-    if (value || row.length || closed) line();
-    if (!rows.length || rows[0].length < 2) throw new Error('CSV sem cabeçalho ou separador incorreto.');
-    var headers = rows.shift().map(function(v) { return v.trim(); });
-    if (headers.some(function(v) { return !v; }) || new Set(headers).size !== headers.length) throw new Error('Cabeçalhos vazios ou duplicados.');
-    rows.forEach(function(r,i) { if (r.length !== headers.length) throw new Error('Quantidade de colunas inválida na linha ' + (i+2) + '.'); });
-    return { headers: headers, rows: rows };
-  }
-  function suggest(headers) {
-    var aliases = {
-      ca: ['ca','numeroca','numerodoca','nca','certificadodeaprovacao'],
-      name: ['name','equipamento','nomedoequipamento','epi','nomeepi'],
-      approvedProtection: ['approvedprotection','aprovadopara','protecaoaprovada'],
-      caExpiry: ['caexpiry','datadevalidade','datavalidade','validadedoca','validade']
-    };
-    var result = {};
-    Object.keys(aliases).forEach(function(key) { result[key] = headers.findIndex(function(h) { return aliases[key].includes(fold(h)); }); });
-    return result;
-  }
-  function expiry(value) {
-    value = String(value || '').trim();
-    if (!value) return '';
-    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) value = value.slice(8,10) + '/' + value.slice(5,7) + '/' + value.slice(0,4);
-    domain().date(value); return value;
-  }
-  function prepare(payload, now) {
-    var D = domain();
-    if (!payload || !Array.isArray(payload.records) || !payload.records.length || payload.records.length > MAX_ROWS) throw new Error('Importe de 1 a 10.000 CAs.');
-    var source = String(payload.source || '').trim(), referenceDate = String(payload.referenceDate || '').trim();
-    // Provenance is declared by the operator; this validates the URL, not authenticity of the file.
-    if (!/^https:\/\/([a-z0-9-]+\.)*(gov\.br|mte\.gov\.br)(\/|$)/i.test(source) || source.length > 1000) throw new Error('Informe a URL HTTPS oficial em domínio gov.br como origem dos dados.');
-    var reference = D.date(referenceDate);
-    var today = now == null ? Date.now() : now;
-    var day = new Date(today); var midnight = Date.UTC(day.getUTCFullYear(),day.getUTCMonth(),day.getUTCDate());
-    if (reference > midnight) throw new Error('Data de referência não pode estar no futuro.');
-    var seen = new Set(), warnings = [], groups = {auditiva:0,dermica:0,outros:0,revisao:0};
-    var records = payload.records.map(function(input,i) {
-      try {
-        var ca = D.ca(input.ca), name = String(input.name || '').trim(), approved = String(input.approvedProtection || '').trim();
-        if (!name || name.length > 1000) throw new Error('Nome do EPI ausente ou maior que 1000 caracteres.');
-        if (approved.length > 10000) throw new Error('Proteção aprovada maior que 10000 caracteres.');
-        if (seen.has(ca)) throw new Error('CA duplicado: ' + ca + '.'); seen.add(ca);
-        var r = {ca:ca,name:name,approvedProtection:approved,caExpiry:expiry(input.caExpiry)};
-        groups[D.classify(r)]++;
-        if (D.classify(r) === 'revisao' || !r.caExpiry) warnings.push('CA ' + ca + ': ' + (D.classify(r) === 'revisao' ? 'proteção aprovada ausente ou insuficiente para classificação; revisão manual. ' : '') + (!r.caExpiry ? 'validade do CA indisponível.' : ''));
-        return r;
-      } catch (err) { throw new Error('Registro ' + (i+1) + ': ' + err.message); }
-    });
-    records.sort(function(a,b) { return Number(a.ca)-Number(b.ca); });
-    if (JSON.stringify(records).length > MAX_CHARS) throw new Error('Base maior que 10 MB de texto.');
-    return {records:records,metadata:{source:source,referenceDate:referenceDate},groups:groups,warnings:warnings};
-  }
-  function fromCsv(parsed, mapping, metadata) {
-    var keys = ['ca','name','approvedProtection','caExpiry'];
-    keys.forEach(function(k) { if (!Number.isInteger(mapping[k]) || mapping[k] < 0 || mapping[k] >= parsed.headers.length) throw new Error('Selecione a coluna de ' + k + '.'); });
-    if (new Set(keys.map(function(k) { return mapping[k]; })).size !== 4) throw new Error('Cada campo precisa de uma coluna diferente.');
-    var records = parsed.rows.map(function(cells) { var record = {}; keys.forEach(function(k) { record[k] = cells[mapping[k]]; }); return record; });
-    return prepare({records:records,source:metadata.source,referenceDate:metadata.referenceDate});
-  }
-  return {parse:parse,suggest:suggest,prepare:prepare,fromCsv:fromCsv,MAX_ROWS:MAX_ROWS,MAX_CHARS:MAX_CHARS};
-})();
-if (typeof module !== 'undefined') module.exports = EpiImport;
 </script><script>if (typeof module !== 'undefined') var EpiDomain = require('./analysis');
 /* Shared reporting: analyze full sequences before selecting delivery dates. */
 var EpiReports = (function () {
@@ -264,12 +184,40 @@ var EpiReports = (function () {
   return {validate:validate,matches:matches,create:create};
 })();
 if (typeof module !== 'undefined') module.exports = EpiReports;
+</script><script>var EpiBrand = {"logo":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAcAAAACLCAYAAAD2zUloAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAABN2SURBVHhe7Z1Nq2VHFYbzC/wH/gPFuY4cCYJDY8dZuiNEYkecxA4qxI4IISaj2A6cJMGBREGhE0UwRgxo2wgGmyYECY1E8SYG0RiCCMmV9+rbqV531/6q2h+n63lgce7Zp3btOtVNvWetWlV1xzEAAECD3BEvAAAAtAACCAAATYIAAgBAkyCAAADQJAggAAA0CQIIAABNggACAECTIIAAANAkCCAAADQJAggAAE2CAAIAQJMggAAA0CQIIAAANAkCCAAATYIAAgBAkyCAAADQJAggAAA0CQIIAABNggACAECTIIAAANAkCCAAADQJAggAAE2CAAIAQJMggAAA0CQIIAAANAkCCAAATYIAHjh/+OPfjl/8/Z8H7U9/fSveuhlj25ya7tkC9VtsS5dt1T4AmA8CeCD841//Pr784qvHF5548fiTX/rR8Qc/9d3jD3z8iVn2obueOqnjs1/7yfE3n/zt8fd++vLJIL4EarOeUdrmaKpP9vlHfn7zO5Tg/nVb1UfxmWMt1796xlR+/dqPjy+/cmmWvfOfZX70XL169fgHzzxz/PWHHjqxbz366Mn7X77wQiy6GE89+eTJs9944434EcBoEMAdowFTg6cG0zjILmUavCUqJYIir0l11BS8MTZVxN2/EqpY11I2pX8lfvc+++HZJhGsydtvv3385QceOP7MnXd2mgRpLe45d+7kme+++278CGA0COAO0cAsz2FtAYn27R++FJvWi9qtwT3Ws5aNFcBD6d9nrj9yStSmWG0BlJcn0ZEIyguUIJobN26s6o2pLc8991y8DDAJBHBnKAy39cBsk0iMReKzdbvHzMMdUv8+/puzp0Rtir3y5tVYZRHy8CSA169fjx9lkTDKhphSZx96lupKxdlIoHOfQZsggDtiS++py8Z6VArnxXu3sCE0fxrv2dIkxn3c++xHTonaFKs9B2gBHPK8JDCao0vDo2fvvvvEazT2JjV/6DK+1lX//efPn3x2dHR08nksp3v1jPSZqlshUj33C/fdd8tnly5dQggBAdwLa87zjbUxSRsaxON9W9jHPvf92LRb2NuPC1mfx/rmO385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"};</script><script>/* One presentation for the application and printed reports. */
+var EpiResultUi = (function () {
+  const headers = ['Entrega','CA / EPI','Intervalo','Limite','Vida útil','Validade do CA','Resultado'];
+  function cell(tr,text) { const td=document.createElement('td');td.textContent=text;tr.append(td);return td; }
+  function badge(td,label,tone) { const span=document.createElement('span');span.className='status '+tone;span.textContent=({ok:'✓ ',bad:'✕ ',warn:'⚠ '}[tone]||'')+label;td.append(span); }
+  function rows(tbody,items) {
+    tbody.replaceChildren();
+    const sections=[['Proteção dérmica',r=>r.group==='dermica'],['Proteção auditiva',r=>r.group==='auditiva'],['Outras entregas',r=>!['dermica','auditiva'].includes(r.group)]];
+    sections.forEach(([name,predicate])=>{
+      const selected=items.filter(predicate).sort((a,b)=>EpiDomain.date(a.date)-EpiDomain.date(b.date));
+      if(!selected.length)return;
+      const heading=document.createElement('tr'),th=document.createElement('th');heading.className='group-heading';heading.dataset.group=name==='Proteção dérmica'?'dermica':name==='Proteção auditiva'?'auditiva':'outros';th.colSpan=headers.length;th.scope='rowgroup';th.textContent=name;heading.append(th);tbody.append(heading);
+      selected.forEach(row=>{
+        const tr=document.createElement('tr');tr.className='delivery-row';tr.dataset.group=row.group;cell(tr,row.date);cell(tr,row.ca+' · '+row.name);
+        cell(tr,row.status==='Marco inicial'?'Marco inicial':row.interval==null?'—':row.interval+' dias');
+        const limit=cell(tr,row.limit==null?'—':row.limit+' dias');if(row.previousCa)limit.title='Vida útil do CA anterior: '+row.previousCa;
+        cell(tr,row.usefulLifeDays==null?'Não cadastrada':row.usefulLifeDays+' dias');
+        const validity=cell(tr,'');const date=document.createElement('div');date.textContent=row.caExpiry||'Indisponível';validity.append(date);badge(validity,row.caStatus,row.caTone);
+        const result=cell(tr,'');
+        if(row.status==='Marco inicial'||row.status==='Sem análise de periodicidade')result.textContent='—';
+        else badge(result,row.status,row.status==='Dentro do prazo'?'ok':row.status==='Fora do prazo'?'bad':'warn');
+        tbody.append(tr);
+      });
+    });
+  }
+  function table(items) {const t=document.createElement('table'),head=document.createElement('thead'),tr=document.createElement('tr'),body=document.createElement('tbody');headers.forEach(label=>{const th=document.createElement('th');th.textContent=label;tr.append(th);});head.append(tr);t.append(head,body);rows(body,items);return t;}
+  return {headers,rows,table};
+})();
 </script><script>(function () {
   'use strict';
   const $ = id => document.getElementById(id);
   const remote = typeof google !== 'undefined' && google.script && google.script.run;
   const KEY = remote ? 'epi.analysis.google.v1' : 'epi.analysis.v1';
-  let sheets = [], savedSheets = [], current, editing = null, catalog = {}, lifetimes = {}, metadata = {}, busy = false;
+  let sheets = [], savedSheets = [], current, editing = null, catalog = {}, lifetimes = {}, metadata = {}, busy = false, livesLoaded = !remote, quickLifeManual = false;
   const id = () => crypto.randomUUID();
   function notify(text, error = false) { $('message').textContent = text; $('message').className = error ? 'error' : ''; }
   function rpc(method, ...args) { return new Promise((resolve, reject) => google.script.run.withSuccessHandler(resolve).withFailureHandler(reject)[method](...args)); }
@@ -288,7 +236,7 @@ if (typeof module !== 'undefined') module.exports = EpiReports;
   }
   function persist() {
     capture();
-    try { localStorage.setItem(KEY, JSON.stringify({ sheets, currentId: current && current.id, demoLifetimes: remote ? undefined : lifetimes })); }
+    try { localStorage.setItem(KEY, JSON.stringify({ sheets, currentId: current && current.id, lifetimes: lifetimes })); }
     catch (_) { notify('Não foi possível guardar o rascunho no navegador. Mantenha esta aba aberta e salve na planilha.', true); }
   }
   function renderEntries() {
@@ -301,7 +249,7 @@ if (typeof module !== 'undefined') module.exports = EpiReports;
       })); $('entries').append(tr);
     });
   }
-  function resetInput() { editing = null; $('entryForm').reset(); $('quickLifeDays').value = ''; $('addEntry').textContent = 'Adicionar'; $('cancelEdit').hidden = true; $('ca').focus(); }
+  function resetInput() { editing = null; quickLifeManual = false; $('entryForm').reset(); $('quickLifeDays').value = ''; $('addEntry').textContent = 'Adicionar'; $('cancelEdit').hidden = true; $('ca').focus(); }
   function open(sheet) {
     current = sheet;
     $('workerCompany').value = sheet.worker.company || ''; $('workerName').value = sheet.worker.name; $('workerSector').value = sheet.worker.sector;
@@ -327,8 +275,17 @@ if (typeof module !== 'undefined') module.exports = EpiReports;
       $('sheetList').append(section);
     });
   }
-  document.addEventListener('epi:catalog-updated', e => { metadata = e.detail; });
+  function showBaseUpdated() {
+    $('baseUpdated').textContent = 'Última atualização da base: ' + (metadata.updatedAt ? new Date(metadata.updatedAt).toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo'}) : 'não informada');
+  }
+  document.addEventListener('epi:catalog-updated', e => { metadata = e.detail; showBaseUpdated(); });
+  function fillQuickLife() {
+    if (quickLifeManual) return;
+    const raw = $('ca').value.trim();
+    $('quickLifeDays').value = /^\d+$/.test(raw) ? lifetimes[String(Number(raw))] || '' : '';
+  }
   function renderLives() {
+    fillQuickLife();
     $('lifeRows').replaceChildren();
     Object.keys(lifetimes).sort((a,b) => Number(a)-Number(b)).forEach(ca => {
       const tr = document.createElement('tr'); cell(tr, ca); cell(tr, lifetimes[ca]); const td = cell(tr, '');
@@ -341,16 +298,13 @@ if (typeof module !== 'undefined') module.exports = EpiReports;
   function renderResult(result) {
     $('resultIntro').replaceChildren(); $('resultRows').replaceChildren();
     [result.worker.name + ' • Setor: ' + result.worker.sector + ' • GES: ' + result.worker.ges].forEach(text => { const p = document.createElement('p'); p.textContent = text; $('resultIntro').append(p); });
-    const names = { auditiva: 'Auditiva', dermica: 'Dérmica química', outros: 'Demais EPIs', revisao: 'Revisão manual' };
-    result.rows.forEach(row => {
-      const tr = document.createElement('tr'); cell(tr, row.date); cell(tr, row.ca + ' · ' + row.name); cell(tr, names[row.group]); cell(tr, row.interval == null ? '—' : row.interval + ' dias'); cell(tr, row.limit == null ? '—' : row.limit + ' dias');
-      const td = cell(tr, ''); const tag = document.createElement('span'); tag.textContent = row.status; tag.className = 'status ' + (row.status === 'Dentro do prazo' ? 'ok' : row.status === 'Fora do prazo' ? 'bad' : 'warn'); td.append(tag);
-      cell(tr, (row.caExpiry || 'Indisponível') + ' · ' + row.caAtDelivery); cell(tr, row.usefulLifeDays == null ? 'Não cadastrada' : row.usefulLifeDays + ' dias'); $('resultRows').append(tr);
-    }); view('results');
+    EpiResultUi.rows($('resultRows'),result.rows); view('results');
   }
   document.querySelectorAll('nav button').forEach(b => b.onclick = () => view(b.dataset.view));
   $('workerForm').onsubmit = e => e.preventDefault();
   $('workerForm').oninput = () => { persist(); renderSheets(); };
+  $('ca').oninput = () => { quickLifeManual = false; fillQuickLife(); };
+  $('quickLifeDays').oninput = () => { quickLifeManual = true; };
   $('ca').onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); $('date').focus(); } };
   $('date').oninput = () => { const v = $('date').value.replace(/\D/g,'').slice(0,8); $('date').value = v.slice(0,2) + (v.length>2 ? '/'+v.slice(2,4) : '') + (v.length>4 ? '/'+v.slice(4) : ''); };
   $('entryForm').onsubmit = guard(async () => {
@@ -359,7 +313,7 @@ if (typeof module !== 'undefined') module.exports = EpiReports;
     if (rawLife && !EpiDomain.validLife(days)) throw new Error('Vida útil deve ser um inteiro entre 1 e 36500 dias.');
     if (rawLife) {
       if (lifetimes[ca] && lifetimes[ca] !== days && !confirm('Substituir a vida útil do CA ' + ca + ' de ' + lifetimes[ca] + ' para ' + days + ' dias? O prazo será usado em todas as fichas desse CA.')) return;
-      if (remote) await operation(() => rpc('epiSaveLifetime', ca, days));
+      if (remote && (!livesLoaded || lifetimes[ca] !== days)) await operation(() => rpc('epiSaveLifetime', ca, days));
       lifetimes[ca] = days; renderLives();
     }
     if (editing) { const e = current.entries.find(x => x.id === editing); if (e.ca !== ca || e.date !== date) e.savedAt = ''; e.ca = ca; e.date = date; }
@@ -379,7 +333,7 @@ if (typeof module !== 'undefined') module.exports = EpiReports;
     if (!current.entries.length) throw new Error('Adicione pelo menos uma entrega para analisar.');
     EpiDomain.validateSheet(current);
     const result = remote ? await operation(() => rpc('epiAnalyzeSheet', current)) : EpiDomain.analyze(current, catalog, lifetimes, metadata);
-    renderResult(result); notify(remote ? 'Análise calculada com a base da planilha.' : 'Demonstração com CAs fictícios; não utilize para conclusões técnicas.');
+    renderResult(result); notify(remote ? '' : 'Demonstração com CAs fictícios; não utilize para conclusões técnicas.');
   });
   $('lifeForm').onsubmit = guard(async () => {
     const ca = EpiDomain.ca($('lifeCa').value), days = Number($('lifeDays').value);
@@ -401,19 +355,20 @@ if (typeof module !== 'undefined') module.exports = EpiReports;
     localStorage.removeItem(KEY); sheets = []; newSheet(); notify('Dados locais anteriores apagados.');
   });
   async function init() {
-    $('mode').textContent = remote ? 'Google Sheets · acesso privado' : 'Demonstração local · dados fictícios';
+    $('mode').textContent = remote ? 'Uso privado' : 'Demonstração local · dados fictícios';
     let cache = {};
     try { cache = JSON.parse(localStorage.getItem(KEY) || '{}'); sheets = Array.isArray(cache.sheets) ? cache.sheets : []; }
     catch (_) { notify('Rascunho local ilegível; não foi recuperado.', true); }
     if (!remote) {
-      catalog = { '90001': { name: 'Protetor auditivo fictício', approvedProtection: 'Proteção auditiva contra ruído', caExpiry: '31/12/2030' }, '90002': { name: 'Luva química fictícia', approvedProtection: 'Proteção das mãos contra agentes químicos', caExpiry: '31/12/2030' }, '90003': { name: 'Creme fictício', approvedProtection: 'Proteção da pele contra agentes químicos', caExpiry: '31/12/2030' }, '90004': { name: 'Luva mecânica fictícia', approvedProtection: 'Proteção das mãos contra agentes abrasivos', caExpiry: '31/12/2030' } };
-      lifetimes = cache.demoLifetimes || { '90001': 90 }; metadata = { source: 'DADOS FICTÍCIOS — somente demonstração', referenceDate: '01/01/2020' };
+      catalog = { '90001': { name: 'Protetor auditivo fictício', approvedProtection: 'Proteção auditiva contra ruído', caExpiry: '31/12/2030', caSituation:'VÁLIDO' }, '90002': { name: 'Luva química fictícia', approvedProtection: 'Proteção das mãos contra agentes químicos', caExpiry: '31/12/2030', caSituation:'VÁLIDO' }, '90003': { name: 'Creme fictício', approvedProtection: 'Proteção da pele contra agentes químicos', caExpiry: '31/12/2030', caSituation:'VÁLIDO' }, '90004': { name: 'Luva mecânica fictícia', approvedProtection: 'Proteção das mãos contra agentes abrasivos', caExpiry: '31/12/2030', caSituation:'VÁLIDO' } };
+      lifetimes = cache.lifetimes || cache.demoLifetimes || { '90001': 90 }; metadata = { source: 'DADOS FICTÍCIOS — somente demonstração', referenceDate: '01/01/2020' };
       notify('Demonstração: CAs 90001 (auditivo), 90002 (luva química), 90003 (creme), 90004 (mecânico).');
     }
+    if (remote) lifetimes = cache.lifetimes || {};
     if (sheets.length) open(sheets.find(s => s.id === cache.currentId) || sheets[0]); else newSheet();
     renderLives();
     if (remote) {
-      try { const data = await operation(() => rpc('epiBootstrap')); catalog = data.catalog; metadata = data.metadata; lifetimes = data.lifetimes; savedSheets = data.sheets; document.dispatchEvent(new CustomEvent('epi:connection',{detail:data.connection})); renderLives(); renderSheets(); notify('Planilha conectada.'); }
+      try { const data = await operation(() => rpc('epiBootstrap')); catalog = data.catalog; metadata = data.metadata; lifetimes = data.lifetimes; livesLoaded = true; savedSheets = data.sheets; persist(); showBaseUpdated(); fillQuickLife(); renderLives(); renderSheets(); notify('Dados carregados.'); }
       catch (err) { notify('Conexão com a planilha falhou: ' + err.message + '. O rascunho local continua disponível.', true); }
     }
   }
@@ -433,125 +388,27 @@ if (typeof module !== 'undefined') module.exports = EpiReports;
     if (generation !== reportGeneration) return;
     const preview = $('reportPreview');
     function paragraph(parent, text, tag = 'p') { const el = document.createElement(tag); el.textContent = text; parent.append(el); }
-    paragraph(preview,'Relatório de fichas de EPI','h2');
-    paragraph(preview,'Gerado em ' + timeLabel(result.generatedAt) + ' • Origem: ' + (fromGoogle ? 'Planilha Google' : 'Rascunhos deste navegador'));
+    const reportHeader = document.createElement('div'); reportHeader.className = 'report-header';
+    if (EpiBrand.logo) { const logo = document.createElement('img'); logo.src = EpiBrand.logo; logo.alt = 'SESI — Serviço Social da Indústria'; logo.className = 'report-logo'; reportHeader.append(logo); }
+    const title = document.createElement('div'); reportHeader.append(title); preview.append(reportHeader);
+    paragraph(title,'Relatório de fichas de EPI','h2');
+    paragraph(title,'Gerado em ' + timeLabel(result.generatedAt));
     paragraph(preview,'Filtros: ' + Object.entries(filters).filter(([,v]) => v).map(([k,v]) => ({start:'Entrega desde',end:'Entrega até',company:'Empresa',ges:'GES',worker:'Funcionário',sector:'Setor',role:'Cargo',state:'Situação'}[k]) + ': ' + v).join(' • '));
-    paragraph(preview,'Fonte de CAs: ' + (result.metadata.source || 'Indisponível') + ' • Referência: ' + (result.metadata.referenceDate || 'Não confirmada'));
     if (!remote) paragraph(preview,'DEMONSTRAÇÃO COM CAs FICTÍCIOS — não usar para conclusões técnicas.');
     result.reports.forEach(report => {
       const section = document.createElement('article'); section.className = 'report-sheet'; preview.append(section);
       const w = report.worker;
       paragraph(section,(w.company || 'Empresa não informada') + ' • ' + w.name,'h3');
       paragraph(section,'Setor: ' + w.sector + ' • Cargo: ' + w.role + ' • GES: ' + w.ges + ' • ' + (report.state === 'complete' ? 'Concluída' : 'Em andamento'));
-      paragraph(section,'Último salvamento da ficha: ' + timeLabel(report.updatedAt));
-      if (report.stale) paragraph(section,'Data de referência da base ausente ou desatualizada. Confirme a situação dos CAs na fonte oficial.');
       report.warnings.forEach(warning => paragraph(section,warning));
-      const table = document.createElement('table'), head = document.createElement('thead'), header = document.createElement('tr'), body = document.createElement('tbody');
-      ['Entrega','CA / EPI','Grupo','Intervalo','Limite / CA anterior','Vida útil','Resultado','Validade do CA (base)','Salvo na planilha'].forEach(label => { const th = document.createElement('th'); th.textContent = label; header.append(th); });
-      head.append(header); table.append(head,body); section.append(table);
-      report.rows.forEach(row => { const tr = document.createElement('tr'); [row.date,row.ca + ' • ' + row.name,{auditiva:'Auditiva',dermica:'Dérmica química',outros:'Demais EPIs',revisao:'Revisão manual'}[row.group],row.interval == null ? '—' : row.interval + ' dias',row.limit == null ? '—' : row.limit + ' dias / CA ' + row.previousCa,row.usefulLifeDays == null ? 'Não cadastrada' : row.usefulLifeDays + ' dias',row.status,(row.caExpiry || 'Indisponível') + ' • ' + row.caAtDelivery,timeLabel(row.savedAt)].forEach(value => cell(tr,value)); body.append(tr); });
+      section.append(EpiResultUi.table(report.rows));
     });
-    paragraph(preview,'A validade exibida vem da base cadastrada; confirme renovações na fonte oficial. A validade do CA não determina a vida útil do EPI. O limite usa a vida útil do CA anterior; proteção dérmica química usa 30 dias. Esta análise não avalia adequação ao risco, uso efetivo ou proteção após a última entrega.');
+    paragraph(preview,'A validade do CA não determina a vida útil do EPI. O limite usa a vida útil do CA anterior; proteção dérmica química usa 30 dias. Esta análise não avalia adequação ao risco, uso efetivo ou proteção após a última entrega.');
     $('reportStatus').textContent = result.reports.length + ' ficha(s), ' + result.reports.reduce((sum,r) => sum+r.rows.length,0) + ' lançamento(s).';
     reportReady = result.reports.length > 0; $('printReport').disabled = !reportReady;
   });
   $('printReport').onclick = () => { if (reportReady) window.print(); };
   init();
-})();
-</script><script>(function () {
-  'use strict';
-  const $ = id => document.getElementById(id);
-  const remote = typeof google !== 'undefined' && google.script && google.script.run;
-  let parsed = null, payload = null, confirmation = null, busy = false, autoAttempted = false, currentConnection = null;
-  const fields = {ca:'columnCa',name:'columnName',approvedProtection:'columnProtection',caExpiry:'columnExpiry'};
-  const labels = {auditiva:'Proteção auditiva',dermica:'Proteção dérmica química',outros:'Demais EPIs',revisao:'Revisão manual'};
-  function rpc(method,...args) { return new Promise((resolve,reject) => google.script.run.withSuccessHandler(resolve).withFailureHandler(reject)[method](...args)); }
-  function notice(text,error=false) { $('message').textContent=text; $('message').className=error?'error':''; }
-  function invalid() { payload=null;confirmation=null;$('commitCatalog').hidden=true; $('catalogPreview').replaceChildren(); }
-  async function act(fn) {
-    if(busy)return;busy=true;
-    const controls=Array.from(document.querySelectorAll('#catalog button,#catalog input,#catalog select'));controls.forEach(el=>el.disabled=true);
-    try {await fn();}catch(err){notice(err.message||String(err),true);}finally{busy=false;controls.forEach(el=>el.disabled=false);}
-  }
-  function connection(data) {
-    const p=$('connectionSummary'); currentConnection=data||null;
-    if(!remote){p.textContent='Demonstração local: sem conexão Google e sem base oficial carregada.';return;}
-    if(data&&data.defaultBase){const b=data.defaultBase;$('defaultBaseSummary').textContent='Pacote: '+b.fileName+' • '+b.total+' CAs • '+(b.classificationCounts?b.classificationCounts.revisao:b.statistics.casWithoutReliableProtection)+' pendentes de revisão para periodicidade. '+b.referenceNote+(b.status==='pending'?' Preparação: '+b.loaded+'/'+b.total+'.':'')+(b.updateAvailable?' Há uma nova versão do pacote. Use Carregar ou retomar base padrão e confirme a substituição para aplicá-la.':'');}
-    if(data && data.connected){p.textContent='Planilha conectada • '+data.caCount+' CAs • Fonte: '+(data.source||'não informada')+' • Referência: '+(data.referenceDate||'não informada');}
-    else p.textContent='Conexão não verificada. Execute initializeApplication no editor do Apps Script e verifique o acesso à planilha.';
-  }
-  document.addEventListener('epi:connection',e=>{connection(e.detail);if(remote&&e.detail&&e.detail.defaultBase&&e.detail.defaultBase.status==='pending'&&!autoAttempted){autoAttempted=true;act(()=>loadDefault(false));}});connection();
-  async function loadDefault(replaceExisting){
-    if(!remote)throw new Error('A base padrão é carregada na planilha pela aplicação Google. A demonstração continua usando CAs fictícios.');
-    let result;
-    do{
-      result=await rpc('epiLoadDefaultBase',replaceExisting);replaceExisting=false;connection(result.connection);
-      notice(result.status==='pending'?'Carregando base padrão: '+result.base.loaded+'/'+result.base.total+' CAs. Mantenha a aba aberta; se houver erro, o botão permite retomar.':result.status==='preserved'?'Catálogo existente preservado.':'Base padrão carregada. Confirme a situação atual dos CAs; a referência oficial está indisponível.');
-    }while(result.status==='pending');
-    if(result.connection)document.dispatchEvent(new CustomEvent('epi:catalog-updated',{detail:{source:result.connection.source,referenceDate:result.connection.referenceDate,updatedAt:result.connection.updatedAt}}));
-  }
-  $('loadDefaultBase').onclick=()=>act(async()=>{
-    let replace=false;
-    if(remote&&currentConnection&&currentConnection.caCount>0&&(!currentConnection.defaultBase||currentConnection.defaultBase.status!=='pending')){
-      if(!confirm('Substituir o catálogo atual pela base padrão incluída? Ela contém registros pendentes de revisão e não tem data de referência oficial confirmada. Fichas e vida útil serão preservadas.'))return;replace=true;
-    }
-    await loadDefault(replace);
-  });
-  $('checkOfficialUpdates').onclick=()=>act(async()=>{
-    if(!remote)throw new Error('A consulta oficial exige abrir a aplicação Google e autorizar o acesso externo.');
-    const result=await rpc('epiCheckOfficialUpdates',$('officialPage').value),container=$('officialUpdateResults');container.replaceChildren();
-    const p=document.createElement('p');p.textContent=result.message+' • Consulta: '+new Date(result.checkedAt).toLocaleString('pt-BR');container.append(p);
-    function link(url,label){const a=document.createElement('a');a.href=url;a.textContent=label;a.target='_blank';a.rel='noopener noreferrer';const row=document.createElement('p');row.append(a);container.append(row);}
-    link(result.pageUrl,'Abrir página oficial');result.candidates.forEach(item=>{link(item.url,item.label);const note=document.createElement('p');note.textContent=item.freshness;container.append(note);});
-    notice(result.freshnessConfirmed?'Atualização confirmada.':'Consulta concluída; a existência de uma base mais recente precisa ser confirmada.',result.status==='blocked'||result.status==='unavailable');
-  });
-  $('catalogForm').onsubmit=e=>e.preventDefault();
-  $('catalogForm').oninput=invalid;
-  ['catalogFile','catalogDelimiter','catalogEncoding'].forEach(id=>$(id).addEventListener('change',()=>{parsed=null;invalid();}));
-  $('checkConnection').onclick=()=>act(async()=>{
-    if(!remote){connection();notice('Conexão real exige abertura pela implantação privada no Apps Script.');return;}
-    try {const status=await rpc('epiConnectionStatus');connection(status);notice(status.caCount?'Planilha e catálogo disponíveis.':'Planilha conectada. Importe a base oficial antes de analisar.');}
-    catch(err){connection();throw err;}
-  });
-  $('readCatalog').onclick=()=>act(async()=>{
-    invalid();parsed=null;
-    const file=$('catalogFile').files[0];if(!file)throw new Error('Selecione o CSV oficial ou seu recorte.');
-    if(file.size>EpiImport.MAX_CHARS)throw new Error('Arquivo maior que 10 MB. Exporte um recorte dos CAs necessários.');
-    let text;try{text=new TextDecoder($('catalogEncoding').value,{fatal:true}).decode(await file.arrayBuffer());}catch(_){throw new Error('Não foi possível ler a codificação. Confira UTF-8 ou Windows-1252.');}
-    const delimiter=$('catalogDelimiter').value==='tab'?'\t':$('catalogDelimiter').value;
-    parsed=EpiImport.parse(text,delimiter);const suggested=EpiImport.suggest(parsed.headers);
-    Object.entries(fields).forEach(([key,id])=>{
-      const select=$(id);select.replaceChildren();const placeholder=document.createElement('option');placeholder.value='';placeholder.textContent='Selecione a coluna';select.append(placeholder);
-      parsed.headers.forEach((header,i)=>{const option=document.createElement('option');option.value=String(i);option.textContent=header;select.append(option);});
-      if(suggested[key]>=0)select.value=String(suggested[key]);
-    });notice(parsed.rows.length+' registros lidos. Confira o mapeamento e informe origem/data de referência.');
-  });
-  $('previewCatalog').onclick=()=>act(async()=>{
-    invalid();if(!parsed)throw new Error('Leia o arquivo CSV primeiro.');
-    const mapping={};Object.entries(fields).forEach(([key,id])=>{if($(id).value==='')throw new Error('Selecione todas as quatro colunas.');mapping[key]=Number($(id).value);});
-    const prepared=EpiImport.fromCsv(parsed,mapping,{source:$('catalogSource').value,referenceDate:$('catalogReference').value});
-    const candidate={records:prepared.records,source:prepared.metadata.source,referenceDate:prepared.metadata.referenceDate};
-    const preview=remote?await rpc('epiPreviewCatalog',candidate):{count:prepared.records.length,groups:prepared.groups,warnings:prepared.warnings.slice(0,100),warningCount:prepared.warnings.length,sample:prepared.records.slice(0,5)};
-    const container=$('catalogPreview');
-    function paragraph(text){const p=document.createElement('p');p.textContent=text;container.append(p);}
-    paragraph(preview.count+' CAs validados. '+(remote?'A importação substituirá '+preview.previousCount+' registros do catálogo atual.':'Prévia local: nada será enviado para Google Sheets.'));
-    paragraph(Object.entries(preview.groups).map(([key,count])=>labels[key]+': '+count).join(' • '));
-    paragraph('Fonte: '+candidate.source+' • Referência: '+candidate.referenceDate);
-    if(preview.warningCount)paragraph(preview.warningCount+' registros com informações ausentes; exigem confirmação ou revisão.');
-    preview.warnings.forEach(paragraph);
-    const table=document.createElement('table'),head=document.createElement('thead'),hr=document.createElement('tr');
-    ['CA','EPI','Proteção aprovada','Validade do CA'].forEach(label=>{const th=document.createElement('th');th.textContent=label;hr.append(th);});head.append(hr);table.append(head);
-    const body=document.createElement('tbody');preview.sample.forEach(r=>{const tr=document.createElement('tr');[r.ca,r.name,r.approvedProtection||'Não informada',r.caExpiry||'Não informada'].forEach(value=>{const td=document.createElement('td');td.textContent=value;tr.append(td);});body.append(tr);});table.append(body);
-    const wrapper=document.createElement('div');wrapper.className='table-wrap';wrapper.append(table);container.append(wrapper);
-    payload=candidate;confirmation=remote?{signature:preview.signature,baseRevision:preview.baseRevision}:null;$('commitCatalog').hidden=!remote;
-    notice(remote?'Confira a prévia antes de confirmar a substituição do catálogo.':'CSV validado localmente. A importação real depende da conexão Google.');
-  });
-  $('commitCatalog').onclick=()=>act(async()=>{
-    if(!remote||!payload||!confirmation)throw new Error('Gere uma prévia válida na aplicação Google.');
-    if(!confirm('Substituir todo o catálogo pelos '+payload.records.length+' CAs desta prévia? Fichas e vida útil serão mantidas.'))return;
-    const result=await rpc('epiImportCatalog',payload,confirmation);invalid();document.dispatchEvent(new CustomEvent('epi:catalog-updated',{detail:result.metadata}));
-    connection(await rpc('epiConnectionStatus'));notice(result.count+' CAs importados na planilha.');
-  });
 })();
 </script>
 </body></html>

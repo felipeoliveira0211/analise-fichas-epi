@@ -10,7 +10,7 @@ var EpiCatalog = (function () {
       var number = EpiDomain.ca(row.ca);
       if (wanted && !wanted.has(number)) return;
       if (index[number]) throw new Error('CA duplicado na base: ' + number + '. Revise a importação.');
-      index[number] = { ca: number, name: String(row.name || ''), approvedProtection: String(row.approvedProtection || ''), caExpiry: String(row.caExpiry || '') };
+      index[number] = { ca: number, name: String(row.name || ''), approvedProtection: String(row.approvedProtection || ''), caExpiry: String(row.caExpiry || ''), caSituation: String(row.caSituation || '') };
     });
     return { index: index, metadata: metadata(store) };
   }

@@ -4,9 +4,9 @@ var EpiStore = (function () {
     Sheets: ['id', 'workerId', 'state', 'updatedAt', 'revision'],
     Entries: ['id', 'sheetId', 'ca', 'date', 'physicalExpiry', 'position', 'savedAt'],
     Lifetimes: ['ca', 'days'],
-    CaIndex: ['ca', 'name', 'approvedProtection', 'caExpiry'],
-    CaDefaultStage: ['ca', 'name', 'approvedProtection', 'caExpiry'],
-    CaDefaultBackup: ['ca', 'name', 'approvedProtection', 'caExpiry'],
+    CaIndex: ['ca', 'name', 'approvedProtection', 'caExpiry', 'caSituation'],
+    CaDefaultStage: ['ca', 'name', 'approvedProtection', 'caExpiry', 'caSituation'],
+    CaDefaultBackup: ['ca', 'name', 'approvedProtection', 'caExpiry', 'caSituation'],
     Metadata: ['source', 'referenceDate', 'updatedAt']
   };
   function database() {
@@ -28,7 +28,7 @@ var EpiStore = (function () {
       var tab = db.getSheetByName(name);
       if (!tab) { tab = db.insertSheet(name); tab.getRange(1, 1, 1, schema[name].length).setValues([schema[name]]); tab.setFrozenRows(1); }
       // Append new columns only to recognized legacy headers; preserve all data.
-      var legacy = name === 'Workers' ? schema[name].slice(0,5) : name === 'Entries' ? schema[name].slice(0,6) : null;
+      var legacy = name === 'Workers' ? schema[name].slice(0,5) : name === 'Entries' ? schema[name].slice(0,6) : ['CaIndex','CaDefaultStage','CaDefaultBackup'].includes(name) ? schema[name].slice(0,4) : null;
       if (legacy) {
         var header = tab.getRange(1,1,1,schema[name].length).getValues()[0];
         if (header.slice(0,legacy.length).join('|') === legacy.join('|') && !header[legacy.length]) tab.getRange(1,legacy.length+1,1,1).setValues([[schema[name][legacy.length]]]);

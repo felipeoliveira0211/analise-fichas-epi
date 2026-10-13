@@ -15,10 +15,10 @@ test('base padrão em etapas não expõe registros parciais e preserva trabalhad
 test('catálogo existente só é substituído com ação explícita',()=>{const {c,tables}=setup();tables.CaIndex=[{ca:'999',name:'EPI fictício anterior'}];assert.equal(c.epiLoadDefaultBase().status,'preserved');assert.equal(tables.CaIndex[0].ca,'999');c.epiLoadDefaultBase(true);c.epiLoadDefaultBase();assert.equal(tables.CaIndex.length,12);assert.equal(tables.CaDefaultBackup[0].ca,'999');});
 test('interrupção após escrever chunk antes de salvar progresso é idempotente',()=>{const {c,properties,tables}=setup();const original=properties.setProperty;let writes=0;properties.setProperty=(k,v)=>{writes++;if(writes===2)throw new Error('interrupção simulada');original(k,v)};assert.throws(()=>c.epiLoadDefaultBase(),/interrupção/);properties.setProperty=original;c.epiLoadDefaultBase();c.epiLoadDefaultBase();assert.equal(tables.CaIndex.length,12);assert.equal(new Set(tables.CaIndex.map(r=>r.ca)).size,12);});
 test('falha final recupera catálogo anterior e permite retomar',()=>{const {c,store,tables}=setup();tables.CaIndex=[{ca:'999',name:'EPI anterior'}];tables.Metadata=[{updatedAt:'old-revision',source:'old-source'}];c.epiLoadDefaultBase(true);const replace=store.replace;let fail=true;store.replace=(n,v)=>{if(n==='Metadata'&&fail){fail=false;throw new Error('falha simulada')}replace(n,v)};assert.throws(()=>c.epiLoadDefaultBase(),/tente retomar/);assert.equal(tables.CaIndex[0].ca,'999');assert.equal(tables.Metadata[0].updatedAt,'old-revision');c.epiLoadDefaultBase();assert.equal(tables.CaIndex.length,12);});
-test('pacote real tem checksums corretos, CAs únicos, datas válidas e referência desconhecida',()=>{
+test('pacote real tem checksums corretos, CAs únicos, datas válidas e referência de geração oficial',()=>{
  const m=JSON.parse(fs.readFileSync('data/default-ca/manifest.json','utf8'));const seen=new Set();let missing=0,total=0;
- for(const part of m.chunks){const blob=fs.readFileSync('data/default-ca/'+part.file);assert.equal(crypto.createHash('sha256').update(blob).digest('hex'),part.sha256);const rows=JSON.parse(zlib.gunzipSync(blob));assert.equal(rows.length,part.records);for(const r of rows){assert.equal(r.length,4);D.ca(r[0]);assert.equal(seen.has(r[0]),false);seen.add(r[0]);if(r[3])D.date(r[3]);if(!r[2])missing++;total++;}}
- assert.equal(total,36136);assert.equal(total,m.statistics.uniqueCas);assert.equal(missing,16359);assert.equal(missing,m.statistics.casWithoutReliableProtection);assert.equal(m.referenceDate,'');assert.match(m.fileModifiedAt,/^2022-08-16/);
+ for(const part of m.chunks){const blob=fs.readFileSync('data/default-ca/'+part.file);assert.equal(crypto.createHash('sha256').update(blob).digest('hex'),part.sha256);const rows=JSON.parse(zlib.gunzipSync(blob));assert.equal(rows.length,part.records);for(const r of rows){assert.equal(r.length,5);D.ca(r[0]);assert.equal(seen.has(r[0]),false);seen.add(r[0]);if(r[3])D.certificateDate(r[3]);if(!r[2])missing++;total++;}}
+ assert.equal(total,42478);assert.equal(total,m.statistics.uniqueCas);assert.equal(missing,3580);assert.equal(missing,m.statistics.casWithoutReliableProtection);assert.equal(m.referenceDate,'13/10/2026');assert.equal(m.gzipCrcVerified,true);assert.equal(m.trailingHtmlBytes,389003);
 });
 
 test('bloco alterado é rejeitado antes de escrever dados',()=>{const {c,tables}=setup();c.EpiBundledBase.chunks[0]=Buffer.from('conteúdo fictício alterado').toString('base64');assert.throws(()=>c.epiLoadDefaultBase(),/Checksum inválido/);assert.equal(tables.CaIndex.length,0);assert.equal(tables.CaDefaultStage.length,0);});
@@ -26,10 +26,21 @@ test('pacote atualizado não recarrega base existente e informa substituição d
 test('base real aplica dispensa por nome aos demais EPIs e mantém revisão nos grupos indefinidos',()=>{
  const m=JSON.parse(fs.readFileSync('data/default-ca/manifest.json')),counts={auditiva:0,dermica:0,outros:0,revisao:0};let noExpiry=0;
  for(const part of m.chunks)for(const [,name,approvedProtection,date]of JSON.parse(zlib.gunzipSync(fs.readFileSync('data/default-ca/'+part.file)))){counts[D.classify({name,approvedProtection})]++;if(!date)noExpiry++;}
- assert.deepEqual(counts,{auditiva:428,dermica:497,outros:33805,revisao:1406});assert.equal(noExpiry,0);assert.equal(m.expiryPolicy,'latest-valid-date-per-ca');assert.equal(m.projectionVersion,3);
+ assert.deepEqual(counts,{auditiva:545,dermica:3197,outros:38733,revisao:3});assert.equal(noExpiry,0);assert.equal(m.expiryPolicy,'latest-valid-date-per-ca');assert.equal(m.projectionVersion,4);
 });
 test('CA 13990 tem validade do certificado, sem inferir expiração a partir da emissão',()=>{
  const m=JSON.parse(fs.readFileSync('data/default-ca/manifest.json'));let found;
  for(const part of m.chunks)for(const r of JSON.parse(zlib.gunzipSync(fs.readFileSync('data/default-ca/'+part.file))))if(r[0]==='13990')found=r;
- assert.equal(found[3],'22/08/2028');const evidence=m.corrections.find(r=>r.ca==='13990');assert.equal(evidence.issuanceDate,'22/08/2023');assert.match(evidence.source,/Prints/);
+ assert.equal(found[3],'22/08/2028');assert.equal(found[4],'VÁLIDO');assert.equal(m.corrections,undefined);assert.match(m.source,/caepi.trabalho.gov.br/);
+});
+
+test('situação e demais campos vêm da maior validade, e validade 3031 é preservada',()=>{
+ const m=JSON.parse(fs.readFileSync('data/default-ca/manifest.json')),index={};
+ for(const part of m.chunks)for(const r of JSON.parse(zlib.gunzipSync(fs.readFileSync('data/default-ca/'+part.file))))if(['7536','40355','51892','51760'].includes(r[0]))index[r[0]]=r;
+ assert.equal(index['7536'][1],'MANGA');assert.equal(index['7536'][3],'08/10/2027');assert.equal(index['7536'][4],'VÁLIDO');
+ assert.equal(index['40355'][3],'26/05/3031');assert.equal(index['51892'][4],'SUSPENSO');assert.equal(index['51760'][4],'CANCELADO');
+});
+test('atualização administrativa conclui etapas e repetição não recarrega nem apaga prazos',()=>{
+ const {c,store,tables}=setup();store.initialize=()=>{};c.console={log(){}};vm.runInContext(fs.readFileSync('src/server/setup.js','utf8'),c);
+ assert.equal(c.adminUpdateOfficialBase().status,'ready');assert.equal(tables.CaIndex.length,12);const before=JSON.stringify(tables);assert.equal(c.adminUpdateOfficialBase().status,'ready');assert.equal(JSON.stringify(tables),before);assert.equal(tables.Lifetimes[0].days,30);
 });
