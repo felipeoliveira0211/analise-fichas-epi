@@ -17,9 +17,19 @@ var EpiDomain = (function () {
     return time;
   }
   function fold(v) { return String(v || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); }
-  // Only explicit approved protection supports automatic classification.
+  // Names may identify equipment outside the periodicity scope; they do not
+  // assert approved protection or admit chemical/auditory equipment into scope.
+  function nameOnlyOther(name) {
+    var n = fold(name);
+    if (!n.trim() || /indisponivel|revisar|\b(auditiv\w*|ruido\w*|creme\w*)\b/.test(n)) return false;
+    if (/\bluva\w*\b/.test(n)) {
+      return !/\bquimic\w*\b/.test(n) && /\b(mecanic\w*|termic\w*|abrasiv\w*|escoriant\w*|vibrac\w*|isolante\w*|procedimento\w*|cirurgic\w*|cobertura|malha de aco)\b/.test(n);
+    }
+    return /\b(capacete|oculos|vestimenta|macacao|calca|manga|mangote|perneira|calcado|botina|bota|sobre-bota|cinturao|talabarte|trava[- ]?queda|respirador|mascara|capuz|balaclava|colete|meia|protetor facial|cadeira suspensa|bracadeira)\b/.test(n);
+  }
   function classify(record) {
-    if (!record || !String(record.approvedProtection || '').trim()) return GROUP.REVISAO;
+    if (!record) return GROUP.REVISAO;
+    if (!String(record.approvedProtection || '').trim()) return nameOnlyOther(record.name) ? GROUP.OUTROS : GROUP.REVISAO;
     var p = fold(record.approvedProtection);
     var auditory = /\b(auditiv\w*|ruido\w*)\b/.test(p);
     var chemical = /\bquimic\w*\b/.test(p) && /\b(maos|membros superiores|pele|cutane\w*|dermic\w*)\b/.test(p);

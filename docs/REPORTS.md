@@ -5,9 +5,9 @@
 Use o mesmo projeto Google, planilha e implantação.
 
 1. Baixe a versão atual do repositório. Em `google-apps-script/`, copie o conteúdo completo de **Domain.gs**, **Store.gs**, **Api.gs** e **Index.html** para os arquivos correspondentes no editor Apps Script.
-2. Adicione um arquivo de script chamado **ReportDomain** e cole **ReportDomain.gs**. Mantenha os demais scripts da aplicação, incluindo a base padrão já carregada.
+2. Adicione um arquivo de script chamado **ReportDomain** e cole **ReportDomain.gs**. Se também estiver aplicando a correção da base de CAs, atualize **ImportDomain.gs**, **DefaultCatalog.gs** e **DefaultData.gs** do pacote. Mantenha os demais scripts.
 3. Execute **setupDatabase** no editor. A função acrescenta `company` na aba `Workers` e `savedAt` na aba `Entries`, sem apagar os dados. Não altere os cabeçalhos manualmente. Se estiver atualizando uma versão anterior à base padrão, siga também [DEFAULT-BASE.md](DEFAULT-BASE.md).
-4. Em **Implantar → Gerenciar implantações**, edite a implantação e selecione **Nova versão**. Mantenha o acesso privado e reabra a aplicação. Essa atualização não exige substituir ou recarregar o catálogo de CAs já carregado.
+4. Em **Implantar → Gerenciar implantações**, edite a implantação e selecione **Nova versão**. Mantenha o acesso privado e reabra a aplicação. As mudanças de interface não exigem recarga do catálogo. Para aplicar também a correção das 19 validades divergentes da base padrão v2, vá a **Base e conexão → Carregar ou retomar base padrão** e confirme a substituição uma única vez. As fichas e prazos de vida útil são preservados; aberturas seguintes não repetem a carga.
 
 A migração só aceita os cabeçalhos antigos conhecidos. Um cabeçalho diferente gera erro para evitar modificar uma tabela incompatível. As fichas antigas continuam disponíveis: empresa e horários ausentes não são inventados. Complete a empresa ao reabrir uma ficha antiga para analisar ou salvar novamente pela interface.
 

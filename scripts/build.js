@@ -10,9 +10,12 @@ fs.writeFileSync(path.join(out,'Index.html'),html);
 
 const crypto = require('node:crypto');
 const manifest = JSON.parse(read('data/default-ca/manifest.json'));
+manifest.classificationCounts = {auditiva:0,dermica:0,outros:0,revisao:0};
+const classification = require('../src/domain/analysis');
 const chunks = manifest.chunks.map(entry => {
   const blob = fs.readFileSync(path.join(root,'data/default-ca',entry.file));
   if(crypto.createHash('sha256').update(blob).digest('hex') !== entry.sha256) throw new Error('Checksum inválido: '+entry.file);
+  for (const [,name,approvedProtection] of JSON.parse(require('node:zlib').gunzipSync(blob))) manifest.classificationCounts[classification.classify({name,approvedProtection})]++;
   return blob.toString('base64');
 });
 fs.writeFileSync(path.join(out,'DefaultData.gs'),'// Generated from projected CA fields only. Do not edit.\nvar EpiBundledBase = '+JSON.stringify({manifest,chunks},null,2)+';\n');

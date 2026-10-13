@@ -35,7 +35,8 @@ def project(rows):
         if entry['suspect']: counts['casWithSourceAlignmentWarnings']+=1
         if len(entry['names'])>1: counts['casWithMultipleNames']+=1
         if len(entry['protections'])>1: counts['casWithMultipleApprovedTexts']+=1
-        records.append([ca,name,protection,next(iter(entry['dates'])) if len(entry['dates'])==1 else ''])
+        latest=max(entry['dates'],key=lambda value:datetime.datetime.strptime(value,'%d/%m/%Y'))
+        records.append([ca,name,protection,latest])
     counts['uniqueCas']=len(records);counts['duplicateRowsConsolidated']=counts['inputRows']-len(records)
     return records,dict(counts)
 
@@ -53,7 +54,7 @@ def main():
         blob=gzip.compress(raw,mtime=0);name=f'chunk-{index:03d}.json.gz';(destination/name).write_bytes(blob)
         chunks.append({'file':name,'records':len(records[start:start+500]),'sha256':hashlib.sha256(blob).hexdigest()})
     modified=workbook.properties.modified
-    manifest={'version':digest[:20],'fileName':source.name,'fileSha256':digest,'source':'Arquivo fornecido pelo usuário: '+source.name+' (origem online ainda não confirmada)','referenceDate':'','fileModifiedAt':modified.isoformat() if modified else None,'referenceNote':'Data de referência oficial não informada. Data de modificação interna do XLSX não comprova atualização da base.','statistics':stats,'chunks':chunks}
+    manifest={'version':digest[:20]+'-v2','projectionVersion':2,'expiryPolicy':'latest-valid-date-per-ca','fileName':source.name,'fileSha256':digest,'source':'Arquivo fornecido pelo usuário: '+source.name+' (origem online ainda não confirmada)','referenceDate':'','fileModifiedAt':modified.isoformat() if modified else None,'referenceNote':'Data de referência oficial não informada. Data de modificação interna do XLSX não comprova atualização da base.','statistics':stats,'chunks':chunks}
     (destination/'manifest.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n')
     print(json.dumps({'statistics':stats,'compressedBytes':sum((destination/c['file']).stat().st_size for c in chunks),'chunks':len(chunks),'fileModifiedAt':manifest['fileModifiedAt']},ensure_ascii=False,indent=2))
 if __name__=='__main__':main()

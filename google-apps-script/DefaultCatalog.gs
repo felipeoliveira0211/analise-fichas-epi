@@ -8,7 +8,7 @@ var EpiDefaultCatalog = (function () {
   function status(store){
     var s=state(),m=EpiBundledBase.manifest,total=m.statistics.uniqueCas,count=store.count('CaIndex');
     var pending=s&&!s.complete || !count;
-    return {status:pending?'pending':'ready',loaded:s?s.rows:0,total:total,fileName:m.fileName,fileModifiedAt:m.fileModifiedAt,referenceNote:m.referenceNote,statistics:m.statistics,version:m.version};
+    return {status:pending?'pending':'ready',loaded:s?s.rows:0,total:total,fileName:m.fileName,fileModifiedAt:m.fileModifiedAt,referenceNote:m.referenceNote,statistics:m.statistics,classificationCounts:m.classificationCounts||null,version:m.version,loadedVersion:s&&s.complete?s.version:null,updateAvailable:!!(count&&s&&s.complete&&s.version!==m.version)};
   }
   function decode(index){
     var bytes=Utilities.base64Decode(EpiBundledBase.chunks[index]);

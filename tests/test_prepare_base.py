@@ -13,9 +13,10 @@ class ProjectionTest(unittest.TestCase):
     def test_shifted_columns_do_not_invent_protection(self):
         shifted=row();shifted[12]='Marca fictícia';shifted[15]='PROTEÇÃO EM COLUNA DESLOCADA'
         records,stats=projection.project([shifted]);self.assertEqual(records[0][2],'');self.assertEqual(stats['casWithoutReliableProtection'],1)
-    def test_conflicting_dates_are_not_chosen_by_latest(self):
-        first=row();second=row();second[1]=datetime.datetime(2027,1,1)
-        records,stats=projection.project([first,second]);self.assertEqual(records[0][3],'');self.assertEqual(stats['casWithConflictingExpiry'],1)
+    def test_conflicting_dates_choose_latest_calendar_date(self):
+        first=row();second=row();first[1]=datetime.datetime(2026,12,31);second[1]=datetime.datetime(2027,1,1)
+        records,stats=projection.project([first,second]);self.assertEqual(records[0][3],'01/01/2027');self.assertEqual(stats['casWithConflictingExpiry'],1)
+        reversed_records,_=projection.project([second,first]);self.assertEqual(reversed_records,records)
     def test_bad_ca_or_expiry_block_projection(self):
         for bad in ['=1+1',0,-1]:
             with self.assertRaises(ValueError):projection.project([row(bad)])

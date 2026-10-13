@@ -40,7 +40,7 @@ require('./build');
   if(useDefault){
    await page.waitForFunction(()=>document.getElementById('message').textContent.includes('Base padrão carregada'),null,{timeout:60000});
    assert.equal(tables.CaIndex.length,36136);assert.equal(tables.Workers.length,0);
-   await page.locator('[data-view="catalog"]').click();assert.match(await page.locator('#connectionSummary').innerText(),/36136 CAs/);assert.match(await page.locator('#defaultBaseSummary').innerText(),/16359/);
+   await page.locator('[data-view="catalog"]').click();assert.match(await page.locator('#connectionSummary').innerText(),/36136 CAs/);assert.match(await page.locator('#defaultBaseSummary').innerText(),/1406/);
    await page.locator('#checkOfficialUpdates').click();await page.waitForFunction(()=>document.getElementById('officialUpdateResults').textContent.includes('Arquivos ou portal'));
    assert.equal(await page.locator('#officialUpdateResults a').count(),2);assert.match(await page.locator('#officialUpdateResults').innerText(),/não confirmadas/);
    c.UrlFetchApp.fetch=()=>({getResponseCode:()=>403,getAllHeaders:()=>({})});

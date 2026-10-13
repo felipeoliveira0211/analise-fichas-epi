@@ -11,7 +11,7 @@ Use **o mesmo projeto Apps Script, a mesma planilha e a implantação existente*
 5. Execute **initializeApplication**. O ID da planilha atual é reutilizado e são criadas duas tabelas auxiliares para preparar e recuperar o catálogo e acrescentadas as colunas de empresa/horário nas tabelas legadas. Para uma aplicação que já usa a base padrão, veja [REPORTS.md](REPORTS.md).
 6. Abra **Implantar → Gerenciar implantações**, edite a implantação existente e selecione **Nova versão**. Mantenha execução como usuário que acessa e acesso somente você.
 7. Reabra a aplicação e vá a **Base e conexão**. Se o catálogo estiver vazio, o carregamento continua automaticamente em etapas. Mantenha a aba aberta até aparecer **36.136 CAs**. Se uma chamada falhar ou a aba for fechada, use **Carregar ou retomar base padrão**.
-8. Se já houver outro catálogo, ele é mantido. Para usar a base padrão em seu lugar, clique no mesmo botão e confirme a substituição apresentada. Fichas, trabalhadores, lançamentos e prazos de vida útil são preservados.
+8. Se já houver um catálogo, ele é mantido. Para aplicar as validades corrigidas do pacote v2, atualize também **DefaultData**, **DefaultCatalog**, **Domain**, **ImportDomain** e **Index**, e use **Carregar ou retomar base padrão** com confirmação. A tela informa quando uma base padrão anterior está carregada e há um pacote novo disponível. Para usar a base padrão em seu lugar, clique no mesmo botão e confirme a substituição apresentada. Fichas, trabalhadores, lançamentos e prazos de vida útil são preservados.
 
 O comando `npm run google:bundle` gera a exportação para o editor a partir das fontes e dos arquivos comprimidos. Quem usa clasp pode enviar `dist/` após `npm run build`; o build não publica nem atualiza a implantação sozinho.
 
@@ -26,13 +26,13 @@ Arquivo: **cadastro-EPI-final.xlsx**, fornecido pelo usuário.
 | Repetições por CA consolidadas | 70.062 |
 | Linhas com proteção/alinhamento que exigiram revisão | 46.769 |
 | CAs sem proteção aprovada recuperável com segurança | 16.359 |
-| CAs com datas de validade conflitantes | 19 |
+| CAs com datas divergentes, resolvidos pela maior data | 19 |
 
 O XLSX apresenta repetições por laudos/normas e campos deslocados em parte das linhas. O processamento usa apenas CA, nome do equipamento, proteção aprovada e validade. Não exporta CNPJ, razão social, fabricantes, laboratórios, processos nem dados de trabalhadores.
 
-A projeção é conservadora: para recuperar a proteção aprovada, exige alinhamento reconhecível de natureza e laboratório, além de texto iniciado por “PROTEÇÃO” no campo esperado. Dados que não atendem ao critério não são reconstruídos por adivinhação. Quando há registros alinhados do mesmo CA, seus textos oficiais são mantidos; sem texto confiável, a proteção fica vazia e a análise marca revisão manual. Nomes distintos recuperados são preservados em conjunto. Datas de validade conflitantes ficam indisponíveis, sem escolher uma data mais recente por conveniência.
+A projeção é conservadora: para recuperar a proteção aprovada, exige alinhamento reconhecível de natureza e laboratório, além de texto iniciado por “PROTEÇÃO” no campo esperado. Dados que não atendem ao critério não são reconstruídos por adivinhação. Quando há registros alinhados do mesmo CA, seus textos oficiais são mantidos; sem texto confiável, a proteção fica vazia. Isso exige revisão para grupos analisados ou nomes indefinidos, mas não para EPIs reconhecidos pelo nome como fora do escopo. Nomes distintos recuperados são preservados em conjunto. Para registros do mesmo CA com validades diferentes, é usada a maior data válida de calendário, conforme regra solicitada pelo usuário. Isso não confirma a situação atual do certificado nem representa a data de atualização oficial da base.
 
-A classificação ainda depende da proteção explícita recuperada; a base não torna automaticamente conformes todos os equipamentos. Os CAs pendentes continuam aparecendo pelo número e pelo nome disponível, com alerta de análise parcial.
+A entrada nos grupos auditivo e dérmico químico ainda depende da proteção explícita recuperada. EPIs reconhecidos como fora do escopo podem aparecer só pelo nome; não se inventa texto de proteção aprovada. A regra reduz os pendentes de 16.359 para **1.406 CAs**. A base não torna automaticamente conformes todos os equipamentos. Os CAs pendentes continuam aparecendo pelo número e pelo nome disponível, com alerta de análise parcial.
 
 ### Referência temporal e origem
 

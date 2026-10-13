@@ -16,7 +16,7 @@
   function connection(data) {
     const p=$('connectionSummary'); currentConnection=data||null;
     if(!remote){p.textContent='Demonstração local: sem conexão Google e sem base oficial carregada.';return;}
-    if(data&&data.defaultBase){const b=data.defaultBase;$('defaultBaseSummary').textContent='Pacote: '+b.fileName+' • '+b.total+' CAs • '+b.statistics.casWithoutReliableProtection+' com proteção pendente de revisão. '+b.referenceNote+(b.status==='pending'?' Preparação: '+b.loaded+'/'+b.total+'.':'');}
+    if(data&&data.defaultBase){const b=data.defaultBase;$('defaultBaseSummary').textContent='Pacote: '+b.fileName+' • '+b.total+' CAs • '+(b.classificationCounts?b.classificationCounts.revisao:b.statistics.casWithoutReliableProtection)+' pendentes de revisão para periodicidade. '+b.referenceNote+(b.status==='pending'?' Preparação: '+b.loaded+'/'+b.total+'.':'')+(b.updateAvailable?' Há uma nova versão do pacote. Use Carregar ou retomar base padrão e confirme a substituição para aplicá-la.':'');}
     if(data && data.connected){p.textContent='Planilha conectada • '+data.caCount+' CAs • Fonte: '+(data.source||'não informada')+' • Referência: '+(data.referenceDate||'não informada');}
     else p.textContent='Conexão não verificada. Execute initializeApplication no editor do Apps Script e verifique o acesso à planilha.';
   }

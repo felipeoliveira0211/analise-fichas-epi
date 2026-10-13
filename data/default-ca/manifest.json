@@ -1,5 +1,7 @@
 {
-  "version": "8987491b7ca6a3e921d9",
+  "version": "8987491b7ca6a3e921d9-v2",
+  "projectionVersion": 2,
+  "expiryPolicy": "latest-valid-date-per-ca",
   "fileName": "cadastro-EPI-final.xlsx",
   "fileSha256": "8987491b7ca6a3e921d9bbc27a2d91e5951eb7c1d48baeddf5bd2f91fea41265",
   "source": "Arquivo fornecido pelo usuário: cadastro-EPI-final.xlsx (origem online ainda não confirmada)",
@@ -31,7 +33,7 @@
     {
       "file": "chunk-002.json.gz",
       "records": 500,
-      "sha256": "3f104f3fb0ab7774611f03c7f1e651ffd538b08e3c6d9e96d8d38befaef8c190"
+      "sha256": "5f315a372c334602fe945989082e41fe22d9a88101b75c9b103d017aaa5113ce"
     },
     {
       "file": "chunk-003.json.gz",
@@ -41,7 +43,7 @@
     {
       "file": "chunk-004.json.gz",
       "records": 500,
-      "sha256": "8949beaf87fe3fda6b34359602499c82342b1aadc1585baa7d1907d36c2fe052"
+      "sha256": "70ede448018650a6a7d2b1a4f5c88090772b4ecfb93b2bac4326d8b0ebf55758"
     },
     {
       "file": "chunk-005.json.gz",
@@ -56,7 +58,7 @@
     {
       "file": "chunk-007.json.gz",
       "records": 500,
-      "sha256": "eb4222a4ef5d31959d153b697a8a3a57c5d8116ebf6b11b03afa2f296fd4aed8"
+      "sha256": "760d9b4227fa34402a56dc8c18a25c78e949a3b70a7dfd6e6cfc15be3cf4034e"
     },
     {
       "file": "chunk-008.json.gz",
@@ -71,27 +73,27 @@
     {
       "file": "chunk-010.json.gz",
       "records": 500,
-      "sha256": "482928dcdc33a280339e93297081d235ae7f4739350e180ba16a74ac4459467a"
+      "sha256": "c3b2f6f58699a9a2005443b37be10428955a9c15b45b088ba48c8f55cc09b527"
     },
     {
       "file": "chunk-011.json.gz",
       "records": 500,
-      "sha256": "734a773b5f326240779ccafe5dc0e1c4221cc211c2ba40eece08214ec9ada311"
+      "sha256": "bc728de435fc0a86cf1552ef3d187f74c4873230260c66af6300afbec82b71eb"
     },
     {
       "file": "chunk-012.json.gz",
       "records": 500,
-      "sha256": "373e6bf9f5d38da46af34944fec24b6c104416facfe87c1cf88a9581e7d891fb"
+      "sha256": "bed30efd2f128777923bafd26cc553f26fbe4fc072b5da49a1b2d9b8fe5dfb58"
     },
     {
       "file": "chunk-013.json.gz",
       "records": 500,
-      "sha256": "38b0da3273382f59df8e69935e2e0f50a8050120d4d7a076648e661c74de3469"
+      "sha256": "f1dda2079bf0d827f0cd7f7d05bcc5b753f0ea0b573c03a8013f717ad5b327a8"
     },
     {
       "file": "chunk-014.json.gz",
       "records": 500,
-      "sha256": "6a34de0c2df54845497dd1fc76a3764ec2eef3059d3061e3f11a783eb4668d75"
+      "sha256": "42b2ef18ff0330a3d405d7927b3c6f2c6a2bcfd42b37c8dc580d08154ae76724"
     },
     {
       "file": "chunk-015.json.gz",
@@ -101,12 +103,12 @@
     {
       "file": "chunk-016.json.gz",
       "records": 500,
-      "sha256": "7721daad841f21a07945f42f57d2a5c10af396426da636499299d75931efe777"
+      "sha256": "8c502ba46fe6c89879989022b703c740be54ea1d9f7aa7b6b95f02ff621878da"
     },
     {
       "file": "chunk-017.json.gz",
       "records": 500,
-      "sha256": "59479c42bd812c6470f42e1080bac6b3c1cd893bc6123b0a5d8924b69ef72e17"
+      "sha256": "b090a99cb4cef10e85f418e80349312c8a1f86b3a551a72a5effa4f337dcac07"
     },
     {
       "file": "chunk-018.json.gz",
@@ -126,12 +128,12 @@
     {
       "file": "chunk-021.json.gz",
       "records": 500,
-      "sha256": "dd5c099b2ef0373cd07f76bdd703af2332af56c777f26c5c6abf43d06e6127fd"
+      "sha256": "112878426c687fdf58ea35746be073d2b805473a603ef2349a2c6143399fd2d9"
     },
     {
       "file": "chunk-022.json.gz",
       "records": 500,
-      "sha256": "50e2ebaccb0141ea1a3481d0ef677c20035c562978a5ad49cdb6b2c6122e2ff0"
+      "sha256": "665810d2102b38c70160be702b906d3cbd03b1abb70bccfabd7524d9ca71fc2a"
     },
     {
       "file": "chunk-023.json.gz",
@@ -146,7 +148,7 @@
     {
       "file": "chunk-025.json.gz",
       "records": 500,
-      "sha256": "91adfb128e7c6cd067d334c65bf6ae0eec101485a57ab085220a6ff6d23d3386"
+      "sha256": "4cc621bdb86118cfff9a21368c53b59833243f5bcb191d15a3e2cfb5812b09bd"
     },
     {
       "file": "chunk-026.json.gz",

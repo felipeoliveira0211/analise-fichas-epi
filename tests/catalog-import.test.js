@@ -25,3 +25,4 @@ test('origem oficial, referência futura e formato de data inválido',()=>{
 });
 test('campos ausentes geram aviso e revisão, sem vida útil presumida',()=>{const p=one();p.records[0].approvedProtection='';p.records[0].caExpiry='';const r=I.prepare(p);assert.equal(r.groups.revisao,1);assert.equal(r.warnings.length,1);});
 test('mapeamento precisa de quatro colunas diferentes',()=>{const p=I.parse('A;B;C;D\n1;Nome;Proteção;31/12/2030',';');assert.throws(()=>I.fromCsv(p,{ca:0,name:0,approvedProtection:2,caExpiry:3},{source,referenceDate:'01/01/2026'}));});
+test('nome de EPI fora do escopo não exige proteção nem gera aviso de revisão',()=>{const p=one();p.records[0].name='ÓCULOS';p.records[0].approvedProtection='';const r=I.prepare(p);assert.equal(r.groups.outros,1);assert.equal(r.warnings.length,0);});

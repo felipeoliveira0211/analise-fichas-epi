@@ -36,7 +36,7 @@ Consulte [REPORTS.md](docs/REPORTS.md) para atualizar a aplicação já implanta
 
 O arquivo `cadastro-EPI-final.xlsx` enviado pelo usuário foi projetado em uma base de **36.136 CAs**, já incluída no pacote Google. O carregamento em etapas começa em um catálogo vazio, pode ser retomado e preserva fichas e vida útil. Um catálogo existente só é substituído mediante confirmação na interface.
 
-Há **16.359 CAs com proteção pendente de revisão** e **19 com validade conflitante**, devido a inconsistências no arquivo. A referência oficial da base não é conhecida; a data interna de modificação em 2022 não é tratada como atualização oficial. A aplicação sinaliza a necessidade de confirmação.
+Há **16.359 CAs sem proteção aprovada confiável no arquivo**. EPIs reconhecidos pelo nome como fora do escopo dispensam esse campo: **1.406 CAs permanecem pendentes para periodicidade**. Para os **19 CAs com validades divergentes**, o pacote usa a maior data válida, conforme regra definida pelo usuário. A referência oficial da base não é conhecida; a data interna de modificação em 2022 não é tratada como atualização oficial. A aplicação sinaliza a necessidade de confirmação.
 
 O campo **Buscar atualizações** consulta páginas HTTPS em `www.gov.br`, `caepi.mte.gov.br` ou `caepi.trabalho.gov.br`, identifica links de arquivos e informa bloqueios/indisponibilidade. Não garante que um arquivo encontrado seja mais recente, não importa automaticamente e não contorna 403.
 
@@ -143,7 +143,7 @@ Antes de colar, formate essas colunas como **texto simples**, especialmente CA e
 
 Atualizações de `CaIndex` e `Metadata` **não devem apagar `Lifetimes`**. A vida útil é um parâmetro técnico independente do certificado. Os dados de teste/demonstração nunca são inseridos automaticamente na planilha de produção.
 
-A classificação considera **proteção aprovada**, não somente o nome do equipamento. Proteção auditiva explícita entra na sequência auditiva; proteção química explícita das mãos, pele ou membros superiores entra na dérmica. Luvas apenas mecânicas ficam em demais EPIs. Descrições ausentes/ambíguas e CAs desconhecidos exigem revisão. A identificação conservadora por texto requer validação com o vocabulário real da base oficial antes de uso técnico. A primeira versão sinaliza revisão manual, sem editar a classificação oficial pela interface.
+A inclusão nos grupos com análise de periodicidade considera **proteção aprovada**; o nome pode identificar os demais EPIs fora do escopo. Proteção auditiva explícita entra na sequência auditiva; proteção química explícita das mãos, pele ou membros superiores entra na dérmica. Luvas apenas mecânicas ficam em demais EPIs. Para EPIs claramente fora do escopo (como capacetes, óculos, vestimentas e luvas explicitamente mecânicas), basta o nome, mesmo sem proteção aprovada. Luvas químicas, cremes e protetores auditivos sem proteção confiável, nomes indefinidos e CAs desconhecidos continuam pendentes de revisão. A identificação conservadora por texto requer validação com o vocabulário real da base oficial antes de uso técnico. A primeira versão sinaliza revisão manual, sem editar a classificação oficial pela interface.
 
 ## Regras e limites técnicos
 

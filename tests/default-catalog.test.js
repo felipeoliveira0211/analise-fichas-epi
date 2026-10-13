@@ -22,3 +22,9 @@ test('pacote real tem checksums corretos, CAs únicos, datas válidas e referên
 });
 
 test('bloco alterado é rejeitado antes de escrever dados',()=>{const {c,tables}=setup();c.EpiBundledBase.chunks[0]=Buffer.from('conteúdo fictício alterado').toString('base64');assert.throws(()=>c.epiLoadDefaultBase(),/Checksum inválido/);assert.equal(tables.CaIndex.length,0);assert.equal(tables.CaDefaultStage.length,0);});
+test('pacote atualizado não recarrega base existente e informa substituição disponível',()=>{const {c,tables}=setup();c.epiLoadDefaultBase();c.epiLoadDefaultBase();c.EpiBundledBase.manifest.version='new-test-version';const before=JSON.stringify(tables);const result=c.epiLoadDefaultBase();assert.equal(result.status,'preserved');assert.equal(result.base.updateAvailable,true);assert.equal(result.base.loadedVersion,'test-version');assert.equal(JSON.stringify(tables),before);});
+test('base real aplica dispensa por nome aos demais EPIs e mantém revisão nos grupos indefinidos',()=>{
+ const m=JSON.parse(fs.readFileSync('data/default-ca/manifest.json')),counts={auditiva:0,dermica:0,outros:0,revisao:0};let noExpiry=0;
+ for(const part of m.chunks)for(const [,name,approvedProtection,date]of JSON.parse(zlib.gunzipSync(fs.readFileSync('data/default-ca/'+part.file)))){counts[D.classify({name,approvedProtection})]++;if(!date)noExpiry++;}
+ assert.deepEqual(counts,{auditiva:428,dermica:497,outros:33805,revisao:1406});assert.equal(noExpiry,0);assert.equal(m.expiryPolicy,'latest-valid-date-per-ca');assert.equal(m.projectionVersion,2);
+});

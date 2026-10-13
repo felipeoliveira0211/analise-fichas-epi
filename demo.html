@@ -32,7 +32,7 @@
 <section id="catalog" class="view" hidden>
 <div class="toolbar"><h2>Base de CAs e conexão Google</h2><button id="checkConnection">Verificar conexão</button></div>
 <p id="connectionSummary" role="status">Verificando configuração…</p>
-<div class="quick"><h3>Base padrão incluída</h3><p id="defaultBaseSummary">Arquivo cadastro-EPI-final.xlsx fornecido pelo usuário. A data de referência oficial não está confirmada.</p><button id="loadDefaultBase">Carregar ou retomar base padrão</button><p class="muted">O carregamento é feito em etapas e pode ser retomado. Substituir um catálogo existente exige confirmação e preserva fichas e vida útil. Registros com proteção não confiável precisam de revisão manual.</p></div>
+<div class="quick"><h3>Base padrão incluída</h3><p id="defaultBaseSummary">Arquivo cadastro-EPI-final.xlsx fornecido pelo usuário. A data de referência oficial não está confirmada.</p><button id="loadDefaultBase">Carregar ou retomar base padrão</button><p class="muted">O carregamento é feito em etapas e pode ser retomado. Substituir um catálogo existente exige confirmação e preserva fichas e vida útil. A proteção aprovada é necessária para os grupos analisados. Demais EPIs reconhecidos pelo nome dispensam esse campo. Para CAs repetidos no arquivo padrão, é usada a maior data de validade.</p></div>
 <div class="quick"><h3>Buscar bases nas fontes oficiais</h3><label>Página oficial de publicação ou pesquisa<input id="officialPage" type="url" value="https://www.gov.br/trabalho-e-emprego/pt-br/assuntos/inspecao-do-trabalho/seguranca-e-saude-no-trabalho/equipamentos-de-protecao-individual" maxlength="2000"></label><button id="checkOfficialUpdates">Buscar atualizações</button><div id="officialUpdateResults" aria-live="polite"></div><p class="muted">A consulta busca arquivos e o portal de exportação indicado na página oficial. Encontrar um arquivo não confirma que ele seja mais recente. Confira a data de referência antes de importar; a aplicação não substitui a base automaticamente nem contorna bloqueios do portal.</p></div>
 <p class="muted">Na aplicação Google, execute initializeApplication no editor do Apps Script para criar as tabelas e conectar uma planilha privada. A demonstração local não acessa sua conta.</p>
 <h3>Importar dados oficiais</h3><p>Selecione um CSV exportado da planilha oficial. Identifique as colunas, confira a prévia e confirme a substituição do catálogo. Fichas, trabalhadores e vida útil serão preservados.</p>
@@ -72,9 +72,19 @@ var EpiDomain = (function () {
     return time;
   }
   function fold(v) { return String(v || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); }
-  // Only explicit approved protection supports automatic classification.
+  // Names may identify equipment outside the periodicity scope; they do not
+  // assert approved protection or admit chemical/auditory equipment into scope.
+  function nameOnlyOther(name) {
+    var n = fold(name);
+    if (!n.trim() || /indisponivel|revisar|\b(auditiv\w*|ruido\w*|creme\w*)\b/.test(n)) return false;
+    if (/\bluva\w*\b/.test(n)) {
+      return !/\bquimic\w*\b/.test(n) && /\b(mecanic\w*|termic\w*|abrasiv\w*|escoriant\w*|vibrac\w*|isolante\w*|procedimento\w*|cirurgic\w*|cobertura|malha de aco)\b/.test(n);
+    }
+    return /\b(capacete|oculos|vestimenta|macacao|calca|manga|mangote|perneira|calcado|botina|bota|sobre-bota|cinturao|talabarte|trava[- ]?queda|respirador|mascara|capuz|balaclava|colete|meia|protetor facial|cadeira suspensa|bracadeira)\b/.test(n);
+  }
   function classify(record) {
-    if (!record || !String(record.approvedProtection || '').trim()) return GROUP.REVISAO;
+    if (!record) return GROUP.REVISAO;
+    if (!String(record.approvedProtection || '').trim()) return nameOnlyOther(record.name) ? GROUP.OUTROS : GROUP.REVISAO;
     var p = fold(record.approvedProtection);
     var auditory = /\b(auditiv\w*|ruido\w*)\b/.test(p);
     var chemical = /\bquimic\w*\b/.test(p) && /\b(maos|membros superiores|pele|cutane\w*|dermic\w*)\b/.test(p);
@@ -207,7 +217,7 @@ var EpiImport = (function () {
         if (seen.has(ca)) throw new Error('CA duplicado: ' + ca + '.'); seen.add(ca);
         var r = {ca:ca,name:name,approvedProtection:approved,caExpiry:expiry(input.caExpiry)};
         groups[D.classify(r)]++;
-        if (!approved || !r.caExpiry) warnings.push('CA ' + ca + ': ' + (!approved ? 'proteção aprovada indisponível; revisão manual. ' : '') + (!r.caExpiry ? 'validade do CA indisponível.' : ''));
+        if (D.classify(r) === 'revisao' || !r.caExpiry) warnings.push('CA ' + ca + ': ' + (D.classify(r) === 'revisao' ? 'proteção aprovada ausente ou insuficiente para classificação; revisão manual. ' : '') + (!r.caExpiry ? 'validade do CA indisponível.' : ''));
         return r;
       } catch (err) { throw new Error('Registro ' + (i+1) + ': ' + err.message); }
     });
@@ -466,7 +476,7 @@ if (typeof module !== 'undefined') module.exports = EpiReports;
   function connection(data) {
     const p=$('connectionSummary'); currentConnection=data||null;
     if(!remote){p.textContent='Demonstração local: sem conexão Google e sem base oficial carregada.';return;}
-    if(data&&data.defaultBase){const b=data.defaultBase;$('defaultBaseSummary').textContent='Pacote: '+b.fileName+' • '+b.total+' CAs • '+b.statistics.casWithoutReliableProtection+' com proteção pendente de revisão. '+b.referenceNote+(b.status==='pending'?' Preparação: '+b.loaded+'/'+b.total+'.':'');}
+    if(data&&data.defaultBase){const b=data.defaultBase;$('defaultBaseSummary').textContent='Pacote: '+b.fileName+' • '+b.total+' CAs • '+(b.classificationCounts?b.classificationCounts.revisao:b.statistics.casWithoutReliableProtection)+' pendentes de revisão para periodicidade. '+b.referenceNote+(b.status==='pending'?' Preparação: '+b.loaded+'/'+b.total+'.':'')+(b.updateAvailable?' Há uma nova versão do pacote. Use Carregar ou retomar base padrão e confirme a substituição para aplicá-la.':'');}
     if(data && data.connected){p.textContent='Planilha conectada • '+data.caCount+' CAs • Fonte: '+(data.source||'não informada')+' • Referência: '+(data.referenceDate||'não informada');}
     else p.textContent='Conexão não verificada. Execute initializeApplication no editor do Apps Script e verifique o acesso à planilha.';
   }

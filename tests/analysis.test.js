@@ -31,3 +31,12 @@ test('trabalhadores são isolados',()=>{assert.equal(run([[1,'01/01/2026']])[0].
 test('validade física independente da validade do CA',()=>{const r=run([[1,'01/01/2026']])[0];assert.equal(r.caExpiry,'31/12/2030');assert.equal(r.physicalExpiry,null);});
 test('metadados ausentes/antigos exigem confirmação',()=>{const s=sheet([[1,'01/01/2026']]);assert.equal(D.analyze(s,catalog,{}).stale,true);assert.equal(D.analyze(s,catalog,{}, {source:'Fonte fictícia',referenceDate:'01/01/2026'},Date.UTC(2026,0,15)).stale,false);assert.equal(D.analyze(s,catalog,{}, {source:'Fonte fictícia',referenceDate:'01/01/2026'},Date.UTC(2026,2,15)).stale,true);});
 test('validação de CA, IDs e prazo',()=>{assert.throws(()=>D.ca('=1+1'));assert.equal(D.ca('000123'),'123');assert.equal(D.validLife(1.5),false);const s=sheet([[1,'01/01/2026'],[1,'02/01/2026']]);s.entries[1].id=s.entries[0].id;assert.throws(()=>D.validateSheet(s));});
+test('EPIs fora do escopo identificados pelo nome dispensam proteção aprovada',()=>{
+ for(const name of ['CAPACETE CLASSE B','ÓCULOS','VESTIMENTA TIPO AVENTAL','RESPIRADOR PFF2','LUVA PARA PROTEÇÃO CONTRA AGENTES MECÂNICOS','LUVA PARA PROTEÇÃO CONTRA AGENTES TÉRMICOS E MECÂNICOS','LUVA PARA PROCEDIMENTOS NÃO-CIRÚRGICOS']) assert.equal(D.classify({name}), 'outros',name);
+ const result=D.analyze(sheet([[81,'01/01/2026'],[81,'01/02/2026']]),{'81':{name:'VESTIMENTA TIPO AVENTAL'}},{},{});
+ assert.equal(result.warnings.length,0);assert.equal(result.rows[1].interval,null);assert.equal(result.rows[1].status,'Sem análise de periodicidade');
+});
+test('nomes de grupos analisados ou indefinidos continuam pendentes sem proteção',()=>{
+ for(const name of ['PROTETOR AUDITIVO','CREME PROTETOR DE SEGURANÇA','LUVA','LUVA PARA PROTEÇÃO CONTRA AGENTES QUÍMICOS','LUVA PARA PROTEÇÃO CONTRA AGENTES MECÂNICOS E QUÍMICOS','CONJUGADO TIPO CAPACETE, PROTETOR FACIAL E PROTETOR AUDITIVO','Nome do EPI indisponível: revisar arquivo original','EPI não especificado']) assert.equal(D.classify({name}), 'revisao',name);
+ assert.equal(D.classify({name:'CAPACETE',approvedProtection:'Proteção auditiva contra ruído'}),'auditiva');
+});

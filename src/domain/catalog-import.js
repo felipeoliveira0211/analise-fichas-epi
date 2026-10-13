@@ -66,7 +66,7 @@ var EpiImport = (function () {
         if (seen.has(ca)) throw new Error('CA duplicado: ' + ca + '.'); seen.add(ca);
         var r = {ca:ca,name:name,approvedProtection:approved,caExpiry:expiry(input.caExpiry)};
         groups[D.classify(r)]++;
-        if (!approved || !r.caExpiry) warnings.push('CA ' + ca + ': ' + (!approved ? 'proteção aprovada indisponível; revisão manual. ' : '') + (!r.caExpiry ? 'validade do CA indisponível.' : ''));
+        if (D.classify(r) === 'revisao' || !r.caExpiry) warnings.push('CA ' + ca + ': ' + (D.classify(r) === 'revisao' ? 'proteção aprovada ausente ou insuficiente para classificação; revisão manual. ' : '') + (!r.caExpiry ? 'validade do CA indisponível.' : ''));
         return r;
       } catch (err) { throw new Error('Registro ' + (i+1) + ': ' + err.message); }
     });
