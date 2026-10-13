@@ -17,6 +17,14 @@ class ProjectionTest(unittest.TestCase):
         first=row();second=row();first[1]=datetime.datetime(2026,12,31);second[1]=datetime.datetime(2027,1,1)
         records,stats=projection.project([first,second]);self.assertEqual(records[0][3],'01/01/2027');self.assertEqual(stats['casWithConflictingExpiry'],1)
         reversed_records,_=projection.project([second,first]);self.assertEqual(reversed_records,records)
+    def test_correction_requires_explicit_date_and_evidence(self):
+        records,_=projection.project([row()])
+        correction={'ca':'123','caExpiry':'22/08/2028','previousCaExpiry':'01/01/2026','source':'Print fictício','reason':'Validade explícita no certificado'}
+        projection.apply_corrections(records,[correction]);self.assertEqual(records[0][3],'22/08/2028')
+        with self.assertRaises(ValueError):projection.apply_corrections(records,[{**correction,'ca':'999'}])
+        with self.assertRaises(ValueError):projection.apply_corrections(records,[{**correction,'caExpiry':'31/02/2028'}])
+        with self.assertRaises(ValueError):projection.apply_corrections(records,[{**correction,'source':''}])
+        with self.assertRaises(ValueError):projection.apply_corrections(records,[correction])
     def test_bad_ca_or_expiry_block_projection(self):
         for bad in ['=1+1',0,-1]:
             with self.assertRaises(ValueError):projection.project([row(bad)])

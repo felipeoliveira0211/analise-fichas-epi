@@ -26,5 +26,10 @@ test('pacote atualizado não recarrega base existente e informa substituição d
 test('base real aplica dispensa por nome aos demais EPIs e mantém revisão nos grupos indefinidos',()=>{
  const m=JSON.parse(fs.readFileSync('data/default-ca/manifest.json')),counts={auditiva:0,dermica:0,outros:0,revisao:0};let noExpiry=0;
  for(const part of m.chunks)for(const [,name,approvedProtection,date]of JSON.parse(zlib.gunzipSync(fs.readFileSync('data/default-ca/'+part.file)))){counts[D.classify({name,approvedProtection})]++;if(!date)noExpiry++;}
- assert.deepEqual(counts,{auditiva:428,dermica:497,outros:33805,revisao:1406});assert.equal(noExpiry,0);assert.equal(m.expiryPolicy,'latest-valid-date-per-ca');assert.equal(m.projectionVersion,2);
+ assert.deepEqual(counts,{auditiva:428,dermica:497,outros:33805,revisao:1406});assert.equal(noExpiry,0);assert.equal(m.expiryPolicy,'latest-valid-date-per-ca');assert.equal(m.projectionVersion,3);
+});
+test('CA 13990 tem validade do certificado, sem inferir expiração a partir da emissão',()=>{
+ const m=JSON.parse(fs.readFileSync('data/default-ca/manifest.json'));let found;
+ for(const part of m.chunks)for(const r of JSON.parse(zlib.gunzipSync(fs.readFileSync('data/default-ca/'+part.file))))if(r[0]==='13990')found=r;
+ assert.equal(found[3],'22/08/2028');const evidence=m.corrections.find(r=>r.ca==='13990');assert.equal(evidence.issuanceDate,'22/08/2023');assert.match(evidence.source,/Prints/);
 });

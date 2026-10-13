@@ -11,7 +11,7 @@ Use **o mesmo projeto Apps Script, a mesma planilha e a implantação existente*
 5. Execute **initializeApplication**. O ID da planilha atual é reutilizado e são criadas duas tabelas auxiliares para preparar e recuperar o catálogo e acrescentadas as colunas de empresa/horário nas tabelas legadas. Para uma aplicação que já usa a base padrão, veja [REPORTS.md](REPORTS.md).
 6. Abra **Implantar → Gerenciar implantações**, edite a implantação existente e selecione **Nova versão**. Mantenha execução como usuário que acessa e acesso somente você.
 7. Reabra a aplicação e vá a **Base e conexão**. Se o catálogo estiver vazio, o carregamento continua automaticamente em etapas. Mantenha a aba aberta até aparecer **36.136 CAs**. Se uma chamada falhar ou a aba for fechada, use **Carregar ou retomar base padrão**.
-8. Se já houver um catálogo, ele é mantido. Para aplicar as validades corrigidas do pacote v2, atualize também **DefaultData**, **DefaultCatalog**, **Domain**, **ImportDomain** e **Index**, e use **Carregar ou retomar base padrão** com confirmação. A tela informa quando uma base padrão anterior está carregada e há um pacote novo disponível. Para usar a base padrão em seu lugar, clique no mesmo botão e confirme a substituição apresentada. Fichas, trabalhadores, lançamentos e prazos de vida útil são preservados.
+8. Se já houver um catálogo, ele é mantido. Para aplicar as validades corrigidas do pacote atual, atualize também **DefaultData**, **DefaultCatalog**, **Domain**, **ImportDomain** e **Index**, e use **Carregar ou retomar base padrão** com confirmação. A tela informa quando uma base padrão anterior está carregada e há um pacote novo disponível. Para usar a base padrão em seu lugar, clique no mesmo botão e confirme a substituição apresentada. Fichas, trabalhadores, lançamentos e prazos de vida útil são preservados.
 
 O comando `npm run google:bundle` gera a exportação para o editor a partir das fontes e dos arquivos comprimidos. Quem usa clasp pode enviar `dist/` após `npm run build`; o build não publica nem atualiza a implantação sozinho.
 
@@ -33,6 +33,18 @@ O XLSX apresenta repetições por laudos/normas e campos deslocados em parte das
 A projeção é conservadora: para recuperar a proteção aprovada, exige alinhamento reconhecível de natureza e laboratório, além de texto iniciado por “PROTEÇÃO” no campo esperado. Dados que não atendem ao critério não são reconstruídos por adivinhação. Quando há registros alinhados do mesmo CA, seus textos oficiais são mantidos; sem texto confiável, a proteção fica vazia. Isso exige revisão para grupos analisados ou nomes indefinidos, mas não para EPIs reconhecidos pelo nome como fora do escopo. Nomes distintos recuperados são preservados em conjunto. Para registros do mesmo CA com validades diferentes, é usada a maior data válida de calendário, conforme regra solicitada pelo usuário. Isso não confirma a situação atual do certificado nem representa a data de atualização oficial da base.
 
 A entrada nos grupos auditivo e dérmico químico ainda depende da proteção explícita recuperada. EPIs reconhecidos como fora do escopo podem aparecer só pelo nome; não se inventa texto de proteção aprovada. A regra reduz os pendentes de 16.359 para **1.406 CAs**. A base não torna automaticamente conformes todos os equipamentos. Os CAs pendentes continuam aparecendo pelo número e pelo nome disponível, com alerta de análise parcial.
+
+### Correção documentada do CA 13990
+
+Na linha 15450 do XLSX, `DataValidade` contém **22/08/2023** e `Situacao` contém **VÁLIDO**. A importação lê essa coluna pelo cabeçalho; não troca emissão e validade. A situação do arquivo é um registro da base fornecida, sem consulta atual ao portal.
+
+Os prints da consulta CAEPI e do certificado enviados pelo usuário em 13/10/2026 mostram **validade 22/08/2028** e **expedição 22/08/2023** no histórico. O pacote v3 corrige somente a validade do CA 13990 usando essa evidência explícita. O registro está em `data/default-ca/corrections.json`, com data anterior esperada, fonte e motivo. O script exige que a data original ainda corresponda à correção antes de aplicá-la; uma nova fonte com outra data requer revisão desse registro, evitando substituir uma validade mais recente.
+
+Não se soma automaticamente cinco anos às demais datas. Esta correção não comprova que a coluna DataValidade inteira seja de emissão e não atualiza a referência temporal de todos os CAs. Os prints são evidência fornecida pelo usuário, sem consulta independente ao portal pelo Codex. O SHA-256 do XLSX original permanece registrado; a versão do pacote também identifica as correções aplicadas.
+
+Para corrigir uma aplicação existente sem recarregar toda a base, abra sua planilha, localize **CA 13990 na aba CaIndex** e altere **somente caExpiry para 22/08/2028** (texto DD/MM/AAAA). Refaça a análise. Não altere a data de entrega nem o cadastro de vida útil. O pacote atualizado inclui a mesma correção para futuras cargas da base padrão. A aplicação não mantém os CAs no navegador, portanto uma nova análise lê o valor da planilha.
+
+A interface identifica a coluna como **Validade do CA (base)**. Quando uma entrega ocorre depois da validade de uma base com referência ausente ou antiga, orienta confirmar a renovação na fonte oficial; não afirma a situação atual do CA. A comparação é com a data da entrega, não com o dia de emissão ou a vida útil do EPI.
 
 ### Referência temporal e origem
 
@@ -70,7 +82,7 @@ A importação CSV existente continua limitada a 10.000 registros/10 MB por subs
 
 ## Evidência e limitações de validação
 
-Quatro testes Python com dados fictícios verificam a projeção e os casos de colunas deslocadas/repetições/conflitos. Execute `python -m unittest discover -s tests -p 'test_*.py'` em um ambiente com openpyxl 3.1.5.
+Cinco testes Python com dados fictícios verificam a projeção e os casos de colunas deslocadas/repetições/conflitos. Execute `python -m unittest discover -s tests -p 'test_*.py'` em um ambiente com openpyxl 3.1.5.
 
 Os testes de Node verificam o pacote real completo, checksums, unicidade dos CAs, datas, retomada, substituição explícita, recuperação de falha e comportamento diante de 403/redirecionamentos. O teste de navegador `SMOKE_DEFAULT_BASE=1 CHROMIUM_PATH=/usr/bin/chromium npm run test:google-ui` carrega os 36.136 CAs com serviços Google simulados e exercita a tela de consulta com respostas simuladas.
 

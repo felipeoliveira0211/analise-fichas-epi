@@ -181,11 +181,11 @@
       if (report.stale) paragraph(section,'Data de referência da base ausente ou desatualizada. Confirme a situação dos CAs na fonte oficial.');
       report.warnings.forEach(warning => paragraph(section,warning));
       const table = document.createElement('table'), head = document.createElement('thead'), header = document.createElement('tr'), body = document.createElement('tbody');
-      ['Entrega','CA / EPI','Grupo','Intervalo','Limite / CA anterior','Vida útil','Resultado','Validade do CA','Salvo na planilha'].forEach(label => { const th = document.createElement('th'); th.textContent = label; header.append(th); });
+      ['Entrega','CA / EPI','Grupo','Intervalo','Limite / CA anterior','Vida útil','Resultado','Validade do CA (base)','Salvo na planilha'].forEach(label => { const th = document.createElement('th'); th.textContent = label; header.append(th); });
       head.append(header); table.append(head,body); section.append(table);
       report.rows.forEach(row => { const tr = document.createElement('tr'); [row.date,row.ca + ' • ' + row.name,{auditiva:'Auditiva',dermica:'Dérmica química',outros:'Demais EPIs',revisao:'Revisão manual'}[row.group],row.interval == null ? '—' : row.interval + ' dias',row.limit == null ? '—' : row.limit + ' dias / CA ' + row.previousCa,row.usefulLifeDays == null ? 'Não cadastrada' : row.usefulLifeDays + ' dias',row.status,(row.caExpiry || 'Indisponível') + ' • ' + row.caAtDelivery,timeLabel(row.savedAt)].forEach(value => cell(tr,value)); body.append(tr); });
     });
-    paragraph(preview,'A validade do CA não determina a vida útil do EPI. O limite usa a vida útil do CA anterior; proteção dérmica química usa 30 dias. Esta análise não avalia adequação ao risco, uso efetivo ou proteção após a última entrega.');
+    paragraph(preview,'A validade exibida vem da base cadastrada; confirme renovações na fonte oficial. A validade do CA não determina a vida útil do EPI. O limite usa a vida útil do CA anterior; proteção dérmica química usa 30 dias. Esta análise não avalia adequação ao risco, uso efetivo ou proteção após a última entrega.');
     $('reportStatus').textContent = result.reports.length + ' ficha(s), ' + result.reports.reduce((sum,r) => sum+r.rows.length,0) + ' lançamento(s).';
     reportReady = result.reports.length > 0; $('printReport').disabled = !reportReady;
   });

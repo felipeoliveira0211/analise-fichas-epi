@@ -40,6 +40,19 @@ def project(rows):
     counts['uniqueCas']=len(records);counts['duplicateRowsConsolidated']=counts['inputRows']-len(records)
     return records,dict(counts)
 
+def apply_corrections(records, corrections):
+    """Apply only documented, explicit dates; never infer renewal from issuance."""
+    by_ca={record[0]:record for record in records}; seen=set()
+    for correction in corrections:
+        ca=correction['ca']; value=correction['caExpiry']
+        if ca in seen or ca not in by_ca: raise ValueError('Unknown or duplicate correction CA '+ca)
+        if not correction.get('source') or not correction.get('reason'): raise ValueError('Correction needs evidence and reason')
+        parsed=datetime.datetime.strptime(value,'%d/%m/%Y')
+        if parsed.strftime('%d/%m/%Y')!=value or not 1900<=parsed.year<=2100: raise ValueError('Invalid correction expiry')
+        if correction.get('previousCaExpiry') and by_ca[ca][3]!=correction['previousCaExpiry']: raise ValueError('Correction no longer matches source expiry for CA '+ca)
+        seen.add(ca); by_ca[ca][3]=value
+    return records
+
 def main():
     parser=argparse.ArgumentParser();parser.add_argument('workbook');args=parser.parse_args()
     source=pathlib.Path(args.workbook);digest=hashlib.sha256(source.read_bytes()).hexdigest()
@@ -48,13 +61,16 @@ def main():
     if header[0]!='#NRRegistroCA' or header[7]!='NomeEquipamento' or header[12]!='AprovadoParaLaudo':raise ValueError('Unexpected workbook schema')
     records,stats=project(sheet.iter_rows(min_row=2,max_col=19,values_only=True))
     destination=pathlib.Path(__file__).resolve().parent.parent/'data/default-ca';destination.mkdir(parents=True,exist_ok=True)
+    corrections=json.loads((destination/'corrections.json').read_text())
+    records=apply_corrections(records,corrections)
+    correction_digest=hashlib.sha256(json.dumps(corrections,sort_keys=True,ensure_ascii=False).encode()).hexdigest()
     chunks=[]
     for index,start in enumerate(range(0,len(records),500)):
         raw=json.dumps(records[start:start+500],ensure_ascii=False,separators=(',',':')).encode()
         blob=gzip.compress(raw,mtime=0);name=f'chunk-{index:03d}.json.gz';(destination/name).write_bytes(blob)
         chunks.append({'file':name,'records':len(records[start:start+500]),'sha256':hashlib.sha256(blob).hexdigest()})
     modified=workbook.properties.modified
-    manifest={'version':digest[:20]+'-v2','projectionVersion':2,'expiryPolicy':'latest-valid-date-per-ca','fileName':source.name,'fileSha256':digest,'source':'Arquivo fornecido pelo usuário: '+source.name+' (origem online ainda não confirmada)','referenceDate':'','fileModifiedAt':modified.isoformat() if modified else None,'referenceNote':'Data de referência oficial não informada. Data de modificação interna do XLSX não comprova atualização da base.','statistics':stats,'chunks':chunks}
+    manifest={'version':digest[:20]+'-v3-'+correction_digest[:8],'projectionVersion':3,'corrections':corrections,'expiryPolicy':'latest-valid-date-per-ca','fileName':source.name,'fileSha256':digest,'source':'Arquivo fornecido pelo usuário: '+source.name+' (origem online ainda não confirmada); correção documentada do CA 13990 a partir dos prints fornecidos pelo usuário','referenceDate':'','fileModifiedAt':modified.isoformat() if modified else None,'referenceNote':'Data de referência oficial não informada. Data de modificação interna do XLSX não comprova atualização da base.','statistics':stats,'chunks':chunks}
     (destination/'manifest.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n')
     print(json.dumps({'statistics':stats,'compressedBytes':sum((destination/c['file']).stat().st_size for c in chunks),'chunks':len(chunks),'fileModifiedAt':manifest['fileModifiedAt']},ensure_ascii=False,indent=2))
 if __name__=='__main__':main()

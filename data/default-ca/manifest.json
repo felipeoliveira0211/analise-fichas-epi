@@ -1,10 +1,21 @@
 {
-  "version": "8987491b7ca6a3e921d9-v2",
-  "projectionVersion": 2,
+  "version": "8987491b7ca6a3e921d9-v3-8a1f7af8",
+  "projectionVersion": 3,
+  "corrections": [
+    {
+      "ca": "13990",
+      "caExpiry": "22/08/2028",
+      "issuanceDate": "22/08/2023",
+      "observedAt": "13/10/2026",
+      "source": "Prints da consulta CAEPI e do certificado enviados pelo usuário; não consultados independentemente pelo aplicativo",
+      "reason": "A consulta mostra validade 22/08/2028. A data 22/08/2023 consta no histórico de expedição; o XLSX fornecido registra essa mesma data em DataValidade.",
+      "previousCaExpiry": "22/08/2023"
+    }
+  ],
   "expiryPolicy": "latest-valid-date-per-ca",
   "fileName": "cadastro-EPI-final.xlsx",
   "fileSha256": "8987491b7ca6a3e921d9bbc27a2d91e5951eb7c1d48baeddf5bd2f91fea41265",
-  "source": "Arquivo fornecido pelo usuário: cadastro-EPI-final.xlsx (origem online ainda não confirmada)",
+  "source": "Arquivo fornecido pelo usuário: cadastro-EPI-final.xlsx (origem online ainda não confirmada); correção documentada do CA 13990 a partir dos prints fornecidos pelo usuário",
   "referenceDate": "",
   "fileModifiedAt": "2022-08-16T16:15:51",
   "referenceNote": "Data de referência oficial não informada. Data de modificação interna do XLSX não comprova atualização da base.",
@@ -78,7 +89,7 @@
     {
       "file": "chunk-011.json.gz",
       "records": 500,
-      "sha256": "bc728de435fc0a86cf1552ef3d187f74c4873230260c66af6300afbec82b71eb"
+      "sha256": "ee4b99f9302bceb6fc20b4984983e1724dae40bdeacd743227651101ad4bfbd8"
     },
     {
       "file": "chunk-012.json.gz",

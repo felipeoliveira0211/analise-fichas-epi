@@ -38,6 +38,8 @@ O arquivo `cadastro-EPI-final.xlsx` enviado pelo usuário foi projetado em uma b
 
 Há **16.359 CAs sem proteção aprovada confiável no arquivo**. EPIs reconhecidos pelo nome como fora do escopo dispensam esse campo: **1.406 CAs permanecem pendentes para periodicidade**. Para os **19 CAs com validades divergentes**, o pacote usa a maior data válida, conforme regra definida pelo usuário. A referência oficial da base não é conhecida; a data interna de modificação em 2022 não é tratada como atualização oficial. A aplicação sinaliza a necessidade de confirmação.
 
+O CA **13990** recebeu uma correção documentada para **22/08/2028** a partir dos prints fornecidos pelo usuário. A data **22/08/2023** registrada no XLSX coincide com a expedição mostrada no histórico atual. Não há conversão geral de emissão em validade nem soma automática de cinco anos; detalhes e correção pontual na planilha em [DEFAULT-BASE.md](docs/DEFAULT-BASE.md).
+
 O campo **Buscar atualizações** consulta páginas HTTPS em `www.gov.br`, `caepi.mte.gov.br` ou `caepi.trabalho.gov.br`, identifica links de arquivos e informa bloqueios/indisponibilidade. Não garante que um arquivo encontrado seja mais recente, não importa automaticamente e não contorna 403.
 
 Siga o [guia de atualização da implantação existente](docs/DEFAULT-BASE.md). Foram adicionados quatro scripts ao pacote (`DefaultData`, `DefaultCatalog`, `UpdateDomain`, `OfficialUpdates`) e a permissão Google de consulta externa. A validação da nova versão em sua conta e a consulta ao conteúdo do portal CAEPI permanecem pendentes. A página de EPI do Ministério foi consultada com HTTP 200 e indica o portal atual.

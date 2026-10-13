@@ -40,3 +40,8 @@ test('nomes de grupos analisados ou indefinidos continuam pendentes sem proteç�
  for(const name of ['PROTETOR AUDITIVO','CREME PROTETOR DE SEGURANÇA','LUVA','LUVA PARA PROTEÇÃO CONTRA AGENTES QUÍMICOS','LUVA PARA PROTEÇÃO CONTRA AGENTES MECÂNICOS E QUÍMICOS','CONJUGADO TIPO CAPACETE, PROTETOR FACIAL E PROTETOR AUDITIVO','Nome do EPI indisponível: revisar arquivo original','EPI não especificado']) assert.equal(D.classify({name}), 'revisao',name);
  assert.equal(D.classify({name:'CAPACETE',approvedProtection:'Proteção auditiva contra ruído'}),'auditiva');
 });
+test('validade antiga não comprova CA atualmente vencido ou ausência de renovação',()=>{
+ const s=sheet([[13990,'13/10/2026']]),old={'13990':{name:'PERNEIRA',caExpiry:'22/08/2023'}};
+ const result=D.analyze(s,old,{},{});assert.equal(result.stale,true);assert.match(result.rows[0].caAtDelivery,/confirmar renovação/);assert.equal(result.rows[0].status,'Sem análise de periodicidade');
+ const updated=D.analyze(s,{'13990':{name:'PERNEIRA',caExpiry:'22/08/2028'}},{},{});assert.match(updated.rows[0].caAtDelivery,/Entrega até/);assert.equal(updated.rows[0].caExpiry,'22/08/2028');
+});

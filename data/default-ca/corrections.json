@@ -1,0 +1,11 @@
+[
+  {
+    "ca": "13990",
+    "caExpiry": "22/08/2028",
+    "issuanceDate": "22/08/2023",
+    "observedAt": "13/10/2026",
+    "source": "Prints da consulta CAEPI e do certificado enviados pelo usuário; não consultados independentemente pelo aplicativo",
+    "reason": "A consulta mostra validade 22/08/2028. A data 22/08/2023 consta no histórico de expedição; o XLSX fornecido registra essa mesma data em DataValidade.",
+    "previousCaExpiry": "22/08/2023"
+  }
+]

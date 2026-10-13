@@ -71,7 +71,7 @@ var EpiDomain = (function () {
         usefulLifeDays: group === GROUP.DERMICA ? 30 : validLife(lifetimes[number]) ? lifetimes[number] : null, savedAt: entry.savedAt || '', physicalExpiry: entry.physicalExpiry || null, caStatus: 'Situação atual do CA precisa ser confirmada', source: metadata.source || 'Indisponível', referenceDate: metadata.referenceDate || null };
       if (row.physicalExpiry) date(row.physicalExpiry);
       if (record && record.caExpiry) {
-        try { row.caAtDelivery = item.time <= date(record.caExpiry) ? 'Dentro da validade informada do CA' : 'Após a validade informada do CA'; }
+        try { row.caAtDelivery = item.time <= date(record.caExpiry) ? 'Entrega até a validade registrada na base' : stale ? 'Entrega posterior à validade da base; confirmar renovação na fonte oficial' : 'Entrega posterior à validade registrada; confirmar situação na fonte oficial'; }
         catch (_) { row.caAtDelivery = 'Validade do CA indisponível'; }
       } else row.caAtDelivery = 'Validade do CA indisponível';
       if (!stale && record) row.caStatus = 'Consultar a fonte para confirmar situação atual; referência recente';
