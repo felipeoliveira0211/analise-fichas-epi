@@ -2,17 +2,20 @@
 <html lang="pt-BR">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Análise de fichas de EPI</title><style>:root{font-family:system-ui,-apple-system,sans-serif;color:#18312d;background:#f3f6f5;line-height:1.5;--green:#146350}*{box-sizing:border-box}body{margin:0}header{background:#153f35;color:white;padding:26px max(24px,calc((100vw - 1280px)/2));display:flex;align-items:center;justify-content:space-between;gap:20px}h1{font-size:28px;margin:5px 0}h2{font-size:22px}h3{font-size:18px}.eyebrow{font-size:12px;letter-spacing:2px;color:#bbd8cf}.badge{border:1px solid #a5c5ba;padding:6px 12px;border-radius:20px;font-size:13px}nav{max-width:1280px;margin:20px auto 0;display:flex;gap:8px;padding:0 20px}main{max-width:1280px;margin:0 auto;padding:0 20px 30px}.view{background:white;border:1px solid #d9e3df;border-radius:12px;padding:24px;box-shadow:0 3px 12px #153f3508}button{cursor:pointer;border:1px solid #afc5bd;background:white;color:#183e32;padding:10px 16px;border-radius:6px;font:inherit;font-size:14px}button:hover{background:#e8f1ed}button.primary,nav button.active{background:var(--green);color:white;border-color:var(--green)}button:disabled{opacity:.5;cursor:wait}.danger{color:#a12626}.toolbar{display:flex;align-items:center;justify-content:space-between;gap:15px;flex-wrap:wrap}.toolbar>div{display:flex;gap:8px}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin:24px 0}label{display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:600}input,select{font:inherit;font-size:18px;border:1px solid #9bb5aa;border-radius:6px;padding:12px;width:100%;background:white;color:#18312d}input:focus,button:focus-visible,select:focus{outline:3px solid #78b9a4;outline-offset:2px}.quick{background:#edf5f1;border-radius:8px;padding:18px;margin:24px 0}.quick h3{margin-top:0}.quick form,.inline{display:flex;align-items:end;gap:14px;flex-wrap:wrap}.quick input{font-size:24px;max-width:280px}.muted,.privacy{font-size:14px;color:#51675f}.table-wrap{overflow:auto}table{border-collapse:collapse;width:100%;font-size:14px;margin:12px 0 24px}th{text-align:left;background:#eff4f1;color:#496257;font-size:12px}th,td{padding:12px;border-bottom:1px solid #dce6e0;vertical-align:top}td button{padding:5px 10px;margin-right:5px}.status{display:inline-block;padding:3px 7px;border-radius:4px;background:#edf1f0}.ok{background:#e1f3e7;color:#206338}.bad{background:#fde6e3;color:#9e2b21}.warn{background:#fff1cc;color:#755a10}#message{min-height:25px;padding:8px 0}#message.error{color:#9e2b21}#sheetList button{margin:4px 8px 8px 0}footer{text-align:center;color:#62756d;font-size:12px;padding:20px}[hidden]{display:none!important}@media(max-width:800px){header{padding:20px;align-items:start;flex-direction:column}h1{font-size:23px}.grid{grid-template-columns:repeat(2,1fr)}nav{flex-wrap:wrap}.view{padding:16px}.toolbar>div{flex-wrap:wrap}.quick form label{flex:1;min-width:150px}}@media(max-width:480px){.grid{grid-template-columns:1fr}main{padding:0 10px 20px}nav{padding:0 10px}button{font-size:13px}}
 #connectionSummary,#defaultBaseSummary,#officialUpdateResults{overflow-wrap:anywhere}
-.save-warning{max-width:310px;align-self:center}.report-sheet{margin-top:30px}#reportPreview{overflow-wrap:anywhere;overflow-x:auto}#reportPreview td{min-width:75px}
+.save-warning{max-width:310px;align-self:center}.report-sheet{margin-top:30px}:is(#reportPreview,#quickPrintPreview){overflow-wrap:anywhere;overflow-x:auto}:is(#reportPreview,#quickPrintPreview) td{min-width:75px}
 @media print{
  @page{size:A4 landscape;margin:12mm}
- body{background:white;color:black;font-size:10pt}header,nav,footer,#message,.report-controls,.view{display:none!important}main{max-width:none;padding:0;margin:0}#reports{display:block!important;border:0;box-shadow:none;padding:0}#reportPreview{overflow:visible}#reportPreview table{font-size:8pt;table-layout:fixed;width:100%}#reportPreview th,#reportPreview td{padding:5px;min-width:0;overflow-wrap:anywhere}thead{display:table-header-group}tr{break-inside:avoid}.report-sheet{break-before:page}.report-sheet:first-of-type{break-before:auto}h3{break-after:avoid}
+ body{background:white;color:black;font-size:10pt}header,nav,footer,#message,.report-controls,.view{display:none!important}main{max-width:none;padding:0;margin:0}#reports{display:block!important;border:0;box-shadow:none;padding:0}:is(#reportPreview,#quickPrintPreview){overflow:visible}:is(#reportPreview,#quickPrintPreview) table{font-size:8pt;table-layout:fixed;width:100%}:is(#reportPreview,#quickPrintPreview) th,:is(#reportPreview,#quickPrintPreview) td{padding:5px;min-width:0;overflow-wrap:anywhere}thead{display:table-header-group}tr{break-inside:avoid}.report-sheet{break-before:page}.report-sheet:first-of-type{break-before:auto}h3{break-after:avoid}
 }
 .group-heading th{background:#dcece5;color:#153f35;font-size:15px;padding:12px}.delivery-row td:nth-child(2){min-width:180px;max-width:320px;overflow-wrap:anywhere}.delivery-row .status{font-weight:600}.status.ok{color:#14532d;background:#e8f5ec}.status.bad{color:#991b1b;background:#fdecec}.status.warn{color:#715000;background:#fff3cd}
-@media print{#baseUpdated{display:none!important}#reportPreview .status{print-color-adjust:exact;-webkit-print-color-adjust:exact}#reportPreview .group-heading th{print-color-adjust:exact;-webkit-print-color-adjust:exact}#reportPreview .delivery-row td:nth-child(2){min-width:0;max-width:none}#reportPreview .group-heading{break-after:avoid}}
+@media print{#baseUpdated{display:none!important}:is(#reportPreview,#quickPrintPreview) .status{print-color-adjust:exact;-webkit-print-color-adjust:exact}:is(#reportPreview,#quickPrintPreview) .group-heading th{print-color-adjust:exact;-webkit-print-color-adjust:exact}:is(#reportPreview,#quickPrintPreview) .delivery-row td:nth-child(2){min-width:0;max-width:none}:is(#reportPreview,#quickPrintPreview) .group-heading{break-after:avoid}}
 /* Interface palette: vivid blue for actions; semantic colors remain in results. */
 :root{--primary:#245ce6;--green:var(--primary);color:#172b4d;background:#edf3ff}body{background:linear-gradient(135deg,#eef4ff 0%,#f7faff 55%,#e6f5ff 100%);min-height:100vh}header{background:linear-gradient(115deg,#163bc0,#2865ec 62%,#087fb7);border-bottom:5px solid #4dd6e7;box-shadow:0 5px 22px #1743b526}.eyebrow{color:#c9f5ff}.badge{border-color:#96caff;background:#ffffff15}nav{gap:10px;margin-top:24px}nav button{border-color:#bfd0f7;color:#244a9b;font-weight:650;box-shadow:0 2px 5px #173e7910}nav button.active{box-shadow:0 4px 10px #245ce62e}.view{border-color:#d3def5;box-shadow:0 8px 28px #214a8910}h2{color:#173f9f}h3{color:#244b91}button{border-color:#b8cbef;color:#234981}button:hover{background:#e7efff}button.primary:hover{background:#174bcc}.quick{background:linear-gradient(100deg,#e6efff,#f2f7ff);border:1px solid #c6d8ff;border-left:5px solid #2865ec}.quick h3{color:#194cae}input,select{border-color:#adc3eb;color:#152e53}input:focus,button:focus-visible,select:focus{outline-color:#7bacff}.muted,.privacy{color:#4f6384}#baseUpdated{display:inline-block;background:#e0edff;border:1px solid #b8d3ff;color:#224e95;border-radius:20px;padding:6px 14px;font-size:13px;margin-bottom:6px}th{background:#eaf1ff;color:#345689}th,td{border-bottom-color:#dce6f8}.group-heading th{background:#dbe9ff;color:#194385}.group-heading[data-group="dermica"] th{background:#eee4ff;color:#5d2a98;border-top:3px solid #9062d5}.group-heading[data-group="auditiva"] th{background:#dceaff;color:#194aa2;border-top:3px solid #3872e0}.group-heading[data-group="outros"] th{background:#edf2f8;color:#395474;border-top:3px solid #829cba}footer{color:#526c96}
 @media print{body{background:white;color:black}h2,h3{color:#172b4d}}
 .report-header{display:flex;align-items:center;justify-content:space-between;gap:24px;border-bottom:2px solid #b9cdec;padding:8px 0 14px;margin-bottom:16px}.report-header h2{margin:0 0 6px}.report-header p{margin:0;font-size:13px;color:#526580}.report-logo{width:224px;height:auto;max-height:76px;object-fit:contain;flex-shrink:0}@media(max-width:600px){.report-header{flex-direction:column;align-items:flex-start;gap:12px}}@media print{.report-header{flex-direction:row;align-items:center;break-inside:avoid}.report-logo{width:200px;max-height:66px}}
+
+#quickPrintPreview{display:none}
+@media print{body.print-current #reports{display:none!important}body.print-current #quickPrintPreview{display:block!important}body.print-current #quickPrintPreview .report-sheet{break-before:auto}}
 </style></head>
 <body>
 <header><div><span class="eyebrow">SEGURANÇA DO TRABALHO</span><h1>Análise de fichas de EPI</h1></div><span id="mode" class="badge"></span></header>
@@ -33,11 +36,11 @@
 <div class="toolbar"><h3>Fichas desta sessão / salvas</h3><div><button id="refreshSheets">Atualizar lista</button><button id="reloadSheet">Reabrir ficha da planilha</button></div></div><p class="muted">Agrupadas por GES para navegação. Use Relatórios / PDFs para filtrar e consolidar fichas.</p><div id="sheetList"></div>
 <p class="privacy">Rascunhos ficam neste navegador. Em computador compartilhado, salve na planilha e use “Apagar dados locais” antes de sair.</p><button id="clearLocal" class="danger">Apagar dados locais</button>
 </section>
-<section id="results" class="view" hidden><h2>Resultado da análise</h2><div id="resultIntro"></div><div class="table-wrap"><table><thead><tr><th>Entrega</th><th>CA / EPI</th><th>Intervalo</th><th>Vida útil</th><th>Validade do CA</th><th>Resultado</th></tr></thead><tbody id="resultRows"></tbody></table></div><p class="muted">A validade do CA não determina a vida útil do EPI. O limite do intervalo usa a vida útil do CA da entrega anterior; para proteção dérmica química, 30 dias. Esta análise não avalia adequação ao risco, uso efetivo ou proteção após a última entrega.</p></section>
+<section id="results" class="view" hidden><div class="toolbar"><h2>Resultado da análise</h2><button id="printAnalyzed" class="primary" disabled>Imprimir / PDF desta ficha</button></div><div id="resultIntro"></div><div class="table-wrap"><table><thead><tr><th>Entrega</th><th>CA / EPI</th><th>Intervalo</th><th>Vida útil</th><th>Validade do CA</th><th>Resultado</th></tr></thead><tbody id="resultRows"></tbody></table></div><p class="muted">A validade do CA não determina a vida útil do EPI. O limite do intervalo usa a vida útil do CA da entrega anterior; para proteção dérmica química, 30 dias. Esta análise não avalia adequação ao risco, uso efetivo ou proteção após a última entrega.</p></section>
 <section id="admin" class="view" hidden><h2>Cadastro de vida útil</h2><p>Prazo técnico cadastrado por CA, independente da base oficial. A proteção dérmica química utiliza sempre 30 dias.</p><form id="lifeForm" class="inline"><label>CA<input id="lifeCa" inputmode="numeric" required maxlength="10"></label><label>Vida útil (dias)<input id="lifeDays" type="number" min="1" max="36500" step="1" required></label><button class="primary">Salvar prazo</button></form><div class="table-wrap"><table><thead><tr><th>CA</th><th>Dias</th><th>Ações</th></tr></thead><tbody id="lifeRows"></tbody></table></div></section>
 <section id="reports" class="view" hidden><div class="report-controls"><h2>Relatórios / PDFs</h2><p>Selecione a origem e os filtros, gere a prévia e use “Salvar como PDF” na janela de impressão. O período filtra datas de entrega, incluindo os dois limites. A análise considera a sequência completa de cada ficha antes de aplicar o período.</p><form id="reportForm" class="grid"><label>Origem<select id="reportSource"><option value="local">Fichas deste navegador</option><option value="google">Fichas salvas na planilha Google</option></select></label><label>Entrega a partir de<input id="reportStart" type="date"></label><label>Entrega até<input id="reportEnd" type="date"></label><label>Empresa<input id="reportCompany" maxlength="200"></label><label>GES<input id="reportGes" maxlength="200"></label><label>Funcionário<input id="reportWorker" maxlength="200"></label><label>Setor<input id="reportSector" maxlength="200"></label><label>Cargo<input id="reportRole" maxlength="200"></label><label>Situação<select id="reportState"><option value="">Todas</option><option value="draft">Em andamento</option><option value="complete">Concluída</option></select></label><button class="primary">Gerar prévia</button></form><button id="printReport" disabled>Imprimir / Salvar PDF</button><p id="reportStatus" role="status"></p></div><div id="reportPreview"></div></section>
 
-</main><footer>Ferramenta de análise técnica de fichas de EPI</footer>
+<div id="quickPrintPreview" aria-hidden="true"></div></main><footer>Ferramenta de análise técnica de fichas de EPI</footer>
 <script>/* Shared pure domain module: Node.js and Apps Script V8. */
 var EpiDomain = (function () {
   'use strict';
@@ -218,14 +221,14 @@ var EpiResultUi = (function () {
   const $ = id => document.getElementById(id);
   const remote = typeof google !== 'undefined' && google.script && google.script.run;
   const KEY = remote ? 'epi.analysis.google.v1' : 'epi.analysis.v1';
-  let sheets = [], savedSheets = [], current, editing = null, catalog = {}, lifetimes = {}, metadata = {}, busy = false, livesLoaded = !remote, quickLifeManual = false;
+  let sheets = [], savedSheets = [], current, editing = null, catalog = {}, lifetimes = {}, metadata = {}, busy = false, livesLoaded = !remote, quickLifeManual = false, analyzedSheet = null;
   const id = () => crypto.randomUUID();
   function notify(text, error = false) { $('message').textContent = text; $('message').className = error ? 'error' : ''; }
   function rpc(method, ...args) { return new Promise((resolve, reject) => google.script.run.withSuccessHandler(resolve).withFailureHandler(reject)[method](...args)); }
   function guard(fn) { return async e => { if (e) e.preventDefault(); if (busy) return; try { await fn(e); } catch (err) { notify(err.message || String(err), true); } }; }
   async function operation(fn) {
     busy = true; document.querySelectorAll('button').forEach(b => { b.disabled = true; });
-    try { return await fn(); } finally { busy = false; document.querySelectorAll('button').forEach(b => { b.disabled = b.id === 'printReport' && !reportReady; }); }
+    try { return await fn(); } finally { busy = false; document.querySelectorAll('button').forEach(b => { b.disabled = (b.id === 'printReport' && !reportReady) || (b.id === 'printAnalyzed' && !analyzedSheet); }); }
   }
   function cell(tr, value) { const td = document.createElement('td'); td.textContent = value == null ? '—' : value; tr.append(td); return td; }
   function button(label, fn) { const b = document.createElement('button'); b.type = 'button'; b.textContent = label; b.onclick = guard(fn); return b; }
@@ -297,6 +300,7 @@ var EpiResultUi = (function () {
     });
   }
   function renderResult(result) {
+    analyzedSheet = structuredClone({...result,state:current.state}); $('printAnalyzed').disabled = false;
     $('resultIntro').replaceChildren(); $('resultRows').replaceChildren();
     [result.worker.name + ' • Setor: ' + result.worker.sector + ' • GES: ' + result.worker.ges].forEach(text => { const p = document.createElement('p'); p.textContent = text; $('resultIntro').append(p); });
     EpiResultUi.rows($('resultRows'),result.rows,false); view('results');
@@ -387,14 +391,20 @@ var EpiResultUi = (function () {
     if (local) local.forEach(EpiDomain.validateSheet);
     const result = remote ? await operation(() => rpc('epiGenerateReports', filters, local)) : EpiReports.create(local,catalog,lifetimes,metadata,filters);
     if (generation !== reportGeneration) return;
-    const preview = $('reportPreview');
+    renderReport(result,$('reportPreview'));
+    $('reportStatus').textContent = result.reports.length + ' ficha(s), ' + result.reports.reduce((sum,r) => sum+r.rows.length,0) + ' lançamento(s).';
+    reportReady = result.reports.length > 0; $('printReport').disabled = !reportReady;
+  });
+  function renderReport(result,preview) {
+    preview.replaceChildren();
+    const filters = result.filters || {};
     function paragraph(parent, text, tag = 'p') { const el = document.createElement(tag); el.textContent = text; parent.append(el); }
     const reportHeader = document.createElement('div'); reportHeader.className = 'report-header';
     if (EpiBrand.logo) { const logo = document.createElement('img'); logo.src = EpiBrand.logo; logo.alt = 'SESI — Serviço Social da Indústria'; logo.className = 'report-logo'; reportHeader.append(logo); }
     const title = document.createElement('div'); reportHeader.append(title); preview.append(reportHeader);
     paragraph(title,'Análise entregas de EPI','h2');
     paragraph(title,'Gerado em ' + timeLabel(result.generatedAt));
-    paragraph(preview,'Filtros: ' + Object.entries(filters).filter(([,v]) => v).map(([k,v]) => ({start:'Entrega desde',end:'Entrega até',company:'Empresa',ges:'GES',worker:'Funcionário',sector:'Setor',role:'Cargo',state:'Situação'}[k]) + ': ' + v).join(' • '));
+    if(result.filters) paragraph(preview,'Filtros: ' + Object.entries(filters).filter(([,v]) => v).map(([k,v]) => ({start:'Entrega desde',end:'Entrega até',company:'Empresa',ges:'GES',worker:'Funcionário',sector:'Setor',role:'Cargo',state:'Situação'}[k]) + ': ' + v).join(' • '));
     if (!remote) paragraph(preview,'DEMONSTRAÇÃO COM CAs FICTÍCIOS — não usar para conclusões técnicas.');
     result.reports.forEach(report => {
       const section = document.createElement('article'); section.className = 'report-sheet'; preview.append(section);
@@ -405,9 +415,15 @@ var EpiResultUi = (function () {
       section.append(EpiResultUi.table(report.rows));
     });
     paragraph(preview,'A validade do CA não determina a vida útil do EPI. O limite usa a vida útil do CA anterior; proteção dérmica química usa 30 dias. Esta análise não avalia adequação ao risco, uso efetivo ou proteção após a última entrega.');
-    $('reportStatus').textContent = result.reports.length + ' ficha(s), ' + result.reports.reduce((sum,r) => sum+r.rows.length,0) + ' lançamento(s).';
-    reportReady = result.reports.length > 0; $('printReport').disabled = !reportReady;
+  }
+  $('printAnalyzed').onclick = guard(async () => {
+    if(!analyzedSheet) return;
+    const preview=$('quickPrintPreview');
+    renderReport({reports:[analyzedSheet],generatedAt:new Date().toISOString()},preview);
+    await Promise.all(Array.from(preview.querySelectorAll('img'),img=>img.decode()));
+    document.body.classList.add('print-current'); window.print();
   });
+  window.addEventListener('afterprint',()=>document.body.classList.remove('print-current'));
   $('printReport').onclick = () => { if (reportReady) window.print(); };
   init();
 })();

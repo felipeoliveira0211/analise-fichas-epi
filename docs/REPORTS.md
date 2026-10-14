@@ -11,3 +11,8 @@ Na tela **Relatórios / PDFs**, escolha fichas locais ou salvas na planilha, pre
 O PDF mantém filtros e data de geração, sem origem, informações administrativas de base/conexão ou horários de salvamento. Use **Imprimir / Salvar PDF** e selecione **Salvar como PDF** no navegador. Desative cabeçalhos/rodapés do navegador se necessário. Alterar filtros exige gerar a prévia novamente; não há impressão habilitada quando nenhum resultado é encontrado.
 
 Gerar um relatório não salva ou modifica a ficha. Os prazos de vida útil usados são os atuais do cadastro, sem histórico de vigência. Horários de gravação continuam armazenados na planilha, mas não aparecem no PDF. Textos são renderizados como texto, sem executar HTML recebido da base ou digitado pelo usuário.
+# PDF rápido da ficha analisada
+
+Na aba **Resultados**, use **Imprimir / PDF desta ficha** e escolha **Salvar como PDF** na impressão do navegador. O botão usa a análise exibida, mesmo antes de salvar a ficha na planilha, com logo, cabeçalho e data de geração. Não depende dos filtros da aba Relatórios. Após editar a ficha ou a vida útil, analise novamente para imprimir os resultados atualizados.
+
+Para adicionar esse botão à implantação existente, substitua apenas o HTML **Index** pelo `google-apps-script/Index.html` completo e publique uma **Nova versão**. Não é necessário executar funções ou recarregar a base.

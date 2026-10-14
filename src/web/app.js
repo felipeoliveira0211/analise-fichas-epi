@@ -3,14 +3,14 @@
   const $ = id => document.getElementById(id);
   const remote = typeof google !== 'undefined' && google.script && google.script.run;
   const KEY = remote ? 'epi.analysis.google.v1' : 'epi.analysis.v1';
-  let sheets = [], savedSheets = [], current, editing = null, catalog = {}, lifetimes = {}, metadata = {}, busy = false, livesLoaded = !remote, quickLifeManual = false;
+  let sheets = [], savedSheets = [], current, editing = null, catalog = {}, lifetimes = {}, metadata = {}, busy = false, livesLoaded = !remote, quickLifeManual = false, analyzedSheet = null;
   const id = () => crypto.randomUUID();
   function notify(text, error = false) { $('message').textContent = text; $('message').className = error ? 'error' : ''; }
   function rpc(method, ...args) { return new Promise((resolve, reject) => google.script.run.withSuccessHandler(resolve).withFailureHandler(reject)[method](...args)); }
   function guard(fn) { return async e => { if (e) e.preventDefault(); if (busy) return; try { await fn(e); } catch (err) { notify(err.message || String(err), true); } }; }
   async function operation(fn) {
     busy = true; document.querySelectorAll('button').forEach(b => { b.disabled = true; });
-    try { return await fn(); } finally { busy = false; document.querySelectorAll('button').forEach(b => { b.disabled = b.id === 'printReport' && !reportReady; }); }
+    try { return await fn(); } finally { busy = false; document.querySelectorAll('button').forEach(b => { b.disabled = (b.id === 'printReport' && !reportReady) || (b.id === 'printAnalyzed' && !analyzedSheet); }); }
   }
   function cell(tr, value) { const td = document.createElement('td'); td.textContent = value == null ? '—' : value; tr.append(td); return td; }
   function button(label, fn) { const b = document.createElement('button'); b.type = 'button'; b.textContent = label; b.onclick = guard(fn); return b; }
@@ -82,6 +82,7 @@
     });
   }
   function renderResult(result) {
+    analyzedSheet = structuredClone({...result,state:current.state}); $('printAnalyzed').disabled = false;
     $('resultIntro').replaceChildren(); $('resultRows').replaceChildren();
     [result.worker.name + ' • Setor: ' + result.worker.sector + ' • GES: ' + result.worker.ges].forEach(text => { const p = document.createElement('p'); p.textContent = text; $('resultIntro').append(p); });
     EpiResultUi.rows($('resultRows'),result.rows,false); view('results');
@@ -172,14 +173,20 @@
     if (local) local.forEach(EpiDomain.validateSheet);
     const result = remote ? await operation(() => rpc('epiGenerateReports', filters, local)) : EpiReports.create(local,catalog,lifetimes,metadata,filters);
     if (generation !== reportGeneration) return;
-    const preview = $('reportPreview');
+    renderReport(result,$('reportPreview'));
+    $('reportStatus').textContent = result.reports.length + ' ficha(s), ' + result.reports.reduce((sum,r) => sum+r.rows.length,0) + ' lançamento(s).';
+    reportReady = result.reports.length > 0; $('printReport').disabled = !reportReady;
+  });
+  function renderReport(result,preview) {
+    preview.replaceChildren();
+    const filters = result.filters || {};
     function paragraph(parent, text, tag = 'p') { const el = document.createElement(tag); el.textContent = text; parent.append(el); }
     const reportHeader = document.createElement('div'); reportHeader.className = 'report-header';
     if (EpiBrand.logo) { const logo = document.createElement('img'); logo.src = EpiBrand.logo; logo.alt = 'SESI — Serviço Social da Indústria'; logo.className = 'report-logo'; reportHeader.append(logo); }
     const title = document.createElement('div'); reportHeader.append(title); preview.append(reportHeader);
     paragraph(title,'Análise entregas de EPI','h2');
     paragraph(title,'Gerado em ' + timeLabel(result.generatedAt));
-    paragraph(preview,'Filtros: ' + Object.entries(filters).filter(([,v]) => v).map(([k,v]) => ({start:'Entrega desde',end:'Entrega até',company:'Empresa',ges:'GES',worker:'Funcionário',sector:'Setor',role:'Cargo',state:'Situação'}[k]) + ': ' + v).join(' • '));
+    if(result.filters) paragraph(preview,'Filtros: ' + Object.entries(filters).filter(([,v]) => v).map(([k,v]) => ({start:'Entrega desde',end:'Entrega até',company:'Empresa',ges:'GES',worker:'Funcionário',sector:'Setor',role:'Cargo',state:'Situação'}[k]) + ': ' + v).join(' • '));
     if (!remote) paragraph(preview,'DEMONSTRAÇÃO COM CAs FICTÍCIOS — não usar para conclusões técnicas.');
     result.reports.forEach(report => {
       const section = document.createElement('article'); section.className = 'report-sheet'; preview.append(section);
@@ -190,9 +197,15 @@
       section.append(EpiResultUi.table(report.rows));
     });
     paragraph(preview,'A validade do CA não determina a vida útil do EPI. O limite usa a vida útil do CA anterior; proteção dérmica química usa 30 dias. Esta análise não avalia adequação ao risco, uso efetivo ou proteção após a última entrega.');
-    $('reportStatus').textContent = result.reports.length + ' ficha(s), ' + result.reports.reduce((sum,r) => sum+r.rows.length,0) + ' lançamento(s).';
-    reportReady = result.reports.length > 0; $('printReport').disabled = !reportReady;
+  }
+  $('printAnalyzed').onclick = guard(async () => {
+    if(!analyzedSheet) return;
+    const preview=$('quickPrintPreview');
+    renderReport({reports:[analyzedSheet],generatedAt:new Date().toISOString()},preview);
+    await Promise.all(Array.from(preview.querySelectorAll('img'),img=>img.decode()));
+    document.body.classList.add('print-current'); window.print();
   });
+  window.addEventListener('afterprint',()=>document.body.classList.remove('print-current'));
   $('printReport').onclick = () => { if (reportReady) window.print(); };
   init();
 })();

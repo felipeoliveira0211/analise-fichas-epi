@@ -36,6 +36,14 @@ const {chromium}=require('playwright');require('./build');
   assert.equal(await page.locator('#resultRows .delivery-row').filter({hasText:'12065'}).locator('.'+currentStatus.tone).count(),1);
   for(const group of ['dermica','auditiva','outros']){const dates=await page.locator(`#resultRows .delivery-row[data-group="${group}"] td:first-child`).allTextContents();assert.deepEqual(dates,[...dates].sort((a,b)=>c.EpiDomain.date(a)-c.EpiDomain.date(b)));}
   await page.screenshot({path:'/tmp/epi-results-new.png',fullPage:true});
+  await page.evaluate(()=>{window.__printCalls=0;window.print=()=>window.__printCalls++;});
+  await page.locator('#printAnalyzed').click();await page.waitForFunction(()=>window.__printCalls===1);
+  assert.equal(await page.locator('#results').isVisible(),true);assert.equal(tables.Entries.length,0);
+  const quick=await page.locator('#quickPrintPreview').textContent();assert.match(quick,/Análise entregas de EPI/);assert.match(quick,/Pessoa fictícia Google/);assert.doesNotMatch(quick,/Filtros:|Última atualização|Origem:|Salvo na planilha/);
+  assert.equal(await page.locator('#quickPrintPreview .delivery-row').count(),8);
+  await page.emulateMedia({media:'print'});assert.equal(await page.locator('#quickPrintPreview').isVisible(),true);assert.equal(await page.locator('#reports').isVisible(),false);assert.equal(await page.locator('#printAnalyzed').isVisible(),false);
+  fs.writeFileSync('/tmp/epi-quick-print-smoke.pdf',await page.pdf({preferCSSPageSize:true}));
+  await page.evaluate(()=>window.dispatchEvent(new Event('afterprint')));await page.emulateMedia({media:'screen'});assert.equal(await page.locator('#results').isVisible(),true);assert.equal(await page.locator('#quickPrintPreview').isVisible(),false);
   await page.locator('[data-view="entry"]').click();await page.locator('#saveSheet').click();await page.waitForFunction(()=>document.getElementById('message').textContent==='Ficha salva na planilha.');assert.equal(tables.Entries.length,8);
   await page.reload();await page.waitForFunction(()=>document.getElementById('message').textContent==='Dados carregados.');await page.locator('#ca').fill('54460');assert.equal(await page.locator('#quickLifeDays').inputValue(),'30');await page.locator('#ca').fill('');assert.equal(tables.Metadata[0].updatedAt,baseTimestamp);
   await page.locator('[data-view="reports"]').click();await page.locator('#reportSource').selectOption('google');await page.locator('#reportCompany').fill('Empresa ficticia');await page.locator('#reportForm button').click();await page.waitForFunction(()=>document.getElementById('reportStatus').textContent.includes('1 ficha(s), 8 lançamento(s)'));
