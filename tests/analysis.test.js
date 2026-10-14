@@ -58,3 +58,10 @@ test('vencimento próximo inclui dias zero a trinta, com limite no fuso de Bras�
 test('situação suspensa e cancelada prevalece sobre validade futura e aviso de proximidade',()=>{
  const now=Date.UTC(2026,9,13,15);assert.equal(D.certificateStatus({caExpiry:'13/01/2030',caSituation:'SUSPENSO'},now).label,'CA suspenso');assert.equal(D.certificateStatus({caExpiry:'14/10/2026',caSituation:'CANCELADO'},now).label,'CA cancelado');assert.equal(D.certificateStatus({caExpiry:'26/05/3031',caSituation:'VÁLIDO'},now).label,'CA válido');
 });
+test('proteção dérmica limita-se a luvas e cremes químicos e ignora outras entregas na sequência',()=>{
+ const protection='Proteção da pele e membros superiores contra agentes químicos';
+ for(const name of ['Manga','Mangote','Vestimenta','Avental'])assert.equal(D.classify({name,approvedProtection:protection}),'outros');
+ for(const name of ['Luvas de segurança','Creme protetor'])assert.equal(D.classify({name,approvedProtection:protection}),'dermica');
+ const rows=D.analyze(sheet([[3,'01/01/2026'],[7,'15/01/2026'],[4,'01/02/2026']]),{...catalog,7:{name:'Manga',approvedProtection:protection}}, {},{}).rows;
+ assert.equal(rows[1].status,'Sem análise de periodicidade');assert.equal(rows[2].interval,31);assert.equal(rows[2].status,'Fora do prazo');
+});

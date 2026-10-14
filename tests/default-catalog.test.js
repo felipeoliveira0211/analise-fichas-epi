@@ -26,7 +26,7 @@ test('pacote atualizado não recarrega base existente e informa substituição d
 test('base real aplica dispensa por nome aos demais EPIs e mantém revisão nos grupos indefinidos',()=>{
  const m=JSON.parse(fs.readFileSync('data/default-ca/manifest.json')),counts={auditiva:0,dermica:0,outros:0,revisao:0};let noExpiry=0;
  for(const part of m.chunks)for(const [,name,approvedProtection,date]of JSON.parse(zlib.gunzipSync(fs.readFileSync('data/default-ca/'+part.file)))){counts[D.classify({name,approvedProtection})]++;if(!date)noExpiry++;}
- assert.deepEqual(counts,{auditiva:545,dermica:3197,outros:38733,revisao:3});assert.equal(noExpiry,0);assert.equal(m.expiryPolicy,'latest-valid-date-per-ca');assert.equal(m.projectionVersion,4);
+ assert.deepEqual(counts,{auditiva:545,dermica:2392,outros:39538,revisao:3});assert.equal(noExpiry,0);assert.equal(m.expiryPolicy,'latest-valid-date-per-ca');assert.equal(m.projectionVersion,4);
 });
 test('CA 13990 tem validade do certificado, sem inferir expiração a partir da emissão',()=>{
  const m=JSON.parse(fs.readFileSync('data/default-ca/manifest.json'));let found;

@@ -84,7 +84,7 @@
   function renderResult(result) {
     $('resultIntro').replaceChildren(); $('resultRows').replaceChildren();
     [result.worker.name + ' • Setor: ' + result.worker.sector + ' • GES: ' + result.worker.ges].forEach(text => { const p = document.createElement('p'); p.textContent = text; $('resultIntro').append(p); });
-    EpiResultUi.rows($('resultRows'),result.rows); view('results');
+    EpiResultUi.rows($('resultRows'),result.rows,false); view('results');
   }
   document.querySelectorAll('nav button').forEach(b => b.onclick = () => view(b.dataset.view));
   $('workerForm').onsubmit = e => e.preventDefault();
@@ -177,7 +177,7 @@
     const reportHeader = document.createElement('div'); reportHeader.className = 'report-header';
     if (EpiBrand.logo) { const logo = document.createElement('img'); logo.src = EpiBrand.logo; logo.alt = 'SESI — Serviço Social da Indústria'; logo.className = 'report-logo'; reportHeader.append(logo); }
     const title = document.createElement('div'); reportHeader.append(title); preview.append(reportHeader);
-    paragraph(title,'Relatório de fichas de EPI','h2');
+    paragraph(title,'Análise entregas de EPI','h2');
     paragraph(title,'Gerado em ' + timeLabel(result.generatedAt));
     paragraph(preview,'Filtros: ' + Object.entries(filters).filter(([,v]) => v).map(([k,v]) => ({start:'Entrega desde',end:'Entrega até',company:'Empresa',ges:'GES',worker:'Funcionário',sector:'Setor',role:'Cargo',state:'Situação'}[k]) + ': ' + v).join(' • '));
     if (!remote) paragraph(preview,'DEMONSTRAÇÃO COM CAs FICTÍCIOS — não usar para conclusões técnicas.');

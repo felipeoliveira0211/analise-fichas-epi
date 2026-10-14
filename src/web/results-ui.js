@@ -3,17 +3,17 @@ var EpiResultUi = (function () {
   const headers = ['Entrega','CA / EPI','Intervalo','Limite','Vida útil','Validade do CA','Resultado'];
   function cell(tr,text) { const td=document.createElement('td');td.textContent=text;tr.append(td);return td; }
   function badge(td,label,tone) { const span=document.createElement('span');span.className='status '+tone;span.textContent=({ok:'✓ ',bad:'✕ ',warn:'⚠ '}[tone]||'')+label;td.append(span); }
-  function rows(tbody,items) {
+  function rows(tbody,items,showLimit=true) {
     tbody.replaceChildren();
     const sections=[['Proteção dérmica',r=>r.group==='dermica'],['Proteção auditiva',r=>r.group==='auditiva'],['Outras entregas',r=>!['dermica','auditiva'].includes(r.group)]];
     sections.forEach(([name,predicate])=>{
       const selected=items.filter(predicate).sort((a,b)=>EpiDomain.date(a.date)-EpiDomain.date(b.date));
       if(!selected.length)return;
-      const heading=document.createElement('tr'),th=document.createElement('th');heading.className='group-heading';heading.dataset.group=name==='Proteção dérmica'?'dermica':name==='Proteção auditiva'?'auditiva':'outros';th.colSpan=headers.length;th.scope='rowgroup';th.textContent=name;heading.append(th);tbody.append(heading);
+      const heading=document.createElement('tr'),th=document.createElement('th');heading.className='group-heading';heading.dataset.group=name==='Proteção dérmica'?'dermica':name==='Proteção auditiva'?'auditiva':'outros';th.colSpan=headers.length-(showLimit?0:1);th.scope='rowgroup';th.textContent=name;heading.append(th);tbody.append(heading);
       selected.forEach(row=>{
         const tr=document.createElement('tr');tr.className='delivery-row';tr.dataset.group=row.group;cell(tr,row.date);cell(tr,row.ca+' · '+row.name);
         cell(tr,row.status==='Marco inicial'?'Marco inicial':row.interval==null?'—':row.interval+' dias');
-        const limit=cell(tr,row.limit==null?'—':row.limit+' dias');if(row.previousCa)limit.title='Vida útil do CA anterior: '+row.previousCa;
+        if(showLimit){const limit=cell(tr,row.limit==null?'—':row.limit+' dias');if(row.previousCa)limit.title='Vida útil do CA anterior: '+row.previousCa;}
         cell(tr,row.usefulLifeDays==null?'Não cadastrada':row.usefulLifeDays+' dias');
         const validity=cell(tr,'');const date=document.createElement('div');date.textContent=row.caExpiry||'Indisponível';validity.append(date);badge(validity,row.caStatus,row.caTone);
         const result=cell(tr,'');

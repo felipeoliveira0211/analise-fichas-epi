@@ -1,5 +1,9 @@
 # Atualizar a base oficial e a aplicação existente
 
+## Ajustes de relatório e periodicidade de 14/10/2026
+
+Se a versão anterior já foi aplicada, substitua somente **Domain.gs** e o HTML **Index** pelos arquivos atuais de `google-apps-script/`. Depois publique uma **Nova versão** da implantação existente. Não é necessário recarregar a base, executar `adminUpdateOfficialBase` ou modificar a planilha. A ordem por empresa, GES e trabalhador já existe em `ReportDomain` da versão anterior. Os novos totais de classificação em `DefaultData` são apenas informativos; não exigem substituir esse arquivo para aplicar os ajustes.
+
 O pacote já contém o arquivo `RelatorioCA_20261013_150911.csv.gz` processado em **42.478 CAs**. Você pode manter o formato original `.csv.gz` para próximas atualizações. Não abra e salve pelo Excel: o administrador prepara diretamente o arquivo oficial, sem alterar suas colunas manualmente.
 
 ## Aplicar esta versão pelo navegador
@@ -55,7 +59,7 @@ O arquivo recebido tem 123.890 linhas, 42.478 CAs, 22 CAs com validades diferent
 
 As entregas são exibidas em **proteção dérmica, proteção auditiva e outras entregas**, com datas do mais antigo ao mais novo dentro de cada grupo. O cálculo considera a sequência completa antes do filtro de período. “Marco inicial” aparece no intervalo apenas na primeira entrega real do grupo; não é atribuído à primeira linha de um período filtrado.
 
-A coluna **Resultado** é a última. **✓ Dentro do prazo** é verde e **✕ Fora do prazo** é vermelho. A vida útil do CA da entrega anterior define o limite auditivo; a proteção dérmica química continua com limite fixo de 30 dias.
+A coluna **Resultado** é a última. Na aba Resultados, a coluna Limite foi removida; o PDF mantém essa coluna. O cabeçalho do PDF é **Análise entregas de EPI** e as fichas são ordenadas por empresa, GES e nome do trabalhador. Somente luvas e cremes com proteção química aprovada participam da periodicidade dérmica; os demais EPIs ficam em outras entregas. **✓ Dentro do prazo** é verde e **✕ Fora do prazo** é vermelho. A vida útil do CA da entrega anterior define o limite auditivo; a proteção dérmica química continua com limite fixo de 30 dias.
 
 A coluna de CA compara a validade com **o dia atual em Brasília**, independentemente da data histórica da entrega:
 

@@ -53,7 +53,8 @@ var EpiDomain = (function () {
     if (!String(record.approvedProtection || '').trim()) return nameOnlyOther(record.name) ? GROUP.OUTROS : GROUP.REVISAO;
     var p = fold(record.approvedProtection);
     var auditory = /\b(auditiv\w*|ruido\w*)\b/.test(p);
-    var chemical = /\bquimic\w*\b/.test(p) && /\b(maos|membros superiores|pele|cutane\w*|dermic\w*)\b/.test(p);
+    var dermicEquipment = /\b(luva\w*|creme\w*)\b/.test(fold(record.name));
+    var chemical = dermicEquipment && /\bquimic\w*\b/.test(p) && /\b(maos|membros superiores|pele|cutane\w*|dermic\w*)\b/.test(p);
     if (auditory && chemical) return GROUP.REVISAO;
     if (auditory) return GROUP.AUDITIVA;
     if (chemical) return GROUP.DERMICA;

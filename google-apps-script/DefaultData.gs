@@ -450,8 +450,8 @@ var EpiBundledBase = {
     ],
     "classificationCounts": {
       "auditiva": 545,
-      "dermica": 3197,
-      "outros": 38733,
+      "dermica": 2392,
+      "outros": 39538,
       "revisao": 3
     }
   },
