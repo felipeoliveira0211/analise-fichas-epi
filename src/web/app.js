@@ -206,9 +206,9 @@
     document.body.classList.add('print-current'); window.print();
   });
   window.addEventListener('afterprint',()=>document.body.classList.remove('print-current'));
-  $('excelReport').onclick = guard(async () => { if(reportReady) await operation(()=>EpiSpreadsheets.download(EpiSpreadsheets.matrix(reportData,EpiBrand.logo),'relatorio-matriz-epi.xlsx')); });
+  $('excelReport').onclick = guard(async () => { if(reportReady) { const target=EpiSpreadsheets.openDownload(); await operation(()=>EpiSpreadsheets.download(EpiSpreadsheets.matrix(reportData,EpiBrand.logo),'relatorio-matriz-epi.xlsx',target)); } });
   let bulkPending = null;
-  $('bulkTemplate').onclick = guard(()=>EpiSpreadsheets.download(EpiSpreadsheets.template(),'modelo-entregas-epi.xlsx'));
+  $('bulkTemplate').onclick = guard(()=>{const target=EpiSpreadsheets.openDownload();return operation(()=>EpiSpreadsheets.download(EpiSpreadsheets.template(),'modelo-entregas-epi.xlsx',target));});
   $('bulkFile').onchange = guard(async () => {
     bulkPending=null; $('bulkImport').disabled=true; $('bulkPreview').replaceChildren(); $('bulkStatus').textContent='';
     await operation(async()=>{

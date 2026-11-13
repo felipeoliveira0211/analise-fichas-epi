@@ -40,7 +40,7 @@ require('./build');
     assert.match(await page.locator('#resultRows').innerText(),/31 dias/);assert.match(await page.locator('#resultRows').innerText(),/Fora do prazo/);
     await page.locator('[data-view="admin"]').click();await page.locator('#lifeCa').fill('90001');await page.locator('#lifeDays').fill('120');await page.locator('#lifeForm button').click();
     assert.match(await page.locator('#lifeRows').innerText(),/120/);
-    await page.locator('[data-view="entry"]').click();await page.getByRole('button',{name:/Pessoa fictícia A ·/}).click();
+    await page.locator('[data-view="entry"]').click();await page.locator('#savedSheetsPanel summary').click();await page.getByRole('button',{name:/Pessoa fictícia A ·/}).click();
     assert.equal(await page.locator('#entries tr').count(),2);
     await page.locator('#entries tr').nth(1).getByText('Excluir',{exact:true}).click();assert.equal(await page.locator('#entries tr').count(),1);
     await page.locator('#ca').fill('90001');await page.locator('#ca').press('Enter');await page.locator('#date').fill('31022026');await page.locator('#date').press('Enter');

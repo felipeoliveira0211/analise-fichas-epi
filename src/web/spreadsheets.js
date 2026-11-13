@@ -66,7 +66,33 @@ var EpiSpreadsheets = (function () {
     s.columns.forEach(c=>{c.width=24;});s.views=[{state:'frozen',xSplit:3,ySplit:5}];s.autoFilter={from:{row:5,column:1},to:{row:s.rowCount,column:cols.length}};
     s.eachRow((r,n)=>{if(n>5){r.alignment={vertical:'top',wrapText:true};r.eachCell(c=>{c.border={bottom:{style:'hair',color:{argb:'FFCCCCCC'}}};});}});return w;
   }
-  async function download(w,name){const data=await w.xlsx.writeBuffer();const url=URL.createObjectURL(new Blob([data],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),10000);}
-  return {template,parse,matrix,download};
+  function openDownload() {
+    // Apps Script runs in an iframe which can block downloads. Open an escaped
+    // window during the click, before asynchronous XLSX serialization.
+    const target=window.open('', '_blank');
+    if(!target)throw Error('Permita pop-ups para esta aplicação e clique novamente para baixar o Excel.');
+    target.document.title='Preparando planilha Excel';
+    target.document.body.textContent='Preparando sua planilha Excel… Aguarde.';
+    return target;
+  }
+  async function download(w,name,target) {
+    let url;
+    try {
+      target=target||openDownload();
+      const data=await w.xlsx.writeBuffer();
+      url=URL.createObjectURL(new Blob([data],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));
+      if(target.closed)throw Error('A janela de download foi fechada. Clique novamente para baixar.');
+      const doc=target.document;doc.title=name;doc.body.replaceChildren();
+      const title=doc.createElement('h1');title.textContent='Planilha pronta';
+      const p=doc.createElement('p');p.textContent='Se o download não iniciar automaticamente, clique abaixo. Depois de salvar, você pode fechar esta janela.';
+      const a=doc.createElement('a');a.href=url;a.download=name;a.textContent='Baixar '+name;
+      a.style.cssText='display:inline-block;padding:16px 24px;background:#245ce6;color:white;border-radius:8px;font:600 18px sans-serif';
+      doc.body.style.cssText='font:16px system-ui;padding:32px;color:#172b4d';doc.body.append(title,p,a);
+      // Keep the object URL alive while the fallback link can still be used.
+      target.addEventListener('pagehide',()=>URL.revokeObjectURL(url),{once:true});
+      a.click();
+    }catch(error){if(url)URL.revokeObjectURL(url);if(target&&!target.closed)target.document.body.textContent='Não foi possível gerar a planilha: '+error.message;throw error;}
+  }
+  return {template,parse,matrix,download,openDownload};
 })();
 if(typeof module!=='undefined')module.exports=EpiSpreadsheets;

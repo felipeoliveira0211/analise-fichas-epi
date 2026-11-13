@@ -14,3 +14,5 @@
 
 #quickPrintPreview{display:none}
 @media print{body.print-current #reports{display:none!important}body.print-current #quickPrintPreview{display:block!important}body.print-current #quickPrintPreview .report-sheet{break-before:auto}}
+
+.excel-panel{margin:24px 0;padding:22px;background:#eaf1ff;border:2px solid #8aaff8;border-left:7px solid #245ce6;border-radius:10px}.excel-panel h3{margin:0 0 10px;font-size:21px}.excel-panel label{margin:18px 0;max-width:560px}.excel-action{padding:16px 24px;font-size:17px;font-weight:700;min-height:54px}.export-actions{display:flex;gap:14px;flex-wrap:wrap;align-items:center}.saved-sheets{margin:24px 0;border:1px solid #b8cbef;border-radius:8px;padding:16px}.saved-sheets summary{cursor:pointer;font-weight:700;color:#194cae;padding:8px}.saved-sheets summary:focus-visible{outline:3px solid #7bacff}@media print{.excel-panel,.saved-sheets{display:none!important}}

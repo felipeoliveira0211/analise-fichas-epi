@@ -55,7 +55,7 @@ const {chromium}=require('playwright');require('./build');
   await page.locator('#reportStart').fill('2026-02-01');await page.locator('#reportEnd').fill('2026-02-01');await page.locator('#reportForm button').click();await page.waitForFunction(()=>document.getElementById('reportStatus').textContent.includes('2 lançamento(s)'));assert.match(await page.locator('#reportPreview').innerText(),/31 dias/);assert.doesNotMatch(await page.locator('#reportPreview').innerText(),/Marco inicial/);
   await page.setViewportSize({width:390,height:844});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),true);assert.deepEqual(errors,[]);
   // Upload XLSX exercises the existing save RPC and Sheets adapter, not just local drafts.
-  await page.locator('[data-view="entry"]').click();await page.locator('summary').click();
+  await page.locator('[data-view="entry"]').click();
   const uploadBook=new (require('exceljs').Workbook)();const uploadSheet=uploadBook.addWorksheet('Entregas');
   uploadSheet.addRow(['Identificador','Empresa','Trabalhador','Setor','Cargo','GES','CA','Data da entrega']);
   uploadSheet.addRow(['IMPORT-1','Empresa fictícia','Pessoa importada','Setor teste','Cargo teste','GES teste','54460','01/01/2026']);

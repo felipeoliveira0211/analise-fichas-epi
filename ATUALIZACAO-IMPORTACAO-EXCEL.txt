@@ -17,6 +17,16 @@ ATUALIZAÇÃO: LANÇAMENTO EM MASSA E MATRIZ EXCEL
   Confira o scriptId de .clasp.json antes: o push envia todo o dist/ ao projeto.
   Depois atualize a versão da implantação pelo editor Google.
 
+CORREÇÃO DOS DOWNLOADS E VISIBILIDADE
+- Para esta correção, substitua novamente somente google-apps-script/Index.html
+  no Index.html do projeto Google e publique uma NOVA VERSÃO da implantação.
+- A importação agora fica em um painel sempre visível na ficha.
+- Os downloads abrem uma nova janela. Se o navegador bloquear, permita pop-ups
+  para a aplicação e clique novamente. A janela mostra um link Baixar caso o
+  download automático não comece. Aguarde salvar antes de fechar a aplicação.
+- A lista de fichas começa recolhida. Clique Mostrar / ocultar fichas desta
+  sessão e salvas para consultar e selecionar uma ficha.
+
 2. IMPORTAR ENTREGAS
 - Em Ficha e lançamentos, abra Lançamento em massa por Excel.
 - Clique Baixar modelo Excel. Preencha a aba Entregas; consulte Instruções.
