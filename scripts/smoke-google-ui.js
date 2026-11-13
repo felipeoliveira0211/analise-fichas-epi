@@ -54,6 +54,16 @@ const {chromium}=require('playwright');require('./build');
   await page.emulateMedia({media:'print'});assert.equal(await page.locator('#baseUpdated').isVisible(),false);assert.equal(await page.locator('.report-controls').isVisible(),false);const pdf=await page.pdf({preferCSSPageSize:true});fs.writeFileSync('/tmp/epi-google-report-smoke.pdf',pdf);assert.ok(pdf.length>5000);await page.emulateMedia({media:'screen'});
   await page.locator('#reportStart').fill('2026-02-01');await page.locator('#reportEnd').fill('2026-02-01');await page.locator('#reportForm button').click();await page.waitForFunction(()=>document.getElementById('reportStatus').textContent.includes('2 lançamento(s)'));assert.match(await page.locator('#reportPreview').innerText(),/31 dias/);assert.doesNotMatch(await page.locator('#reportPreview').innerText(),/Marco inicial/);
   await page.setViewportSize({width:390,height:844});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),true);assert.deepEqual(errors,[]);
+  // Upload XLSX exercises the existing save RPC and Sheets adapter, not just local drafts.
+  await page.locator('[data-view="entry"]').click();await page.locator('summary').click();
+  const uploadBook=new (require('exceljs').Workbook)();const uploadSheet=uploadBook.addWorksheet('Entregas');
+  uploadSheet.addRow(['Identificador','Empresa','Trabalhador','Setor','Cargo','GES','CA','Data da entrega']);
+  uploadSheet.addRow(['IMPORT-1','Empresa fictícia','Pessoa importada','Setor teste','Cargo teste','GES teste','54460','01/01/2026']);
+  await page.locator('#bulkFile').setInputFiles({name:'teste.xlsx',mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',buffer:Buffer.from(await uploadBook.xlsx.writeBuffer())});
+  await page.waitForFunction(()=>document.getElementById('bulkStatus').textContent.includes('1 nova(s)'));
+  await page.locator('#bulkImport').click();await page.waitForFunction(()=>document.getElementById('message').textContent.includes('Importação concluída'));
+  const importedWorker=tables.Workers.find(w=>w.name==='Pessoa importada');assert.ok(importedWorker);
+  const importedSheet=tables.Sheets.find(s=>s.workerId===importedWorker.id);assert.equal(tables.Entries.filter(e=>e.sheetId===importedSheet.id).length,1);assert.equal(importedSheet.revision,1);assert.deepEqual(errors,[]);
   console.log('Google SIMULADO passou: 42478 CAs, atualização administrativa idempotente, vida útil em Sheets/cache/autopreenchimento, grupos/cores/vencimentos, PDF sem dados de base, filtros e layout móvel.');
  }finally{if(browser)await browser.close();await new Promise(r=>server.close(r));}
 })().catch(e=>{console.error(e);process.exitCode=1});

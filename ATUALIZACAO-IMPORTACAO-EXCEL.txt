@@ -1,0 +1,75 @@
+ATUALIZAÇÃO: LANÇAMENTO EM MASSA E MATRIZ EXCEL
+
+1. ATUALIZAR A APLICAÇÃO GOOGLE EXISTENTE
+- Faça backup da planilha e do projeto Apps Script antes de atualizar.
+- Nesta versão, somente o Index.html gerado precisa ser substituído no editor
+  Apps Script. Use google-apps-script/Index.html deste commit.
+- Não cole src/web/Index.html: ele contém marcadores que o build deve preencher.
+- Salve o projeto e atualize a implantação existente: Implantar > Gerenciar
+  implantações > Editar > Nova versão > Implantar. Preserve o acesso privado
+  e o modo de execução já configurado. Reabra a URL da aplicação.
+- Não é necessário executar setupDatabase, initializeApplication ou
+  adminUpdateOfficialBase para esta atualização. Não apague abas nem dados.
+- Nenhuma nova função de servidor foi adicionada. A importação usa
+  epiSaveSheet, com validação, controle de revisão e recuperação existentes.
+  O relatório usa epiGenerateReports e os filtros atuais.
+- Se preferir clasp: npm ci; npm run build; npm run clasp -- push.
+  Confira o scriptId de .clasp.json antes: o push envia todo o dist/ ao projeto.
+  Depois atualize a versão da implantação pelo editor Google.
+
+2. IMPORTAR ENTREGAS
+- Em Ficha e lançamentos, abra Lançamento em massa por Excel.
+- Clique Baixar modelo Excel. Preencha a aba Entregas; consulte Instruções.
+- Campos: Identificador, Empresa, Trabalhador, Setor, Cargo, GES, CA,
+  Data da entrega. Todos obrigatórios, no máximo 200 caracteres por campo.
+- Uma linha por entrega; repita o identificador e os mesmos dados pessoais
+  nas linhas de uma mesma ficha. Identificadores diferentes separam homônimos.
+- CA: somente dígitos (até 10). Data: DD/MM/AAAA ou data Excel sem horário.
+- Máximo 2 MB e 2000 entregas por arquivo .xlsx. Sem fórmulas ou links.
+  Duplicatas de CA/data para a mesma ficha e dados divergentes são rejeitados.
+- Carregue o arquivo, confira a prévia por trabalhador e clique Importar fichas
+  validadas. Nenhuma ficha é lançada antes desse clique.
+- No Apps Script, cada ficha é salva automaticamente no Google Sheets.
+  Na demonstração, ficam apenas rascunhos no navegador.
+- Fichas novas ficam em andamento. A importação não altera o catálogo nem a
+  vida útil; os prazos continuam cadastrados por CA na seção Vida útil.
+- CAs desconhecidos são aceitos para transcrição, mas geram revisão na análise.
+- O identificador agrupa somente este arquivo. Não mescla com fichas existentes.
+  Arquivo alterado é um novo lote e pode duplicar fichas: confira antes de enviar.
+- Reenvio dos mesmos bytes é reconhecido pelos IDs derivados do SHA-256 do
+  arquivo e do grupo, usando a lista carregada. Em outra sessão, atualize a lista.
+- O lote não é uma transação única: fichas anteriores a uma falha permanecem
+  salvas. Durante a mesma sessão, o botão permite continuar as pendentes.
+  Em erro de comunicação, atualize/reabra a aplicação e confira a lista Google
+  antes de repetir, pois a gravação pode ter ocorrido sem confirmação.
+- Use somente pessoas fictícias para testar; não compartilhe arquivos pessoais.
+
+3. EXPORTAR MATRIZ
+- Em Relatórios / PDFs, selecione origem, período e filtros. Gere a prévia.
+- Clique Baixar matriz Excel. O .xlsx inclui a logo SESI incorporada.
+- Cada ficha ocupa uma linha: trabalhador, setor, empresa, cargo, GES e ID.
+- Seguem blocos de Proteção auditiva, Proteção dérmica e Outras entregas.
+  Cada entrega tem CA, data, EPI, intervalo, limite, resultado, validade e
+  situação do CA. Dentro de cada bloco, as entregas estão em ordem de data.
+- A quantidade de colunas acompanha a maior sequência de cada grupo. Grupos
+  vazios são omitidos. Mais de 16384 colunas exige reduzir o período.
+- CAs pendentes de revisão aparecem em Outras entregas com seu resultado
+  explícito. Não interprete análise parcial como conformidade global.
+- O período filtra entregas depois da análise completa, preservando os intervalos.
+- A exportação segue a última prévia gerada. Refaça-a após editar fichas.
+- PDF e impressão continuam disponíveis. Nenhum arquivo é enviado a terceiros:
+  leitura/escrita XLSX ocorre no navegador com ExcelJS incorporado ao HTML.
+
+4. DESENVOLVIMENTO E VERIFICAÇÃO
+- Node >=22, Python 3 e Chromium (ou navegador Playwright instalado).
+- npm ci --cache /workspace/.npm-cache
+- npm run check
+- python3 -m unittest discover -s tests -p 'test_*.py'
+- CHROMIUM_PATH=/usr/bin/chromium npm run test:ui
+- CHROMIUM_PATH=/usr/bin/chromium npm run test:google-ui
+- CHROMIUM_PATH=/usr/bin/chromium npm run test:spreadsheets
+- Após modificar fontes: npm run demo e npm run google:bundle.
+- Fontes principais: src/web/spreadsheets.js, app.js e Index.html;
+  scripts/build.js incorpora ExcelJS. package.json/lock fixam a dependência.
+- Os testes Google usam serviços simulados. Faça uma importação fictícia e
+  reabra a ficha na implantação privada para validar permissões Google reais.

@@ -10,7 +10,7 @@
   function guard(fn) { return async e => { if (e) e.preventDefault(); if (busy) return; try { await fn(e); } catch (err) { notify(err.message || String(err), true); } }; }
   async function operation(fn) {
     busy = true; document.querySelectorAll('button').forEach(b => { b.disabled = true; });
-    try { return await fn(); } finally { busy = false; document.querySelectorAll('button').forEach(b => { b.disabled = (b.id === 'printReport' && !reportReady) || (b.id === 'printAnalyzed' && !analyzedSheet); }); }
+    try { return await fn(); } finally { busy = false; document.querySelectorAll('button').forEach(b => { b.disabled = (['printReport','excelReport'].includes(b.id) && !reportReady) || (b.id === 'bulkImport' && !bulkPending) || (b.id === 'printAnalyzed' && !analyzedSheet); }); }
   }
   function cell(tr, value) { const td = document.createElement('td'); td.textContent = value == null ? '—' : value; tr.append(td); return td; }
   function button(label, fn) { const b = document.createElement('button'); b.type = 'button'; b.textContent = label; b.onclick = guard(fn); return b; }
@@ -160,8 +160,8 @@
     }
   }
   function timeLabel(value) { return value ? new Date(value).toLocaleString('pt-BR', {timeZone:'America/Sao_Paulo'}) + ' (Brasília)' : 'Horário não registrado'; }
-  let reportReady = false, reportGeneration = 0;
-  function invalidateReport() { reportGeneration++; reportReady = false; $('printReport').disabled = true; $('reportPreview').replaceChildren(); $('reportStatus').textContent = 'Gere a prévia para usar os filtros atuais.'; }
+  let reportReady = false, reportGeneration = 0, reportData = null;
+  function invalidateReport() { reportGeneration++; reportReady = false; reportData = null; $('excelReport').disabled = true; $('printReport').disabled = true; $('reportPreview').replaceChildren(); $('reportStatus').textContent = 'Gere a prévia para usar os filtros atuais.'; }
   $('reportForm').oninput = invalidateReport;
   $('reportForm').onsubmit = guard(async () => {
     invalidateReport(); const generation = reportGeneration; persist();
@@ -173,9 +173,9 @@
     if (local) local.forEach(EpiDomain.validateSheet);
     const result = remote ? await operation(() => rpc('epiGenerateReports', filters, local)) : EpiReports.create(local,catalog,lifetimes,metadata,filters);
     if (generation !== reportGeneration) return;
-    renderReport(result,$('reportPreview'));
+    reportData = result; renderReport(result,$('reportPreview'));
     $('reportStatus').textContent = result.reports.length + ' ficha(s), ' + result.reports.reduce((sum,r) => sum+r.rows.length,0) + ' lançamento(s).';
-    reportReady = result.reports.length > 0; $('printReport').disabled = !reportReady;
+    reportReady = result.reports.length > 0; $('printReport').disabled = !reportReady; $('excelReport').disabled = !reportReady;
   });
   function renderReport(result,preview) {
     preview.replaceChildren();
@@ -206,6 +206,37 @@
     document.body.classList.add('print-current'); window.print();
   });
   window.addEventListener('afterprint',()=>document.body.classList.remove('print-current'));
+  $('excelReport').onclick = guard(async () => { if(reportReady) await operation(()=>EpiSpreadsheets.download(EpiSpreadsheets.matrix(reportData,EpiBrand.logo),'relatorio-matriz-epi.xlsx')); });
+  let bulkPending = null;
+  $('bulkTemplate').onclick = guard(()=>EpiSpreadsheets.download(EpiSpreadsheets.template(),'modelo-entregas-epi.xlsx'));
+  $('bulkFile').onchange = guard(async () => {
+    bulkPending=null; $('bulkImport').disabled=true; $('bulkPreview').replaceChildren(); $('bulkStatus').textContent='';
+    await operation(async()=>{
+      const file=$('bulkFile').files[0]; if(!file)return;
+      if(!/\.xlsx$/i.test(file.name)||file.size>2*1024*1024)throw Error('Use um arquivo .xlsx de até 2 MB.');
+      const data=await file.arrayBuffer(); const hash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',data))).map(x=>x.toString(16).padStart(2,'0')).join('').slice(0,32);
+      const workbook=new ExcelJS.Workbook(); await workbook.xlsx.load(data);
+      const parsed=EpiSpreadsheets.parse(workbook,'imp-'+hash,EpiDomain);
+      bulkPending=parsed.sheets.filter(s=>!sheets.some(x=>x.id===s.id)&&!savedSheets.some(x=>x.id===s.id));
+      if(!bulkPending.length){bulkPending=null;throw Error('As fichas deste arquivo já constam na lista.');}
+      const table=document.createElement('table');bulkPending.forEach(s=>{const tr=document.createElement('tr');[s.worker.name,s.worker.company,s.worker.sector,s.entries.length+' entregas'].forEach(v=>cell(tr,v));table.append(tr);});$('bulkPreview').append(table);
+      $('bulkStatus').textContent=bulkPending.length+' nova(s) ficha(s), '+bulkPending.reduce((n,s)=>n+s.entries.length,0)+' entregas. '+(remote?'Serão salvas na planilha Google.':'Serão criados rascunhos neste navegador.');
+    });
+  });
+  $('bulkImport').onclick = guard(async()=>{
+    if(!bulkPending)return;
+    persist();invalidateReport();
+    await operation(async()=>{
+      let count=0;
+      while(bulkPending.length){
+        const sheet=bulkPending[0];
+        if(remote){const saved=await rpc('epiSaveSheet',sheet);sheet.revision=saved.revision;sheet.updatedAt=saved.updatedAt;saved.entries.forEach(e=>{sheet.entries.find(x=>x.id===e.id).savedAt=e.savedAt;});}
+        sheets.push(sheet);bulkPending.shift();persist();renderSheets();count++;
+        $('bulkStatus').textContent=count+' ficha(s) importada(s); '+bulkPending.length+' pendente(s). Em falha, confira a lista Google antes de repetir.';
+      }
+      bulkPending=null;$('bulkFile').value='';$('bulkPreview').replaceChildren();notify('Importação concluída. Selecione uma ficha para analisar.');
+    });
+  });
   $('printReport').onclick = () => { if (reportReady) window.print(); };
   init();
 })();
