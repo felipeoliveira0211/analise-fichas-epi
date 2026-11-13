@@ -2,6 +2,12 @@
 
 Primeira versão para transcrever fichas existentes e analisar os intervalos de substituição por trabalhador. Backend em Google Apps Script, frontend HTML/CSS/JavaScript e persistência em Google Sheets. Não controla estoque nem entrega de equipamentos.
 
+## Validação do ambiente na nuvem
+
+Em 13/11/2026, o ambiente foi validado para desenvolvimento e demonstração local: instalação com `npm ci`, build, 78 testes Node.js, 11 testes Python e os dois testes de interface (`test:ui` e `test:google-ui`) passaram. O servidor de demonstração também respondeu corretamente por HTTP.
+
+A integração real com Google Sheets ainda exige configuração e autorização na conta Google, conforme [GOOGLE-SETUP.md](docs/GOOGLE-SETUP.md). Os testes Google usam serviços simulados e não comprovam acesso a uma planilha real.
+
 ## Estrutura
 
 ```text
