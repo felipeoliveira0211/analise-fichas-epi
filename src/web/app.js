@@ -15,13 +15,17 @@
   function cell(tr, value) { const td = document.createElement('td'); td.textContent = value == null ? '—' : value; tr.append(td); return td; }
   function button(label, fn) { const b = document.createElement('button'); b.type = 'button'; b.textContent = label; b.onclick = guard(fn); return b; }
   function view(name) { document.querySelectorAll('.view').forEach(v => { v.hidden = v.id !== name; }); document.querySelectorAll('nav button').forEach(b => b.classList.toggle('active', b.dataset.view === name)); }
+  let persistTimer;
   function capture() {
     if (!current) return;
+    const previous=JSON.stringify({worker:current.worker,state:current.state});
     current.worker.company = $('workerCompany').value; current.worker.name = $('workerName').value; current.worker.sector = $('workerSector').value;
     current.worker.role = $('workerRole').value; current.worker.ges = $('workerGes').value; current.state = $('sheetState').value;
+    if(previous!==JSON.stringify({worker:current.worker,state:current.state}))EpiSessionCache.dirty(current);
   }
   function persist() {
-    capture();
+    clearTimeout(persistTimer);capture();
+    if(remote&&current)sheets=EpiSessionCache.prune(sheets,savedSheets,current.id,Date.now());
     try { localStorage.setItem(KEY, JSON.stringify({ sheets, currentId: current && current.id, lifetimes: lifetimes })); }
     catch (_) { notify('Não foi possível guardar o rascunho no navegador. Mantenha esta aba aberta e salve na planilha.', true); }
   }
@@ -31,7 +35,7 @@
       const tr = document.createElement('tr'); cell(tr, e.ca); cell(tr, e.date); cell(tr, timeLabel(e.savedAt));
       const actions = cell(tr, ''); actions.append(button('Editar', () => { editing = e.id; $('ca').value = e.ca; $('date').value = e.date; $('quickLifeDays').value = lifetimes[e.ca] || ''; $('addEntry').textContent = 'Atualizar'; $('cancelEdit').hidden = false; $('ca').focus(); }), button('Excluir', () => {
         if (!confirm('Excluir este lançamento?')) return;
-        current.entries = current.entries.filter(x => x.id !== e.id); if (editing === e.id) resetInput(); persist(); renderEntries();
+        EpiSessionCache.dirty(current);current.entries = current.entries.filter(x => x.id !== e.id); if (editing === e.id) resetInput(); persist(); renderEntries();
       })); $('entries').append(tr);
     });
   }
@@ -47,15 +51,17 @@
     sheets.push(sheet); open(sheet); $('workerName').focus();
   }
   function renderSheets() {
+    if(!$('savedSheetsPanel').open)return;
     $('sheetList').replaceChildren();
+    const localIds=new Set(sheets.map(s=>s.id));
     const merged = new Map(savedSheets.map(s => [s.id, s])); sheets.forEach(s => merged.set(s.id, s));
     const groups = {};
     merged.forEach(s => { const ges = s.worker && s.worker.ges || 'GES não informado'; (groups[ges] ||= []).push(s); });
     Object.keys(groups).sort().forEach(ges => {
       const section = document.createElement('div'), heading = document.createElement('h4'); heading.textContent = ges; section.append(heading);
-      groups[ges].forEach(s => section.append(button((s.worker && s.worker.name || 'Novo trabalhador') + ' · ' + (s.state === 'complete' ? 'Concluída' : 'Em andamento') + ' · ' + (s.worker && s.worker.company || 'Empresa não informada') + (sheets.some(x => x.id === s.id) ? ' · rascunho local' : ' · planilha'), async () => {
+      groups[ges].forEach(s => section.append(button((s.worker && s.worker.name || 'Novo trabalhador') + ' · ' + (s.state === 'complete' ? 'Concluída' : 'Em andamento') + ' · ' + (s.worker && s.worker.company || 'Empresa não informada') + (localIds.has(s.id) ? ' · rascunho local' : ' · planilha'), async () => {
         persist(); let local = sheets.find(x => x.id === s.id);
-        if (!local) { local = await operation(() => rpc('epiLoadSheet', s.id)); sheets.push(local); }
+        if (!local) { local = await operation(() => rpc('epiLoadSheet', s.id)); EpiSessionCache.confirm(local,local,Date.now());sheets.push(local); }
         open(local);
       })));
       $('sheetList').append(section);
@@ -89,7 +95,10 @@
   }
   document.querySelectorAll('nav button').forEach(b => b.onclick = () => view(b.dataset.view));
   $('workerForm').onsubmit = e => e.preventDefault();
-  $('workerForm').oninput = () => { persist(); renderSheets(); };
+  $('savedSheetsPanel').addEventListener('toggle',()=>{if($('savedSheetsPanel').open)renderSheets();else $('sheetList').replaceChildren();});
+  $('workerForm').oninput = () => { capture();clearTimeout(persistTimer);persistTimer=setTimeout(persist,300);renderSheets(); };
+  window.addEventListener('pagehide',persist);
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)persist();});
   $('ca').oninput = () => { quickLifeManual = false; fillQuickLife(); };
   $('quickLifeDays').oninput = () => { quickLifeManual = true; };
   $('ca').onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); $('date').focus(); } };
@@ -103,6 +112,7 @@
       if (remote && (!livesLoaded || lifetimes[ca] !== days)) await operation(() => rpc('epiSaveLifetime', ca, days));
       lifetimes[ca] = days; renderLives();
     }
+    EpiSessionCache.dirty(current);
     if (editing) { const e = current.entries.find(x => x.id === editing); if (e.ca !== ca || e.date !== date) e.savedAt = ''; e.ca = ca; e.date = date; }
     else current.entries.push({ id: id(), ca, date });
     persist(); renderEntries(); resetInput(); notify(rawLife ? 'Lançamento no rascunho; vida útil salva no cadastro de prazos.' : 'Lançamento registrado no rascunho.');
@@ -112,7 +122,8 @@
   $('saveSheet').onclick = guard(async () => {
     persist(); if (!$('workerForm').reportValidity()) return; if (editing || $('ca').value || $('date').value || $('quickLifeDays').value) throw new Error('Adicione ou cancele o lançamento em edição antes de salvar.'); EpiDomain.validateSheet(current);
     if (!remote) { notify('Modo local: rascunho salvo apenas neste navegador. Google Sheets exige implantação privada no Apps Script.'); return; }
-    const result = await operation(() => rpc('epiSaveSheet', current)); current.revision = result.revision; current.updatedAt = result.updatedAt; result.entries.forEach(saved => { const entry = current.entries.find(e => e.id === saved.id); if (entry) entry.savedAt = saved.savedAt; }); persist(); renderEntries(); notify('Ficha salva na planilha.');
+    const submitted=structuredClone(current);
+    const result = await operation(() => rpc('epiSaveSheet', submitted));capture(); current.revision = result.revision; current.updatedAt = result.updatedAt; result.entries.forEach(saved => { const entry = current.entries.find(e => e.id === saved.id); if (entry) entry.savedAt = saved.savedAt; });EpiSessionCache.confirm(current,submitted,Date.now());savedSheets=savedSheets.filter(s=>s.id!==current.id);savedSheets.push({id:current.id,worker:structuredClone(submitted.worker),state:submitted.state,revision:result.revision,updatedAt:result.updatedAt});persist();renderSheets();renderEntries();notify('Ficha salva na planilha.');
   });
   $('analyze').onclick = guard(async () => {
     persist(); if (!$('workerForm').reportValidity()) return;
@@ -129,12 +140,13 @@
   });
   $('refreshSheets').onclick = guard(async () => {
     if (!remote) { renderSheets(); return; }
-    savedSheets = await operation(() => rpc('epiListSheets')); renderSheets(); notify('Lista atualizada. Rascunhos locais mantidos.');
+    savedSheets = await operation(() => rpc('epiListSheets'));sheets=EpiSessionCache.prune(sheets,savedSheets,current.id,Date.now());persist();renderSheets(); notify('Lista atualizada. Rascunhos locais mantidos.');
   });
   $('reloadSheet').onclick = guard(async () => {
     if (!remote) throw new Error('Reabertura da planilha exige implantação no Apps Script.');
     if (!confirm('Substituir o rascunho desta ficha pela versão da planilha? Alterações locais desta ficha serão descartadas.')) return;
     const loaded = await operation(() => rpc('epiLoadSheet', current.id));
+    EpiSessionCache.confirm(loaded,loaded,Date.now());
     sheets = sheets.filter(s => s.id !== loaded.id); sheets.push(loaded); open(loaded); notify('Versão da planilha reaberta.');
   });
   $('clearLocal').onclick = guard(() => {
@@ -155,7 +167,7 @@
     if (sheets.length) open(sheets.find(s => s.id === cache.currentId) || sheets[0]); else newSheet();
     renderLives();
     if (remote) {
-      try { const data = await operation(() => rpc('epiBootstrap')); catalog = data.catalog; metadata = data.metadata; lifetimes = data.lifetimes; livesLoaded = true; savedSheets = data.sheets; persist(); showBaseUpdated(); fillQuickLife(); renderLives(); renderSheets(); notify('Dados carregados.'); }
+      try { const data = await operation(() => rpc('epiBootstrap')); catalog = data.catalog; metadata = data.metadata; lifetimes = data.lifetimes; livesLoaded = true; savedSheets = data.sheets; sheets=EpiSessionCache.prune(sheets,savedSheets,current.id,Date.now());persist(); showBaseUpdated(); fillQuickLife(); renderLives(); renderSheets(); notify('Dados carregados.'); }
       catch (err) { notify('Conexão com a planilha falhou: ' + err.message + '. O rascunho local continua disponível.', true); }
     }
   }
@@ -230,7 +242,7 @@
       let count=0;
       while(bulkPending.length){
         const sheet=bulkPending[0];
-        if(remote){const saved=await rpc('epiSaveSheet',sheet);sheet.revision=saved.revision;sheet.updatedAt=saved.updatedAt;saved.entries.forEach(e=>{sheet.entries.find(x=>x.id===e.id).savedAt=e.savedAt;});}
+        if(remote){const saved=await rpc('epiSaveSheet',sheet);sheet.revision=saved.revision;sheet.updatedAt=saved.updatedAt;EpiSessionCache.confirm(sheet,sheet,Date.now());savedSheets.push({id:sheet.id,worker:structuredClone(sheet.worker),state:sheet.state,revision:sheet.revision,updatedAt:sheet.updatedAt});saved.entries.forEach(e=>{sheet.entries.find(x=>x.id===e.id).savedAt=e.savedAt;});}
         sheets.push(sheet);bulkPending.shift();persist();renderSheets();count++;
         $('bulkStatus').textContent=count+' ficha(s) importada(s); '+bulkPending.length+' pendente(s). Em falha, confira a lista Google antes de repetir.';
       }

@@ -83,3 +83,35 @@ CORREÇÃO DOS DOWNLOADS E VISIBILIDADE
   scripts/build.js incorpora ExcelJS. package.json/lock fixam a dependência.
 - Os testes Google usam serviços simulados. Faça uma importação fictícia e
   reabra a ficha na implantação privada para validar permissões Google reais.
+
+5. REVISÃO DE CACHE E DESEMPENHO
+- Esta atualização continua exigindo somente a substituição do Index.html
+  gerado e uma nova versão da implantação; nenhum .gs mudou.
+- A lista recolhida não cria botões em segundo plano e só é montada ao abrir.
+- Dados pessoais digitados são capturados imediatamente na memória e gravados
+  no navegador após 300 ms sem nova digitação. Ao ocultar/sair da página, o
+  rascunho também é persistido. Salvar e adicionar entregas persistem diretamente.
+- Cópias locais confirmadas e sem alterações podem expirar após 7 dias da
+  confirmação, desde que a mesma revisão esteja na lista atual da planilha.
+  A checagem ocorre ao carregar, atualizar a lista e persistir durante o uso.
+- A ficha aberta, rascunhos alterados, fichas sem confirmação e cópias com
+  divergência de revisão não são removidos automaticamente. Dados antigos sem
+  a nova marca de confirmação também são preservados até salvar/reabrir.
+- A limpeza não toca no Google Sheets. Reabra uma ficha pela lista para baixar
+  novamente suas entregas. Relatórios da origem local incluem somente cópias
+  presentes no navegador; selecione origem Google para consultar o histórico
+  salvo completo, incluindo fichas cujas cópias locais expiraram.
+- Na demonstração local não há expiração, pois o navegador é a única persistência.
+- O navegador mantém fichas locais e prazos de vida útil; não recebe o catálogo
+  completo de CAs no bootstrap. Os relatórios e arquivos Excel não são gravados
+  no localStorage. O upload é limitado a 2 MB e liberado ao concluir a importação.
+- Os links temporários de download são liberados ao fechar/navegar a janela de
+  download. Feche as janelas após salvar para liberar os arquivos em memória.
+- Não foi adicionado cache de servidor: uma invalidação incorreta poderia
+  apresentar fichas ou vidas úteis antigas. A fonte persistente é o Sheets.
+- Limitação de escala: cada gravação lê/regrava Workers, Entries e Sheets;
+  cada análise consulta a tabela de CAs no servidor. A lista inicial também
+  carrega os metadados de todas as fichas. Para grandes históricos e muitos
+  trabalhadores por lote, otimização incremental e paginação serão necessárias.
+  A limpeza do navegador não resolve esses custos de servidor.
+- Não houve benchmark de uma planilha real nem validação de quotas Google.

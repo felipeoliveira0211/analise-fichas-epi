@@ -64,6 +64,11 @@ const {chromium}=require('playwright');require('./build');
   await page.locator('#bulkImport').click();await page.waitForFunction(()=>document.getElementById('message').textContent.includes('Importação concluída'));
   const importedWorker=tables.Workers.find(w=>w.name==='Pessoa importada');assert.ok(importedWorker);
   const importedSheet=tables.Sheets.find(s=>s.workerId===importedWorker.id);assert.equal(tables.Entries.filter(e=>e.sheetId===importedSheet.id).length,1);assert.equal(importedSheet.revision,1);assert.deepEqual(errors,[]);
+  await page.addInitScript(()=>{const key='epi.analysis.google.v1',cache=JSON.parse(localStorage.getItem(key));const imported=cache.sheets.find(s=>s.worker.name==='Pessoa importada');if(!imported.localSync)throw Error('Confirmação local ausente');imported.localSync.confirmedAt=0;const dirty=structuredClone(imported);dirty.id='rascunho-protegido';dirty.worker.id='trabalhador-protegido';dirty.localSync=null;cache.sheets.push(dirty);localStorage.setItem(key,JSON.stringify(cache));});
+  await page.reload();await page.waitForFunction(()=>document.getElementById('message').textContent==='Dados carregados.');
+  const cachedIds=await page.evaluate(()=>JSON.parse(localStorage.getItem('epi.analysis.google.v1')).sheets.map(s=>s.id));assert.ok(!cachedIds.includes(importedSheet.id));assert.ok(cachedIds.includes('rascunho-protegido'));assert.ok(tables.Sheets.some(s=>s.id===importedSheet.id));
+  assert.equal(await page.locator('#sheetList button').count(),0);await page.locator('#savedSheetsPanel summary').click();await page.getByRole('button',{name:/Pessoa importada.*planilha/}).click();
+  assert.equal(await page.locator('#workerName').inputValue(),'Pessoa importada');assert.equal(await page.locator('#entries tr').count(),1);assert.deepEqual(errors,[]);
   console.log('Google SIMULADO passou: 42478 CAs, atualização administrativa idempotente, vida útil em Sheets/cache/autopreenchimento, grupos/cores/vencimentos, PDF sem dados de base, filtros e layout móvel.');
  }finally{if(browser)await browser.close();await new Promise(r=>server.close(r));}
 })().catch(e=>{console.error(e);process.exitCode=1});
