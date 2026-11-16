@@ -1,4 +1,4 @@
-var EPI_BUILD_ID = 'epi-5a90966f6ee9';
+var EPI_BUILD_ID = 'epi-ece0f767eaa3';
 function doGet() {
   return HtmlService.createHtmlOutputFromFile('Index').setTitle('Análise de fichas de EPI');
 }
@@ -21,7 +21,7 @@ function epiLoadSheet_(id) {
   if (!sheet) throw new Error('Ficha não encontrada.');
   var worker = EpiStore.rows('Workers').find(function(w) { return w.id === sheet.workerId; });
   var entries = EpiStore.rows('Entries').filter(function(e) { return e.sheetId === id; }).sort(function(a,b) { return Number(a.position) - Number(b.position); }).map(function(e) {
-    return { id: e.id, ca: String(e.ca), date: String(e.date), physicalExpiry: String(e.physicalExpiry || ''), savedAt: String(e.savedAt || '') };
+    return { id: e.id, ca: String(e.ca), date: String(e.date), quantity: EpiDomain.quantity(e.quantity), physicalExpiry: String(e.physicalExpiry || ''), savedAt: String(e.savedAt || '') };
   });
   return { id: sheet.id, worker: worker, state: sheet.state, revision: Number(sheet.revision), updatedAt: sheet.updatedAt, entries: entries };
 }
@@ -44,7 +44,7 @@ function epiSaveSheet(input) {
     workers = workers.filter(function(w) { return w.id !== input.worker.id; });
     workers.push({ id: input.worker.id, name: input.worker.name.trim(), sector: input.worker.sector.trim(), role: input.worker.role.trim(), ges: input.worker.ges.trim(), company: (input.worker.company || '').trim() });
     entries = entries.filter(function(e) { return e.sheetId !== input.id; });
-    input.entries.forEach(function(e, i) { var old = oldEntries.find(function(r) { return r.sheetId === input.id && r.id === e.id; }); var unchanged = old && String(old.ca) === EpiDomain.ca(e.ca) && old.date === e.date && (old.physicalExpiry || '') === (e.physicalExpiry || ''); entries.push({ id: e.id, sheetId: input.id, ca: EpiDomain.ca(e.ca), date: e.date, physicalExpiry: e.physicalExpiry || '', position: i, savedAt: unchanged && old.savedAt ? old.savedAt : savedAt }); });
+    input.entries.forEach(function(e, i) { var old = oldEntries.find(function(r) { return r.sheetId === input.id && r.id === e.id; }); var unchanged = old && String(old.ca) === EpiDomain.ca(e.ca) && old.date === e.date && EpiDomain.quantity(old.quantity) === EpiDomain.quantity(e.quantity) && (old.physicalExpiry || '') === (e.physicalExpiry || ''); entries.push({ id: e.id, sheetId: input.id, ca: EpiDomain.ca(e.ca), date: e.date, quantity: EpiDomain.quantity(e.quantity), physicalExpiry: e.physicalExpiry || '', position: i, savedAt: unchanged && old.savedAt ? old.savedAt : savedAt }); });
     try { EpiStore.replace('Workers', workers); EpiStore.replace('Entries', entries); EpiStore.replace('Sheets', sheets); }
     catch (error) {
       try { EpiStore.replace('Workers', oldWorkers); EpiStore.replace('Entries', oldEntries); EpiStore.replace('Sheets', oldSheets); }
@@ -114,10 +114,12 @@ function verifyReportAndExcelDeployment() {
   var source = Utilities.ungzip(Utilities.newBlob(Utilities.base64Decode(payload[1].trim()), 'application/x-gzip', 'exceljs.min.js.gz')).getDataAsString('UTF-8');
   var digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, source, Utilities.Charset.UTF_8).map(function(b) { return ('0' + ((b + 256) % 256).toString(16)).slice(-2); }).join('');
   if (digest !== build.excelSha256) throw new Error('Pacote Excel alterado ou incompleto. Copie novamente o Index.html inteiro.');
-  var sample = {id:'verify-sheet',worker:{id:'verify-worker',name:'Teste fictício',sector:'Teste',role:'Teste',ges:'Teste'},state:'draft',entries:[{id:'verify-entry',ca:'1',date:'01/01/2026'}]};
+  if (typeof EpiStore === 'undefined' || !EpiStore.entryColumns || !EpiStore.entryColumns.includes('quantity')) throw new Error('Store.gs desatualizado: substitua pelo arquivo do mesmo pacote para preservar as quantidades.');
+  var sample = {id:'verify-sheet',worker:{id:'verify-worker',name:'Teste fictício',sector:'Teste',role:'Teste',ges:'Teste'},state:'draft',entries:[{id:'verify-entry',ca:'1',date:'01/01/2026',quantity:3},{id:'verify-same-day',ca:'2',date:'01/01/2026',quantity:1},{id:'verify-next',ca:'1',date:'01/03/2026',quantity:1}]};
   var legacy = {id:'verify-legacy',worker:{name:'Rascunho antigo'},entries:sample.entries};
-  var report = EpiReports.create([sample,legacy],{'1':{name:'EPI fictício',approvedProtection:'Proteção auditiva'}},{},{},{});
+  var report = EpiReports.create([sample,legacy],{'1':{name:'Luva química fictícia',approvedProtection:'Proteção das mãos contra agentes químicos'},'2':{name:'Creme fictício',approvedProtection:'Proteção da pele contra agentes químicos'}},{},{},{});
   if (report.reports.length !== 1 || report.warnings.length !== 1) throw new Error('ReportDomain.gs desatualizado: substitua pelo arquivo do pacote.');
+  if (typeof EpiDomain.quantity !== 'function' || report.reports[0].rows[2].limit !== 120) throw new Error('Domain.gs desatualizado: o lote de 3 pares e 1 creme na mesma data deve somar 120 dias.');
   var result = {status:'OK',version:build.id,excel:'SHA-256 confirmado',report:'Sem filtros e rascunho legado verificados',next:'Publique uma nova versão da implantação existente.'};
   console.log(JSON.stringify(result));
   return result;

@@ -7,7 +7,7 @@ const {chromium}=require('playwright');require('./export-google');
  PropertiesService:{getScriptProperties:()=>({getProperty:k=>props[k],setProperty:(k,v)=>{props[k]=v}})},
  Utilities:{DigestAlgorithm:{SHA_256:'sha256'},Charset:{UTF_8:'utf8'},computeDigest:(_,bytes)=>Array.from(crypto.createHash('sha256').update(bytes).digest()),base64Decode:s=>Buffer.from(s,'base64'),newBlob:(bytes,contentType)=>({bytes,contentType}),ungzip:b=>{if(!b.contentType)throw Error('Objeto blob não pode ter tipo de conteúdo nulo para esta operação.');return {getDataAsString:()=>zlib.gunzipSync(b.bytes).toString('utf8')}}},
  HtmlService:{createHtmlOutputFromFile:()=>({getContent:()=>fs.readFileSync('google-apps-script/Index.html','utf8')})},
- EpiStore:{initialize(){},rows:n=>structuredClone(tables[n]),count:n=>tables[n].length,replace:(n,v)=>{tables[n]=structuredClone(v)},writeAt:(n,offset,rows)=>rows.forEach((r,i)=>{tables[n][offset+i]=structuredClone(r)}),locked:fn=>fn()}});
+ EpiStore:{entryColumns:['quantity'],initialize(){},rows:n=>structuredClone(tables[n]),count:n=>tables[n].length,replace:(n,v)=>{tables[n]=structuredClone(v)},writeAt:(n,offset,rows)=>rows.forEach((r,i)=>{tables[n][offset+i]=structuredClone(r)}),locked:fn=>fn()}});
  vm.runInContext(fs.readFileSync('dist/DefaultData.gs','utf8'),c);
  // Load the generated Apps Script files in one V8 context, without Node require/module.
  for(const name of ['Domain','ReportDomain','ImportDomain','Catalog','Api','Setup','DefaultCatalog'])vm.runInContext(fs.readFileSync(`google-apps-script/${name}.gs`,'utf8'),c);
@@ -31,12 +31,12 @@ const {chromium}=require('playwright');require('./export-google');
   assert.equal(await app.evaluate(()=>JSON.parse(localStorage.getItem('epi.analysis.google.v1')).lifetimes['54460']),30);
   await app.locator('#analyze').click();await app.locator('#results').waitFor({state:'visible'});
   assert.deepEqual(await app.locator('#resultRows .group-heading').allTextContents(),['Proteção dérmica','Proteção auditiva','Outras entregas']);
-  assert.equal(await app.locator('#results thead th').last().innerText(),'Resultado');assert.equal(await app.locator('#results thead th').count(),6);assert.ok(!(await app.locator('#results thead th').allTextContents()).includes('Limite'));
-  const audit=app.locator('#resultRows .delivery-row[data-group="auditiva"]');assert.equal(await audit.first().locator('td').nth(2).innerText(),'Marco inicial');assert.equal(await audit.first().locator('td').last().innerText(),'—');
+  assert.equal(await app.locator('#results thead th').last().innerText(),'Resultado');assert.equal(await app.locator('#results thead th').count(),7);assert.ok(!(await app.locator('#results thead th').allTextContents()).includes('Limite'));
+  const audit=app.locator('#resultRows .delivery-row[data-group="auditiva"]');assert.equal(await audit.first().locator('td').nth(3).innerText(),'Marco inicial');assert.equal(await audit.first().locator('td').last().innerText(),'—');
   assert.match(await audit.nth(1).locator('td').last().innerText(),/✕ Fora do prazo/);assert.match(await audit.nth(2).locator('td').last().innerText(),/✓ Dentro do prazo/);
-  assert.match(await audit.nth(2).locator('td').nth(4).innerText(),/CA vencido/);assert.equal(await audit.nth(2).locator('td').nth(4).locator('.bad').count(),1);
+  assert.match(await audit.nth(2).locator('td').nth(5).innerText(),/CA vencido/);assert.equal(await audit.nth(2).locator('td').nth(5).locator('.bad').count(),1);
   assert.match(await app.locator('#resultRows .delivery-row').filter({hasText:'40355'}).innerText(),/26\/05\/3031/);
-  const currentStatus=c.EpiDomain.certificateStatus(tables.CaIndex.find(r=>r.ca==='12065'),Date.now());assert.ok((await app.locator('#resultRows .delivery-row').filter({hasText:'12065'}).locator('td').nth(4).innerText()).includes(currentStatus.label));
+  const currentStatus=c.EpiDomain.certificateStatus(tables.CaIndex.find(r=>r.ca==='12065'),Date.now());assert.ok((await app.locator('#resultRows .delivery-row').filter({hasText:'12065'}).locator('td').nth(5).innerText()).includes(currentStatus.label));
   assert.equal(await app.locator('#resultRows .delivery-row').filter({hasText:'12065'}).locator('.'+currentStatus.tone).count(),1);
   for(const group of ['dermica','auditiva','outros']){const dates=await app.locator(`#resultRows .delivery-row[data-group="${group}"] td:first-child`).allTextContents();assert.deepEqual(dates,[...dates].sort((a,b)=>c.EpiDomain.date(a)-c.EpiDomain.date(b)));}
   await page.screenshot({path:'/tmp/epi-results-new.png',fullPage:true});
@@ -91,18 +91,19 @@ const {chromium}=require('playwright');require('./export-google');
   // Upload XLSX exercises the existing save RPC and Sheets adapter, not just local drafts.
   await app.locator('[data-view="entry"]').click();
   const uploadBook=new (require('exceljs').Workbook)();const uploadSheet=uploadBook.addWorksheet('Entregas');
-  uploadSheet.addRow(['Identificador','Empresa','Trabalhador','Setor','Cargo','GES','CA','Data da entrega']);
-  uploadSheet.addRow(['IMPORT-1','Empresa fictícia','Pessoa importada','Setor teste','Cargo teste','GES teste','54460','01/01/2026']);
+  uploadSheet.addRow(['Identificador','Empresa','Trabalhador','Setor','Cargo','GES','CA','Data da entrega','Quantidade']);
+  uploadSheet.addRow(['IMPORT-1','Empresa fictícia','Pessoa importada','Setor teste','Cargo teste','GES teste','54460','01/01/2026',3]);
+  uploadSheet.addRow(['IMPORT-1','Empresa fictícia','Pessoa importada','Setor teste','Cargo teste','GES teste','54460','01/01/2026',2]);
   await app.locator('#bulkFile').setInputFiles({name:'teste.xlsx',mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',buffer:Buffer.from(await uploadBook.xlsx.writeBuffer())});
   await app.waitForFunction(()=>document.getElementById('bulkStatus').textContent.includes('1 nova(s)'));
   await app.locator('#bulkImport').click();await app.waitForFunction(()=>document.getElementById('message').textContent.includes('Importação concluída'));
   const importedWorker=tables.Workers.find(w=>w.name==='Pessoa importada');assert.ok(importedWorker);
-  const importedSheet=tables.Sheets.find(s=>s.workerId===importedWorker.id);assert.equal(tables.Entries.filter(e=>e.sheetId===importedSheet.id).length,1);assert.equal(importedSheet.revision,1);assert.deepEqual(errors,[]);
+  const importedSheet=tables.Sheets.find(s=>s.workerId===importedWorker.id);assert.equal(tables.Entries.filter(e=>e.sheetId===importedSheet.id).length,2);assert.equal(importedSheet.revision,1);assert.deepEqual(tables.Entries.filter(e=>e.sheetId===importedSheet.id).map(e=>e.quantity),[3,2]);assert.deepEqual(errors,[]);
   await page.addInitScript(()=>{const key='epi.analysis.google.v1',cache=JSON.parse(localStorage.getItem(key));const imported=cache.sheets.find(s=>s.worker.name==='Pessoa importada');if(!imported.localSync)throw Error('Confirmação local ausente');imported.localSync.confirmedAt=0;const dirty=structuredClone(imported);dirty.id='rascunho-protegido';dirty.worker.id='trabalhador-protegido';dirty.localSync=null;cache.sheets.push(dirty);localStorage.setItem(key,JSON.stringify(cache));});
   await page.reload();app=page.frame({name:'app'});await app.waitForFunction(()=>document.getElementById('message').textContent==='Dados carregados.');
   const cachedIds=await app.evaluate(()=>JSON.parse(localStorage.getItem('epi.analysis.google.v1')).sheets.map(s=>s.id));assert.ok(!cachedIds.includes(importedSheet.id));assert.ok(cachedIds.includes('rascunho-protegido'));assert.ok(tables.Sheets.some(s=>s.id===importedSheet.id));
   assert.equal(await app.locator('#sheetList button').count(),0);await app.locator('#savedSheetsPanel summary').click();await app.getByRole('button',{name:/Pessoa importada.*planilha/}).click();
-  assert.equal(await app.locator('#workerName').inputValue(),'Pessoa importada');assert.equal(await app.locator('#entries tr').count(),1);assert.deepEqual(errors,[]);
+  assert.equal(await app.locator('#workerName').inputValue(),'Pessoa importada');assert.equal(await app.locator('#entries tr').count(),2);assert.deepEqual(errors,[]);
   console.log('Google SIMULADO em iframe passou: verificação do pacote, rascunho legado, downloads XLSX reais, 42478 CAs, atualização administrativa idempotente, vida útil em Sheets/cache/autopreenchimento, grupos/cores/vencimentos, PDF sem dados de base, filtros e layout móvel.');
  }finally{if(browser)await browser.close();await new Promise(r=>server.close(r));}
 })().catch(e=>{console.error(e);process.exitCode=1});

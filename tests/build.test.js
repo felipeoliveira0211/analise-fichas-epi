@@ -23,7 +23,7 @@ function setup(){
   DigestAlgorithm:{SHA_256:'sha256'},Charset:{UTF_8:'utf8'},base64Decode:s=>Buffer.from(s,'base64'),newBlob:(bytes,contentType)=>({bytes,contentType}),
   ungzip:b=>{if(!b.contentType)throw Error('Objeto blob não pode ter tipo de conteúdo nulo para esta operação.');return {getDataAsString:()=>zlib.gunzipSync(b.bytes).toString()}},computeDigest:(_,s)=>Array.from(crypto.createHash('sha256').update(s).digest())
  }});
- for(const file of ['Domain','ReportDomain','Api'])vm.runInContext(fs.readFileSync(`dist/${file}.gs`,'utf8'),context);
+ for(const file of ['Domain','ReportDomain','Store','Api'])vm.runInContext(fs.readFileSync(`dist/${file}.gs`,'utf8'),context);
  return {context,change:fn=>{html=fn(html)}};
 }
 test('verificador executa arquivos GAS gerados sem require ou serviços de planilha',()=>{
@@ -36,4 +36,9 @@ test('verificador rejeita Index antigo, versões misturadas e biblioteca Excel a
   [html=>html.replace(/"id":"epi-[a-f0-9]{12}"/,'"id":"epi-antigo"'),/versões diferentes/],
   [html=>html.replace(/"excelSha256":"[a-f0-9]{64}"/,'"excelSha256":"'+'0'.repeat(64)+'"'),/Excel alterado ou incompleto/]
  ]){const {context:c,change:modify}=setup();modify(change);assert.throws(()=>c.verifyReportAndExcelDeployment(),message);}
+});
+
+
+test('verificador rejeita adaptador antigo que descartaria quantidades ao salvar',()=>{
+ const {context:c}=setup();delete c.EpiStore.entryColumns;assert.throws(()=>c.verifyReportAndExcelDeployment(),/Store.gs desatualizado/);
 });

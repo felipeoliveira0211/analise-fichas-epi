@@ -9,3 +9,8 @@ test('expira somente cópias antigas confirmadas na mesma revisão; preserva fic
 test('edição durante gravação não recebe confirmação; cópia inalterada recebe prazo',()=>{
  const s=sheet('s'),submitted=structuredClone(s);s.worker.name='Editado';C.confirm(s,submitted,100);assert.equal(s.localSync,null);C.confirm(s,s,200);assert.equal(s.localSync.confirmedAt,200);C.dirty(s);assert.equal(s.localSync,null);
 });
+
+test('quantidade alterada durante gravação não pode receber confirmação de cópia antiga',()=>{
+ const s=sheet('s'),submitted=structuredClone(s);s.entries[0].quantity=3;C.confirm(s,submitted,100);assert.equal(s.localSync,null);
+ const legacy=sheet('s'),normalized=structuredClone(legacy);normalized.entries[0].quantity=1;C.confirm(legacy,normalized,100);assert.equal(legacy.localSync.confirmedAt,100);
+});

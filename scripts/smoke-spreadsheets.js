@@ -24,7 +24,7 @@ const X=require('../src/web/spreadsheets');const {chromium}=require('playwright'
   await upload(buffer);await app.waitForFunction(()=>document.getElementById('bulkStatus').textContent.includes('30 segundos'));
   assert.equal(await app.locator('#bulkFile').isEnabled(),true);assert.equal(await app.evaluate(()=>window.__terminated),1);
   await app.evaluate(()=>{window.Worker=window.__worker;window.setTimeout=window.__timer;});
-  const fresh=X.template();fresh.getWorksheet('Entregas').addRow(['B','Empresa teste','Pessoa nova','Setor','Cargo','GES','90002','01/02/2026']);
+  const fresh=X.template();fresh.getWorksheet('Entregas').addRow(['B','Empresa teste','Pessoa nova','Setor','Cargo','GES','90002','01/02/2026',3]);fresh.getWorksheet('Entregas').addRow(['B','Empresa teste','Pessoa nova','Setor','Cargo','GES','90002','01/02/2026',2]);
   await upload(Buffer.from(await fresh.xlsx.writeBuffer()));await app.waitForFunction(()=>document.getElementById('bulkStatus').textContent.includes('1 nova(s)'));assert.equal(await app.locator('#bulkImport').isEnabled(),true);
   await app.locator('#bulkImport').click();await app.waitForFunction(()=>document.getElementById('message').textContent.includes('Importação concluída'));
   async function downloadExcel(button){const popupPromise=page.waitForEvent('popup'),download=popupPromise.then(p=>p.waitForEvent('download'));await app.locator(button).click();const file=await download,book=new ExcelJS.Workbook();await book.xlsx.readFile(await file.path());await(await popupPromise).close();return book;}
@@ -41,7 +41,7 @@ const X=require('../src/web/spreadsheets');const {chromium}=require('playwright'
   await app.locator('[data-view="reports"]').click();await app.locator('#reportForm button').click();await app.waitForFunction(()=>!document.getElementById('excelReport').disabled);
   const exported=await downloadExcel('#excelReport'),matrix=exported.getWorksheet('Matriz de entregas');
   const row=Array.from({length:matrix.rowCount},(_,i)=>i+1).find(i=>matrix.getCell('D'+i).value==='Pessoa teste');
-  assert.ok(row);assert.equal(matrix.getImages().length,1);assert.equal(matrix.getCell('F'+row).value,'90001');assert.equal(matrix.getCell('G'+(row+1)).value,'01/05/2026');assert.equal(matrix.getCell('H'+(row+1)).fill.fgColor.argb,'FFFF4D4D');assert.equal(matrix.columnCount,15);
+  assert.ok(row);assert.equal(matrix.getImages().length,1);assert.equal(matrix.getCell('F'+row).value,'90001');assert.equal(matrix.getCell('H'+(row+1)).value,'01/05/2026');assert.equal(matrix.getCell('I'+(row+1)).fill.fgColor.argb,'FFFF4D4D');assert.equal(matrix.columnCount,18);const nova=Array.from({length:matrix.rowCount},(_,i)=>i+1).find(i=>matrix.getCell('D'+i).value==='Pessoa nova');assert.equal(matrix.getCell('L'+nova).value,3);assert.equal(matrix.getCell('L'+(nova+1)).value,2);
   await app.evaluate(()=>{window.open=()=>null;});await app.locator('[data-view="entry"]').click();await app.locator('#bulkTemplate').click();await app.waitForFunction(()=>document.getElementById('message').textContent.includes('Permita pop-ups'));assert.deepEqual(errors,[]);
   console.log('XLSX passou: upload inicial em worker, erro e timeout com recuperação, modelo, importação, reenvio e matriz vertical com cores.');
  }finally{if(browser)await browser.close();await new Promise(r=>server.close(r));}

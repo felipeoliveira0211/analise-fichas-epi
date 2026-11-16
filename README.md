@@ -64,7 +64,7 @@ No GitHub, use **Code → Download ZIP**, extraia o ZIP e abra o arquivo **`demo
 
 A interface desse arquivo foi verificada servindo-o por HTTP local. A abertura direta por `file://` não pôde ser testada neste ambiente porque a política do navegador a bloqueia. Se o navegador do seu computador também restringir arquivos locais, use a opção com Node.js abaixo.
 
-Preencha os dados do trabalhador e experimente o CA **90001** com entregas em **01/01/2026** e **01/05/2026**: a segunda entrega terá intervalo de **120 dias**, fora do prazo fictício de 90 dias. Para a sequência dérmica, use **90002** em **01/01/2026** e **90003** em **01/02/2026**: intervalo de **31 dias**, fora do prazo fixo de 30 dias.
+Preencha os dados do trabalhador e experimente o CA **90001** com entregas em **01/01/2026** e **01/05/2026**: a segunda entrega terá intervalo de **120 dias**, fora do prazo fictício de 90 dias. Para a sequência dérmica, use **90002** em **01/01/2026** e **90003** em **01/02/2026**: intervalo de **31 dias**, fora do prazo de 30 dias quando a quantidade anterior é 1.
 
 Você pode corrigir lançamentos, cadastrar vida útil e alternar trabalhadores. Os rascunhos ficam neste navegador e neste arquivo; mover o arquivo ou trocar de navegador pode alterar o acesso ao armazenamento local. O botão de salvar na planilha informa que essa função depende da implantação no Apps Script.
 
@@ -161,9 +161,9 @@ A inclusão nos grupos com análise de periodicidade considera **proteção apro
 
 ## Regras e limites técnicos
 
-- Auditivos: uma sequência por trabalhador, usando o prazo do CA **da entrega anterior**. Mudança de CA não interrompe a sequência. Sem prazo, “Vida útil não cadastrada”.
-- Dérmicos químicos: luvas e cremes na mesma sequência; limite fixo de 30 dias, inclusive.
-- Primeira entrega: marco inicial. Mesma data: intervalo zero, com desempate pela ordem original. Cada entrega reinicia a contagem, sem acumulação.
+- Auditivos: uma sequência por trabalhador, usando o prazo por unidade do CA **da entrega anterior**, multiplicado pela quantidade anterior. Mudança de CA não interrompe a sequência. Sem prazo, “Vida útil não cadastrada”.
+- Dérmicos químicos: luvas e cremes na mesma sequência; limite de 30 dias × quantidade da entrega anterior, inclusive. Para luvas, informe pares; para cremes, unidades.
+- Primeira entrega: marco inicial. Mesma data e grupo: lote único, somando os prazos de cada CA × quantidade, com a ordem original preservada. Cada nova data de entrega reinicia a contagem, sem acumulação de saldo. Linhas com o mesmo CA e data são preservadas na ordem original. Quantidade ausente em fichas antigas vale 1.
 - Demais EPIs: identificação e validades, sem análise de periodicidade.
 - CA não identificado: revisão necessária e aviso de análise parcial, pois o registro pendente pode alterar os intervalos.
 - Validade do CA, vida útil e validade física são campos distintos. A comparação com a validade informada do CA não comprova aquisição irregular, inadequação ou validade física.
@@ -185,3 +185,23 @@ Rascunhos não são criptografados pela aplicação. Em computador compartilhado
 2. Evoluir atualização incremental e ferramentas de administração da base oficial.
 3. Evoluir classificação assistida e resolução de CAs pendentes, com registro de justificativa.
 4. Evoluir a governança de acesso aos relatórios antes do uso por equipe.
+
+## Quantidades e lotes por data
+
+O lançamento manual começa com quantidade 1. Edite o lançamento para corrigir a
+quantidade; ela aparece nos resultados, PDF, matriz e aba Detalhes do Excel.
+O modelo de importação acrescenta a coluna **Quantidade** ao final; ela é opcional,
+inteira e positiva. Modelos anteriores com oito colunas continuam aceitos com 1.
+Repetições do mesmo CA/data são preservadas como linhas distintas; os prazos das linhas do mesmo grupo e data são somados no lote.
+
+O prazo da próxima comparação usa a quantidade da entrega anterior: três pares de
+luvas químicas representam 3 × 30 = 90 dias. Se houver nova entrega dérmica após
+20 dias com quantidade 1, a próxima comparação parte dessa nova data e usa 30 dias,
+sem aproveitar os 70 dias restantes da anterior. O mesmo princípio aplica-se ao
+prazo cadastrado por unidade dos auditivos. Não se calcula cobertura futura depois
+da última entrega.
+
+Linhas do mesmo grupo na mesma data formam um lote: uma luva e um creme com
+quantidade 1 somam 30 + 30 = 60 dias. Nos auditivos, dois CAs na mesma data
+somam as vidas úteis cadastradas, considerando a quantidade de cada linha.
+Uma nova data de entrega do grupo reinicia o prazo sem carregar saldo.

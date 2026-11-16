@@ -61,6 +61,26 @@ var EpiDomain = (function () {
     return GROUP.OUTROS;
   }
   function validLife(value) { return Number.isInteger(value) && value > 0 && value <= 36500; }
+  function quantity(value) {
+    if (value == null || value === '') return 1;
+    if ((typeof value !== 'number' && typeof value !== 'string') || !/^\d+$/.test(String(value).trim())) throw new Error('Quantidade deve ser um número inteiro positivo.');
+    var n = Number(value);
+    if (!Number.isSafeInteger(n) || n < 1 || n > Math.floor(Number.MAX_SAFE_INTEGER / 36500)) throw new Error('Quantidade deve ser um número inteiro positivo dentro do limite suportado.');
+    return n;
+  }
+  function limitCalculation(row) {
+    if (row.limit == null) return 'Prazo não cadastrado';
+    if (!row.previousComponents) return row.limit + ' dias';
+    // Aggregate identical unit limits for a compact display, retaining each CA
+    // separately in previousComponents for the detailed export.
+    var parts = [];
+    row.previousComponents.forEach(function(c) {
+      var part = parts.find(function(p) { return p.unitLimit === c.unitLimit; });
+      if (part) part.quantity += c.quantity;
+      else parts.push({unitLimit:c.unitLimit,quantity:c.quantity});
+    });
+    return parts.map(function(p) { return p.unitLimit + ' × ' + p.quantity; }).join(' + ') + ' = ' + row.limit + ' dias';
+  }
   function validateSheet(sheet) {
     if (!sheet || !sheet.id || !sheet.worker || !sheet.worker.id) throw new Error('Ficha e trabalhador precisam de IDs.');
     ['name', 'sector', 'role', 'ges'].forEach(function (field) {
@@ -71,7 +91,7 @@ var EpiDomain = (function () {
     var seen = {};
     sheet.entries.forEach(function (entry) {
       if (!entry.id || seen[entry.id]) throw new Error('ID de lançamento ausente ou duplicado.');
-      seen[entry.id] = true; ca(entry.ca); date(entry.date);
+      seen[entry.id] = true; ca(entry.ca); date(entry.date); quantity(entry.quantity);
     });
     return sheet;
   }
@@ -88,7 +108,7 @@ var EpiDomain = (function () {
       return { entry: entry, index: index, time: date(entry.date) };
     }).sort(function (a, b) { return a.time - b.time || a.index - b.index; }).map(function (item) {
       var entry = item.entry, number = ca(entry.ca), record = catalog[number], group = classify(record), currentCa = certificateStatus(record,now);
-      var row = { id: entry.id, ca: number, date: entry.date, name: record ? record.name : 'CA não identificado', group: group,
+      var row = { id: entry.id, quantity: quantity(entry.quantity), ca: number, date: entry.date, name: record ? record.name : 'CA não identificado', group: group,
         interval: null, limit: null, status: 'Sem análise de periodicidade', caExpiry: record && record.caExpiry || null,
         usefulLifeDays: group === GROUP.DERMICA ? 30 : validLife(lifetimes[number]) ? lifetimes[number] : null, savedAt: entry.savedAt || '', physicalExpiry: entry.physicalExpiry || null, caStatus: currentCa.label, caTone: currentCa.tone, caDaysRemaining: currentCa.days, source: metadata.source || 'Indisponível', referenceDate: metadata.referenceDate || null };
       if (row.physicalExpiry) date(row.physicalExpiry);
@@ -99,20 +119,37 @@ var EpiDomain = (function () {
 
       if (group === GROUP.REVISAO) row.status = 'Revisão manual necessária';
       if (group === GROUP.AUDITIVA || group === GROUP.DERMICA) {
-        var prev = previous[group];
+        // Lines in the same group/date are one delivery batch. Every new date
+        // starts a fresh budget; unused time is never carried to that date.
+        var batch = previous[group];
+        if (!batch || batch.time !== item.time) {
+          batch = {time:item.time,previous:batch || null,components:[],quantity:0,total:0,missing:false};
+          previous[group] = batch;
+        }
+        var prev = batch.previous;
         row.status = 'Marco inicial';
         if (prev) {
           row.interval = (item.time - prev.time) / 86400000;
-          row.previousCa = prev.ca;
-          row.limit = group === GROUP.DERMICA ? 30 : validLife(lifetimes[prev.ca]) ? lifetimes[prev.ca] : null;
+          row.previousComponents = prev.components.map(function(c) { return {ca:c.ca,quantity:c.quantity,unitLimit:c.unitLimit}; });
+          row.previousCa = Array.from(new Set(prev.components.map(function(c) { return c.ca; }))).join(' + ');
+          row.previousQuantity = prev.quantity;
+          row.unitLimit = prev.components.every(function(c) { return c.unitLimit === prev.components[0].unitLimit; }) ? prev.components[0].unitLimit : null;
+          row.limit = prev.missing ? null : prev.total;
           row.status = row.limit == null ? 'Vida útil não cadastrada' : row.interval <= row.limit ? 'Dentro do prazo' : 'Fora do prazo';
         }
-        previous[group] = { ca: number, time: item.time };
+        var unitLimit = group === GROUP.DERMICA ? 30 : validLife(lifetimes[number]) ? lifetimes[number] : null;
+        batch.quantity += row.quantity;
+        var component = batch.components.find(function(c) { return c.ca === number; });
+        if (component) component.quantity += row.quantity;
+        else batch.components.push({ca:number,quantity:row.quantity,unitLimit:unitLimit});
+        if (unitLimit == null) batch.missing = true;
+        else batch.total += unitLimit * row.quantity;
+        if (!Number.isSafeInteger(batch.quantity) || !Number.isSafeInteger(batch.total)) throw new Error('Quantidade total do lote excede o limite suportado.');
       }
       return row;
     });
     return { sheetId: sheet.id, worker: sheet.worker, rows: rows, warnings: rows.some(function(r) { return r.group === GROUP.REVISAO; }) ? ['CAs pendentes de revisão podem alterar as sequências e os intervalos. A análise é parcial.'] : [], metadata: metadata, stale: stale };
   }
-  return { GROUP: GROUP, ca: ca, date: date, certificateDate: certificateDate, certificateStatus: certificateStatus, classify: classify, validLife: validLife, validateSheet: validateSheet, analyze: analyze };
+  return { GROUP: GROUP, ca: ca, date: date, certificateDate: certificateDate, certificateStatus: certificateStatus, classify: classify, validLife: validLife, quantity: quantity, limitCalculation: limitCalculation, validateSheet: validateSheet, analyze: analyze };
 })();
 if (typeof module !== 'undefined') module.exports = EpiDomain;

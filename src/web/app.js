@@ -32,8 +32,8 @@
   function renderEntries() {
     $('entries').replaceChildren(); $('entryCount').textContent = '(' + current.entries.length + ')';
     current.entries.forEach(e => {
-      const tr = document.createElement('tr'); cell(tr, e.ca); cell(tr, e.date); cell(tr, timeLabel(e.savedAt));
-      const actions = cell(tr, ''); actions.append(button('Editar', () => { editing = e.id; $('ca').value = e.ca; $('date').value = e.date; $('quickLifeDays').value = lifetimes[e.ca] || ''; $('addEntry').textContent = 'Atualizar'; $('cancelEdit').hidden = false; $('ca').focus(); }), button('Excluir', () => {
+      const tr = document.createElement('tr'); cell(tr, e.ca); cell(tr, e.date); cell(tr, EpiDomain.quantity(e.quantity)); cell(tr, timeLabel(e.savedAt));
+      const actions = cell(tr, ''); actions.append(button('Editar', () => { editing = e.id; $('ca').value = e.ca; $('date').value = e.date; $('quantity').value = EpiDomain.quantity(e.quantity); $('quickLifeDays').value = lifetimes[e.ca] || ''; $('addEntry').textContent = 'Atualizar'; $('cancelEdit').hidden = false; $('ca').focus(); }), button('Excluir', () => {
         if (!confirm('Excluir este lançamento?')) return;
         EpiSessionCache.dirty(current);current.entries = current.entries.filter(x => x.id !== e.id); if (editing === e.id) resetInput(); persist(); renderEntries();
       })); $('entries').append(tr);
@@ -105,6 +105,7 @@
   $('date').oninput = () => { const v = $('date').value.replace(/\D/g,'').slice(0,8); $('date').value = v.slice(0,2) + (v.length>2 ? '/'+v.slice(2,4) : '') + (v.length>4 ? '/'+v.slice(4) : ''); };
   $('entryForm').onsubmit = guard(async () => {
     const ca = EpiDomain.ca($('ca').value), date = $('date').value, rawLife = $('quickLifeDays').value; EpiDomain.date(date);
+    const quantity = EpiDomain.quantity($('quantity').value);
     const days = Number(rawLife);
     if (rawLife && !EpiDomain.validLife(days)) throw new Error('Vida útil deve ser um inteiro entre 1 e 36500 dias.');
     if (rawLife) {
@@ -113,8 +114,8 @@
       lifetimes[ca] = days; renderLives();
     }
     EpiSessionCache.dirty(current);
-    if (editing) { const e = current.entries.find(x => x.id === editing); if (e.ca !== ca || e.date !== date) e.savedAt = ''; e.ca = ca; e.date = date; }
-    else current.entries.push({ id: id(), ca, date });
+    if (editing) { const e = current.entries.find(x => x.id === editing); if (e.ca !== ca || e.date !== date || EpiDomain.quantity(e.quantity) !== quantity) e.savedAt = ''; e.ca = ca; e.date = date; e.quantity = quantity; }
+    else current.entries.push({ id: id(), ca, date, quantity });
     persist(); renderEntries(); resetInput(); notify(rawLife ? 'Lançamento no rascunho; vida útil salva no cadastro de prazos.' : 'Lançamento registrado no rascunho.');
   });
   $('cancelEdit').onclick = resetInput;

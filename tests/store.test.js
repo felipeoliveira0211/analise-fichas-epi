@@ -13,7 +13,7 @@ function setup() {
  }};
  const c=vm.createContext({PropertiesService:{getScriptProperties:()=>({getProperty:()=> 'fake-spreadsheet-id'})},SpreadsheetApp:{openById:()=>db},LockService:{getScriptLock:()=>({waitLock(){locked=true},releaseLock(){locked=false}})}});
  vm.runInContext(fs.readFileSync('src/server/store.js','utf8'),c);
- return {store:c.EpiStore,tabs,isLocked:()=>locked};
+ return {store:c.EpiStore,context:c,tabs,isLocked:()=>locked};
 }
 test('initialisation repeatable preserves existing table data and rejects unexpected headers',()=>{
  const {store:s,tabs}=setup();s.initialize();assert.equal(tabs.size,8);
@@ -45,4 +45,21 @@ test('linhas inteiramente vazias entre registros não se tornam fichas ou trabal
  // A partially populated row remains visible for integrity diagnostics.
  tabs.get('Sheets').cells[2][1]="'w3";
  assert.equal(s.rows('Sheets').length,3);
+});
+
+test('migração automática de Entries de 6/7 colunas preserva dados e acrescenta quantity uma vez',()=>{
+ for(const width of [6,7]){
+  const {store:s,tabs}=setup();s.initialize();s.replace('Entries',[{id:'e1',sheetId:'s1',ca:'3',date:'01/01/2026',position:0,savedAt:'ontem'}]);
+  const tab=tabs.get('Entries');tab.cells.forEach(r=>r.splice(width));const before=JSON.stringify(tab.cells[1]);
+  const rows=s.rows('Entries');assert.equal(rows[0].id,'e1');assert.equal(rows[0].quantity,'');assert.equal(JSON.stringify(tab.cells[1]),before);assert.equal(tab.cells[0][7],'quantity');
+  s.initialize();assert.equal(tab.cells[0].length,8);assert.equal(s.rows('Entries').length,1);
+ }
+});
+
+
+test('API real com adaptador Sheets migra legado e mantém quantidade após gravar e reabrir',()=>{
+ const {store:s,context:c,tabs}=setup();s.initialize();c.EpiDomain=require('../src/domain/analysis');vm.runInContext(fs.readFileSync('src/server/api.js','utf8'),c);
+ s.replace('Workers',[{id:'w1',name:'Pessoa',sector:'Setor',role:'Cargo',ges:'GES'}]);s.replace('Sheets',[{id:'s1',workerId:'w1',state:'draft',revision:0}]);s.replace('Entries',[{id:'e1',sheetId:'s1',ca:'3',date:'01/01/2026',position:0}]);tabs.get('Entries').cells.forEach(row=>row.splice(7));
+ const loaded=c.epiLoadSheet('s1');assert.equal(loaded.entries[0].quantity,1);loaded.entries[0].quantity=3;c.epiSaveSheet(loaded);
+ assert.equal(c.epiLoadSheet('s1').entries[0].quantity,3);assert.equal(tabs.get('Entries').cells[1][7],3);
 });

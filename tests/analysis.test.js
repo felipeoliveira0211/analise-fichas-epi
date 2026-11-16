@@ -22,7 +22,7 @@ test('luva seguida de creme, limite fixo',()=>{const r=run([[3,'01/01/2026'],[4,
 test('creme seguido de luva fora do prazo',()=>assert.equal(run([[4,'01/01/2026'],[3,'01/02/2026']])[1].status,'Fora do prazo'));
 test('datas fora de ordem preservam entrada original',()=>{const s=sheet([[1,'31/01/2026'],[1,'01/01/2026']]);const before=JSON.stringify(s);const r=D.analyze(s,catalog,{1:30});assert.equal(r.rows[0].id,'e1');assert.equal(r.rows[1].interval,30);assert.equal(JSON.stringify(s),before);});
 test('datas inválidas e anos bissextos',()=>{for(const date of ['31/02/2026','29/02/2025','00/01/2026','01/13/2026','2026-01-01']) assert.throws(()=>run([[1,date]]));assert.equal(D.date('29/02/2024'),Date.UTC(2024,1,29));});
-test('mesmo dia: intervalo zero e ordenação estável',()=>{const r=run([[1,'01/01/2026'],[2,'01/01/2026']]);assert.equal(r[1].interval,0);assert.equal(r[0].id,'e0');assert.equal(r[1].status,'Dentro do prazo');});
+test('mesmo dia forma lote sem perder a ordem de digitação',()=>{const r=run([[1,'01/01/2026'],[2,'01/01/2026'],[1,'01/04/2026']]);assert.equal(r[1].interval,null);assert.equal(r[0].id,'e0');assert.equal(r[1].status,'Marco inicial');assert.equal(r[2].limit,90);assert.equal(r[2].status,'Dentro do prazo');});
 test('CA sem vida útil não presume conformidade',()=>{const r=run([[2,'01/01/2026'],[1,'02/01/2026']],{})[1];assert.equal(r.limit,null);assert.equal(r.status,'Vida útil não cadastrada');});
 test('CA não identificado sinaliza análise parcial',()=>{const r=D.analyze(sheet([[999,'01/01/2026']]),catalog,{});assert.equal(r.rows[0].group,'revisao');assert.equal(r.rows[0].status,'Revisão manual necessária');assert.equal(r.warnings.length,1);});
 test('categorias intercaladas têm sequências independentes',()=>{const r=run([[1,'01/01/2026'],[3,'05/01/2026'],[5,'06/01/2026'],[2,'31/01/2026'],[4,'05/02/2026']]);assert.deepEqual(r.map(x=>x.interval),[null,null,null,30,31]);assert.equal(r[2].group,'outros');assert.equal(r[4].status,'Fora do prazo');});
@@ -64,4 +64,36 @@ test('proteção dérmica limita-se a luvas e cremes químicos e ignora outras e
  for(const name of ['Luvas de segurança','Creme protetor'])assert.equal(D.classify({name,approvedProtection:protection}),'dermica');
  const rows=D.analyze(sheet([[3,'01/01/2026'],[7,'15/01/2026'],[4,'01/02/2026']]),{...catalog,7:{name:'Manga',approvedProtection:protection}}, {},{}).rows;
  assert.equal(rows[1].status,'Sem análise de periodicidade');assert.equal(rows[2].interval,31);assert.equal(rows[2].status,'Fora do prazo');
+});
+
+test('quantidade dérmica multiplica prazo anterior e nova entrega reinicia sem saldo',()=>{
+ const s=sheet([[3,'01/01/2026'],[4,'01/02/2026'],[3,'10/03/2026']]);s.entries[0].quantity=3;s.entries[1].quantity=1;s.entries[2].quantity=10;
+ const rows=D.analyze(s,catalog,{},{}).rows;
+ assert.equal(rows[1].quantity,1);assert.equal(rows[1].previousQuantity,3);assert.equal(rows[1].unitLimit,30);assert.equal(rows[1].limit,90);assert.equal(rows[1].status,'Dentro do prazo');
+ assert.equal(rows[2].interval,37);assert.equal(rows[2].limit,30);assert.equal(rows[2].status,'Fora do prazo');
+});
+test('CA/data repetidos preservam ordem e somam quantidades no mesmo lote',()=>{
+ const s=sheet([[3,'01/01/2026'],[3,'01/01/2026'],[4,'01/02/2026']]);s.entries[0].quantity=3;s.entries[1].quantity=2;
+ const rows=D.analyze(s,catalog,{},{}).rows;assert.deepEqual(rows.map(r=>r.id),['e0','e1','e2']);assert.equal(rows[1].interval,null);assert.equal(rows[1].status,'Marco inicial');assert.equal(rows[2].limit,150);assert.equal(rows[2].previousQuantity,5);
+});
+test('quantidade padrão 1, validação de inteiros positivos e prazo auditivo pelo CA anterior',()=>{
+ assert.equal(D.quantity(undefined),1);assert.equal(D.quantity(''),1);assert.equal(D.quantity('3'),3);
+ for(const value of [0,-1,1.5,'2 pares',true,NaN,Infinity])assert.throws(()=>D.quantity(value),/Quantidade/);
+ const s=sheet([[1,'01/01/2026'],[2,'01/03/2026'],[1,'01/04/2026']]);s.entries[0].quantity=3;
+ const rows=D.analyze(s,catalog,{1:30,2:60},{}).rows;assert.equal(rows[0].quantity,3);assert.equal(rows[1].limit,90);assert.equal(rows[1].status,'Dentro do prazo');assert.equal(rows[2].limit,60);
+});
+
+
+test('lote soma luva e creme, nova data descarta o saldo e intercalados não misturam grupos',()=>{
+ const s=sheet([[3,'01/01/2026'],[4,'01/01/2026'],[1,'05/01/2026'],[3,'20/01/2026'],[4,'20/02/2026']]);
+ const rows=D.analyze(s,catalog,{1:100},{}).rows;
+ assert.equal(rows[3].limit,60);assert.equal(rows[3].interval,19);assert.equal(rows[3].previousQuantity,2);assert.equal(rows[4].limit,30);assert.equal(rows[4].interval,31);assert.equal(rows[4].status,'Fora do prazo');
+ assert.equal(D.limitCalculation(rows[3]),'30 × 2 = 60 dias');
+});
+test('lote auditivo soma vida útil de CAs diferentes e respeita quantidade por linha',()=>{
+ const s=sheet([[1,'01/01/2026'],[2,'01/01/2026'],[1,'01/05/2026'],[2,'01/07/2026']]);s.entries[0].quantity=2;
+ const rows=D.analyze(s,catalog,{1:30,2:90},{}).rows;
+ assert.equal(rows[2].limit,150);assert.equal(rows[2].previousQuantity,3);assert.equal(rows[2].unitLimit,null);assert.equal(rows[2].status,'Dentro do prazo');assert.equal(D.limitCalculation(rows[2]),'30 × 2 + 90 × 1 = 150 dias');
+ assert.equal(rows[3].limit,30);assert.equal(rows[3].status,'Fora do prazo');
+ const missing=D.analyze(s,catalog,{1:30},{}).rows;assert.equal(missing[2].limit,null);assert.equal(missing[2].status,'Vida útil não cadastrada');
 });

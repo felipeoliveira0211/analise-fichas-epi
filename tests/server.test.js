@@ -59,3 +59,9 @@ test('rascunho local legado sem IDs não bloqueia relatório sem filtros nem alt
  const drafts=[valid,legacy],before=JSON.stringify(drafts),result=c.epiGenerateReports({},drafts);
  assert.equal(result.reports.length,1);assert.equal(result.warnings.length,1);assert.match(result.warnings[0],/legado.*sem ID/);assert.equal(JSON.stringify(drafts),before);
 });
+
+test('quantidade e repetições persistem, legado vale 1 e edição da quantidade atualiza a entrega',()=>{
+ const {context:c,tables:t}=setup(),s=input();c.epiSaveSheet(s);assert.equal(c.epiLoadSheet(s.id).entries[0].quantity,1);
+ t.Entries[0].savedAt='2020-01-01T00:00:00.000Z';s.revision=1;s.entries[0].quantity=3;s.entries.push({...s.entries[0],id:'e2',quantity:2});
+ c.epiSaveSheet(s);const loaded=c.epiLoadSheet(s.id);assert.deepEqual(Array.from(loaded.entries,e=>e.quantity),[3,2]);assert.notEqual(t.Entries[0].savedAt,'2020-01-01T00:00:00.000Z');
+});

@@ -9,3 +9,9 @@ test('relatórios em massa ordenam empresa, depois GES, depois nome do trabalhad
  const data=[['Empresa B','GES A','Ana'],['Empresa A','GES B','Ana'],['Empresa A','GES A','Zélia'],['Empresa A','GES A','Ana']].map(([company,ges,name],i)=>{const s=sheet();s.id='s'+i;s.worker={...s.worker,id:'w'+i,company,ges,name};return s;});
  assert.deepEqual(R.create(data,catalog,{}, {},{}).reports.map(r=>[r.worker.company,r.worker.ges,r.worker.name]),[['Empresa A','GES A','Ana'],['Empresa A','GES A','Zélia'],['Empresa A','GES B','Ana'],['Empresa B','GES A','Ana']]);
 });
+
+test('filtro de período preserva quantidade da entrega anterior fora da seleção',()=>{
+ const s=sheet();s.entries[0].quantity=3;s.entries[1].quantity=1;
+ const result=R.create([s],catalog,{'1':30,'2':90},{},{start:'2026-02-01',end:'2026-02-01'});
+ assert.equal(result.reports[0].rows.length,1);const row=result.reports[0].rows[0];assert.equal(row.quantity,1);assert.equal(row.previousQuantity,3);assert.equal(row.limit,90);assert.equal(row.status,'Dentro do prazo');
+});

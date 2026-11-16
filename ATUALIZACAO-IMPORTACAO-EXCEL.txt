@@ -2,8 +2,10 @@ ATUALIZAÇÃO: LANÇAMENTO EM MASSA E MATRIZ EXCEL
 
 1. ATUALIZAR A APLICAÇÃO GOOGLE EXISTENTE
 - Faça backup da planilha e do projeto Apps Script antes de atualizar.
-- Nesta versão, somente o Index.html gerado precisa ser substituído no editor
-  Apps Script. Use google-apps-script/Index.html deste commit.
+- Nesta versão, substitua Index.html, Api.gs, Domain.gs e Store.gs no editor
+  Apps Script. Use os arquivos completos da pasta google-apps-script/ do mesmo commit.
+- Execute verifyReportAndExcelDeployment antes de publicar: ele detecta versões
+  incompatíveis e adaptadores antigos que não persistem a quantidade.
 - Não cole src/web/Index.html: ele contém marcadores que o build deve preencher.
 - Salve o projeto e atualize a implantação existente: Implantar > Gerenciar
   implantações > Editar > Nova versão > Implantar. Preserve o acesso privado
@@ -18,8 +20,8 @@ ATUALIZAÇÃO: LANÇAMENTO EM MASSA E MATRIZ EXCEL
   Depois atualize a versão da implantação pelo editor Google.
 
 CORREÇÃO DOS DOWNLOADS E VISIBILIDADE
-- Para esta correção, substitua novamente somente google-apps-script/Index.html
-  no Index.html do projeto Google e publique uma NOVA VERSÃO da implantação.
+- Atualize os quatro arquivos indicados acima e publique uma NOVA VERSÃO
+  da implantação existente.
 - A importação agora fica em um painel sempre visível na ficha.
 - Os downloads abrem uma nova janela. Se o navegador bloquear, permita pop-ups
   para a aplicação e clique novamente. A janela mostra um link Baixar caso o
@@ -31,12 +33,15 @@ CORREÇÃO DOS DOWNLOADS E VISIBILIDADE
 - Em Ficha e lançamentos, abra Lançamento em massa por Excel.
 - Clique Baixar modelo Excel. Preencha a aba Entregas; consulte Instruções.
 - Campos: Identificador, Empresa, Trabalhador, Setor, Cargo, GES, CA,
-  Data da entrega. Todos obrigatórios, no máximo 200 caracteres por campo.
+  Data da entrega (os oito campos obrigatórios), e Quantidade opcional ao final.
+  Quantidade vazia vale 1; informe um inteiro positivo, em pares para luvas
+  e unidades para cremes. Modelos antigos de oito colunas continuam aceitos.
 - Uma linha por entrega; repita o identificador e os mesmos dados pessoais
   nas linhas de uma mesma ficha. Identificadores diferentes separam homônimos.
 - CA: somente dígitos (até 10). Data: DD/MM/AAAA ou data Excel sem horário.
 - Máximo 2 MB e 2000 entregas por arquivo .xlsx. Sem fórmulas ou links.
-  Duplicatas de CA/data para a mesma ficha e dados divergentes são rejeitados.
+  Repetições de CA/data são aceitas e preservadas. Dados divergentes do
+  trabalhador para um mesmo identificador continuam sendo rejeitados.
 - Carregue o arquivo, confira a prévia por trabalhador e clique Importar fichas
   validadas. Nenhuma ficha é lançada antes desse clique.
 - No Apps Script, cada ficha é salva automaticamente no Google Sheets.
@@ -57,12 +62,17 @@ CORREÇÃO DOS DOWNLOADS E VISIBILIDADE
 3. EXPORTAR MATRIZ
 - Em Relatórios / PDFs, selecione origem, período e filtros. Gere a prévia.
 - Clique Baixar matriz Excel. O .xlsx inclui a logo SESI incorporada.
-- Cada ficha ocupa uma linha: trabalhador, setor, empresa, cargo, GES e ID.
-- Seguem blocos de Proteção auditiva, Proteção dérmica e Outras entregas.
-  Cada entrega tem CA, data, EPI, intervalo, limite, resultado, validade e
-  situação do CA. Dentro de cada bloco, as entregas estão em ordem de data.
-- A quantidade de colunas acompanha a maior sequência de cada grupo. Grupos
-  vazios são omitidos. Mais de 16384 colunas exige reduzir o período.
+- A matriz tem grupos lado a lado e entregas cronológicas em linhas.
+  Os dados do trabalhador são mesclados apenas dentro da mesma ficha.
+- Cada grupo apresenta quantidade, CA e data; auditivos e dérmicos mostram
+  também o intervalo, colorido conforme o prazo. A aba Detalhes mantém
+  quantidade anterior, prazo por unidade, prazo total, resultado e validades.
+- São 18 colunas fixas: quantidades e novas entregas aumentam as linhas,
+  sem espalhar a ficha por centenas de colunas.
+- Linhas do mesmo grupo e data somam seus prazos em um lote, respeitando
+  a quantidade de cada linha. Luva + creme (quantidade 1 cada) somam 60 dias.
+  Auditivos somam as vidas úteis dos respectivos CAs. Nova data de entrega
+  do grupo reinicia o prazo sem aproveitar saldo anterior.
 - CAs pendentes de revisão aparecem em Outras entregas com seu resultado
   explícito. Não interprete análise parcial como conformidade global.
 - O período filtra entregas depois da análise completa, preservando os intervalos.
@@ -85,8 +95,8 @@ CORREÇÃO DOS DOWNLOADS E VISIBILIDADE
   reabra a ficha na implantação privada para validar permissões Google reais.
 
 5. REVISÃO DE CACHE E DESEMPENHO
-- Esta atualização continua exigindo somente a substituição do Index.html
-  gerado e uma nova versão da implantação; nenhum .gs mudou.
+- Para esta atualização com quantidade, substitua Index.html, Api.gs,
+  Domain.gs e Store.gs conforme o item 1.
 - A lista recolhida não cria botões em segundo plano e só é montada ao abrir.
 - Dados pessoais digitados são capturados imediatamente na memória e gravados
   no navegador após 300 ms sem nova digitação. Ao ocultar/sair da página, o

@@ -1,6 +1,6 @@
 /* XLSX processing stays in the browser; no external upload service. */
 var EpiSpreadsheets = (function () {
-  const headers = ['Identificador','Empresa','Trabalhador','Setor','Cargo','GES','CA','Data da entrega'];
+  const headers = ['Identificador','Empresa','Trabalhador','Setor','Cargo','GES','CA','Data da entrega','Quantidade'];
   function book() { const w = new ExcelJS.Workbook(); w.creator = 'Análise de fichas de EPI'; return w; }
   function style(row) { row.font = {bold:true,color:{argb:'FFFFFFFF'}}; row.fill = {type:'pattern',pattern:'solid',fgColor:{argb:'FF185748'}}; row.alignment={wrapText:true,vertical:'middle'}; row.height=32; }
   function template() {
@@ -9,7 +9,8 @@ var EpiSpreadsheets = (function () {
     const i=w.addWorksheet('Instruções');
     ['Preencha Entregas: uma linha por entrega. Não altere os cabeçalhos.',
       'Identificador: código único por ficha/trabalhador dentro deste arquivo; repita nas entregas da mesma pessoa.',
-      'Todos os campos são obrigatórios. Repita Empresa, Trabalhador, Setor, Cargo e GES em cada linha.',
+      'Os oito campos originais são obrigatórios. Quantidade: inteiro positivo, opcional; vazio = 1. Informe pares para luvas e unidades para creme.',
+      'Linhas com o mesmo CA e data são aceitas e preservadas; repita os dados do trabalhador.',
       'Data: DD/MM/AAAA como texto ou data do Excel. CA: somente dígitos. Não use fórmulas.',
       'Limites: 2 MB por arquivo e 2000 entregas. A importação cria fichas em andamento.',
       'Não mescla fichas existentes. Reenviar arquivo alterado cria novas fichas: confira a prévia.',
@@ -26,13 +27,15 @@ var EpiSpreadsheets = (function () {
   }
   function parse(w, prefix, domain) {
     const s=w.getWorksheet('Entregas'); if(!s)throw Error('Aba Entregas ausente. Use o modelo.');
-    if(s.rowCount>2001 || s.columnCount>8)throw Error('Limite de 2000 entregas e 8 colunas excedido.');
-    if(headers.some((h,i)=>text(s.getRow(1).getCell(i+1))!==h))throw Error('Cabeçalhos inválidos. Use o modelo.');
+    if(s.rowCount>2001 || s.columnCount>9)throw Error('Limite de 2000 entregas e 9 colunas excedido.');
+    if(headers.slice(0,8).some((h,i)=>text(s.getRow(1).getCell(i+1))!==h) || !['','Quantidade'].includes(text(s.getRow(1).getCell(9))))throw Error('Cabeçalhos inválidos. Use o modelo.');
     const groups=new Map(); let count=0;
     s.eachRow((row,n)=>{
       if(n===1)return;
       try {
-        const values=headers.map((_,i)=>text(row.getCell(i+1))); if(values.every(v=>!v))return;
+        const values=headers.slice(0,8).map((_,i)=>text(row.getCell(i+1))),rawQuantity=text(row.getCell(9)); if(values.every(v=>!v)&&!rawQuantity)return;
+        if(rawQuantity&&text(s.getRow(1).getCell(9))!=='Quantidade')throw Error('A coluna 9 deve ter o cabeçalho Quantidade.');
+        const quantity=domain.quantity(rawQuantity);
         if(values.some(v=>!v||v.length>200))throw Error('Preencha todos os campos (máximo 200 caracteres).');
         if(typeof row.getCell(8).value==='number'){const serial=row.getCell(8).value;if(!Number.isInteger(serial))throw Error('Data não pode conter horário.');const d=new Date((serial-(w.properties.date1904?24107:25569))*86400000);values[7]=text({value:d});}
         const [key,company,name,sector,role,ges,ca,date]=values;
@@ -41,8 +44,7 @@ var EpiSpreadsheets = (function () {
         let sheet=groups.get(key); const worker={company,name,sector,role,ges};
         if(sheet && Object.keys(worker).some(k=>sheet.worker[k]!==worker[k]))throw Error('Dados divergentes para o mesmo identificador.');
         if(!sheet){const id=prefix+'-'+groups.size;sheet={id,worker:{id:'w-'+id,...worker},state:'draft',revision:0,entries:[]};groups.set(key,sheet);}
-        if(sheet.entries.some(e=>e.ca===ca&&e.date===date))throw Error('Entrega duplicada (mesmo CA e data).');
-        sheet.entries.push({id:sheet.id+'-e'+n,ca,date});count++;
+        sheet.entries.push({id:sheet.id+'-e'+n,ca,date,quantity});count++;
       }catch(e){throw Error('Linha '+n+': '+e.message);}
     });
     if(!count)throw Error('A planilha não contém entregas.');
@@ -70,18 +72,18 @@ var EpiSpreadsheets = (function () {
     const w=book(),s=w.addWorksheet('Matriz de entregas');
     s.properties.defaultRowHeight=26;
     if(logo){const image=w.addImage({base64:logo,extension:'png'});s.addImage(image,{tl:{col:0,row:0},ext:{width:140,height:65}});}
-    s.getRow(1).height=52;s.mergeCells('C1:O1');s.getCell('C1').value='Análise de fichas de EPI';s.getCell('C1').font={bold:true,size:18,color:{argb:'FF18312D'}};
-    s.mergeCells('A2:O2');s.getCell('A2').value='Gerado em: '+result.generatedAt+' · Filtros: '+JSON.stringify(result.filters||{});
-    s.mergeCells('A3:O3');s.getCell('A3').value='Troca em dias: verde = dentro do prazo; vermelho = fora do prazo; amarelo = vida útil não cadastrada ou revisão. Primeira entrega = marco inicial.'+((result.warnings||[]).length?' RELATÓRIO PARCIAL: confira a aba Avisos.':'');s.getCell('A3').alignment={wrapText:true};s.getRow(3).height=32;
+    s.getRow(1).height=52;s.mergeCells('C1:R1');s.getCell('C1').value='Análise de fichas de EPI';s.getCell('C1').font={bold:true,size:18,color:{argb:'FF18312D'}};
+    s.mergeCells('A2:R2');s.getCell('A2').value='Gerado em: '+result.generatedAt+' · Filtros: '+JSON.stringify(result.filters||{});
+    s.mergeCells('A3:R3');s.getCell('A3').value='Troca em dias: verde = dentro do prazo; vermelho = fora do prazo; amarelo = vida útil não cadastrada ou revisão. Primeira entrega = marco inicial.'+((result.warnings||[]).length?' RELATÓRIO PARCIAL: confira a aba Avisos.':'');s.getCell('A3').alignment={wrapText:true};s.getRow(3).height=32;
     if ((result.warnings || []).length) {
       const notices=w.addWorksheet('Avisos');notices.addRow(['Relatório parcial — confira os registros não incluídos']);
       result.warnings.forEach(warning=>notices.addRow([warning]));notices.getColumn(1).width=120;
     }
-    const headings=['Nome do GHE / GES','Setor','Cargo','Nome do funcionário','Empresa','CA','Data entrega','Troca em dias','Creme / luva — agentes químicos','CA','Data entrega','Troca em dias','Outros EPIs / revisão','CA','Data entrega'];
+    const headings=['Nome do GHE / GES','Setor','Cargo','Nome do funcionário','Empresa','CA','Qtd.','Data entrega','Troca em dias','Creme / luva — agentes químicos','CA','Qtd.','Data entrega','Troca em dias','Outros EPIs / revisão','CA','Qtd.','Data entrega'];
     s.getRow(5).values=headings;
-    for(const [from,to,title] of [[1,5,'Trabalhador'],[6,8,'Proteção auditiva'],[9,12,'Proteção dérmica'],[13,15,'Outros EPIs / revisão']]){s.mergeCells(4,from,4,to);s.getRow(4).getCell(from).value=title;}
+    for(const [from,to,title] of [[1,5,'Trabalhador'],[6,9,'Proteção auditiva'],[10,14,'Proteção dérmica'],[15,18,'Outros EPIs / revisão']]){s.mergeCells(4,from,4,to);s.getRow(4).getCell(from).value=title;}
     for(const n of [4,5]){style(s.getRow(n));s.getRow(n).height=36;s.getRow(n).font={bold:true,color:{argb:'FF102B20'},size:11};s.getRow(n).fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFCCFFCC'}};s.getRow(n).alignment={horizontal:'center',vertical:'middle',wrapText:true};}
-    const details=w.addWorksheet('Detalhes');details.addRow(['GHE / GES','Setor','Cargo','Funcionário','Empresa','ID da ficha','Grupo','CA','EPI','Data entrega','Intervalo (dias)','Limite (dias)','Resultado','Validade CA','Situação CA']);style(details.getRow(1));
+    const details=w.addWorksheet('Detalhes');details.addRow(['GHE / GES','Setor','Cargo','Funcionário','Empresa','ID da ficha','Grupo','CA','EPI','Data entrega','Intervalo (dias)','Limite (dias)','Resultado','Validade CA','Situação CA','Quantidade','Quantidade anterior','Prazo por unidade (dias)','Cálculo do lote anterior']);style(details.getRow(1));
     const ordered=result.reports.slice().sort((a,b)=>String(a.worker.company||'').localeCompare(String(b.worker.company||''),'pt-BR')||String(a.worker.ges).localeCompare(String(b.worker.ges),'pt-BR')||String(a.worker.name).localeCompare(String(b.worker.name),'pt-BR'));
     ordered.forEach((report,index)=>{
       const p=report.worker,identity=[p.ges,p.sector,p.role,p.name,p.company||''];
@@ -91,21 +93,21 @@ var EpiSpreadsheets = (function () {
       const identityHeight=Math.ceil((identityLines*14+10)/height);
       for(let i=0;i<height;i++){
         const [a,d,o]=groups.map(rows=>rows[i]);
-        const row=s.addRow([...(i===0?identity:identity.map(()=>'')),...(a?[a.ca,a.date,a.interval==null?'Marco inicial':a.interval]:['','','']),...(d?[d.name,d.ca,d.date,d.interval==null?'Marco inicial':d.interval]:['','','','']),...(o?[o.name,o.ca,o.date]:['','',''])]);
+        const row=s.addRow([...(i===0?identity:identity.map(()=>'')),...(a?[a.ca,EpiDomain.quantity(a.quantity),a.date,a.interval==null?'Marco inicial':a.interval]:['','','','']),...(d?[d.name,d.ca,EpiDomain.quantity(d.quantity),d.date,d.interval==null?'Marco inicial':d.interval]:['','','','','']),...(o?[o.name,o.ca,EpiDomain.quantity(o.quantity),o.date]:['','','',''])]);
         row.height=Math.min(409,Math.max(40,identityHeight,...[d,o].filter(Boolean).map(entry=>Math.ceil(String(entry.name).length/28)*14+10)));row.font={size:10};row.alignment={vertical:'middle',horizontal:'center',wrapText:true};
         row.eachCell({includeEmpty:true},cell=>{cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:index%2?'FFD9E9F8':'FFF2F2F2'}};cell.border={bottom:{style:'hair',color:{argb:'FFFFFFFF'}}};});
-        for(const [entry,col] of [[a,6],[d,10],[o,14]])if(entry){const cell=row.getCell(col);const color=entry.caTone==='bad'?'FFFF4D4D':entry.caTone==='warn'||entry.group==='revisao'?'FFFFEB72':null;if(color)cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:color}};cell.note=(entry.caStatus||'Situação não informada')+(entry.caExpiry?' · Validade CA: '+entry.caExpiry:'');}
-        for(const [entry,col] of [[a,8],[d,12]])if(entry){const cell=row.getCell(col);const color=entry.status==='Dentro do prazo'?'FF00B050':entry.status==='Fora do prazo'?'FFFF4D4D':entry.interval!=null?'FFFFEB72':null;if(color)cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:color}};cell.note=entry.status+(entry.limit!=null?' · Prazo: '+entry.limit+' dias':'')+(entry.caExpiry?' · Validade CA: '+entry.caExpiry:'');}
+        for(const [entry,col] of [[a,6],[d,11],[o,16]])if(entry){const cell=row.getCell(col);const color=entry.caTone==='bad'?'FFFF4D4D':entry.caTone==='warn'||entry.group==='revisao'?'FFFFEB72':null;if(color)cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:color}};cell.note=(entry.caStatus||'Situação não informada')+(entry.caExpiry?' · Validade CA: '+entry.caExpiry:'');}
+        for(const [entry,col] of [[a,9],[d,14]])if(entry){const cell=row.getCell(col);const color=entry.status==='Dentro do prazo'?'FF00B050':entry.status==='Fora do prazo'?'FFFF4D4D':entry.interval!=null?'FFFFEB72':null;if(color)cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:color}};cell.note=entry.status+(entry.limit!=null?' · Prazo anterior: '+EpiDomain.limitCalculation(entry):'')+(entry.caExpiry?' · Validade CA: '+entry.caExpiry:'');}
       }
       if(height>1)for(let col=1;col<=5;col++)s.mergeCells(first,col,first+height-1,col);
-      for(const rows of groups)for(const r of rows)details.addRow([...identity,report.sheetId,r.group,r.ca,r.name,r.date,r.interval==null?'':r.interval,r.limit==null?'':r.limit,r.status,r.caExpiry||'',r.caStatus||'']);
+      for(const rows of groups)for(const r of rows)details.addRow([...identity,report.sheetId,r.group,r.ca,r.name,r.date,r.interval==null?'':r.interval,r.limit==null?'':r.limit,r.status,r.caExpiry||'',r.caStatus||'',EpiDomain.quantity(r.quantity),r.previousQuantity||'',r.unitLimit==null?'':r.unitLimit,r.limit==null?'':EpiDomain.limitCalculation(r)]);
       // A white separator keeps different sheets distinct, including homonyms.
       s.addRow([]).height=10;
     });
-    const widths=[32,22,28,34,24,12,16,14,30,12,16,14,30,12,16];widths.forEach((width,i)=>{s.getColumn(i+1).width=width;});
+    const widths=[32,22,28,34,24,12,8,16,14,30,12,8,16,14,30,12,8,16];widths.forEach((width,i)=>{s.getColumn(i+1).width=width;});
     s.views=[{state:'frozen',xSplit:5,ySplit:5,showGridLines:false}];
-    s.pageSetup={paperSize:8,orientation:'landscape',fitToPage:true,fitToWidth:1,fitToHeight:0,printTitlesRow:'4:5',printArea:'A1:O'+s.rowCount};
-    details.columns.forEach(c=>{c.width=24;});details.views=[{state:'frozen',xSplit:4,ySplit:1}];details.autoFilter={from:{row:1,column:1},to:{row:details.rowCount,column:15}};
+    s.pageSetup={paperSize:8,orientation:'landscape',fitToPage:true,fitToWidth:1,fitToHeight:0,printTitlesRow:'4:5',printArea:'A1:R'+s.rowCount};
+    details.columns.forEach(c=>{c.width=24;});details.views=[{state:'frozen',xSplit:4,ySplit:1}];details.autoFilter={from:{row:1,column:1},to:{row:details.rowCount,column:19}};
     return w;
   }
   function openDownload() {

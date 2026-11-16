@@ -144,3 +144,34 @@ O Api acompanha a nova identificação de versão. Execute
 `verifyReportAndExcelDeployment`, publique uma **Nova versão** da implantação
 existente e recarregue a URL `/exec`. Os scripts do Worker já estão incorporados
 no Index: não crie arquivos adicionais no editor Google.
+
+## Quantidade e entregas repetidas
+
+Para aplicar essa atualização, substitua **Index.html**, **Api.gs**, **Domain.gs**
+e **Store.gs**, todos do mesmo pacote `google-apps-script/`. Execute
+`verifyReportAndExcelDeployment` e publique uma **Nova versão** na implantação
+existente. A verificação também detecta Domain/Store antigos que não suportam
+quantidade. Nenhum outro arquivo precisa ser criado no editor.
+
+A coluna `quantity` é acrescentada automaticamente ao fim de `Entries` no primeiro
+acesso usando o Store atualizado, somente quando os cabeçalhos antigos de seis ou
+sete colunas são reconhecidos. Cabeçalhos desconhecidos continuam bloqueados.
+Essa migração não regrava as entregas existentes: campos vazios equivalem a 1.
+Mantenha a planilha e `SPREADSHEET_ID`; não recrie as abas nem o catálogo.
+
+Quantidade é inteira e positiva, em pares para luvas e unidades para cremes.
+No modelo Excel, a nova nona coluna **Quantidade** pode ficar vazia (1), e modelos
+antigos de oito colunas continuam aceitos. CA/data repetidos são preservados, com
+IDs distintos por linha e ordem original em empates. O reconhecimento de reenvio
+do mesmo arquivo continua ativo para evitar importar a ficha inteira novamente.
+
+O prazo compara o intervalo com a quantidade da entrega anterior: 30 dias por
+unidade/par de proteção dérmica ou vida útil cadastrada por unidade de auditivo.
+Linhas do mesmo grupo/data somam os prazos em um lote; uma nova data reinicia a contagem sem acumular saldos. Quantidade,
+prazo total e quantidade anterior constam nos relatórios e no Excel.
+
+A regra do lote considera a data: luva + creme na mesma data, com quantidade 1
+cada, somam 60 dias. Dois auditivos na mesma data somam os prazos dos respectivos
+CAs. As linhas são mantidas separadas nos relatórios; cada uma compara o intervalo
+com o lote da data anterior do seu grupo. Não se cria um intervalo zero entre linhas
+do mesmo lote. Um CA auditivo sem prazo cadastrado torna o total desse lote pendente.

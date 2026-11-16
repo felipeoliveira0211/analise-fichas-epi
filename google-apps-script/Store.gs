@@ -2,7 +2,7 @@ var EpiStore = (function () {
   var schema = {
     Workers: ['id', 'name', 'sector', 'role', 'ges', 'company'],
     Sheets: ['id', 'workerId', 'state', 'updatedAt', 'revision'],
-    Entries: ['id', 'sheetId', 'ca', 'date', 'physicalExpiry', 'position', 'savedAt'],
+    Entries: ['id', 'sheetId', 'ca', 'date', 'physicalExpiry', 'position', 'savedAt', 'quantity'],
     Lifetimes: ['ca', 'days'],
     CaIndex: ['ca', 'name', 'approvedProtection', 'caExpiry', 'caSituation'],
     CaDefaultStage: ['ca', 'name', 'approvedProtection', 'caExpiry', 'caSituation'],
@@ -19,6 +19,15 @@ var EpiStore = (function () {
     var db = database(), tab = db.getSheetByName(name);
     if (!tab) throw new Error('Execute setupDatabase pelo editor do Apps Script.');
     var header = tab.getRange(1, 1, 1, schema[name].length).getValues()[0];
+    // Append only recognized legacy columns; never rewrite existing entry data.
+    if (name === 'Entries') {
+      for (var width = 6; width <= 7; width++) {
+        if (header.slice(0,width).join('|') === schema[name].slice(0,width).join('|') && header.slice(width).every(function(v) { return v === ''; })) {
+          tab.getRange(1,width+1,1,schema[name].length-width).setValues([schema[name].slice(width)]);
+          header = schema[name].slice(); break;
+        }
+      }
+    }
     if (header.join('|') !== schema[name].join('|')) throw new Error('Cabeçalho inesperado em ' + name + '.');
     return tab;
   }
@@ -77,5 +86,5 @@ var EpiStore = (function () {
     var meta = rows('Metadata')[0] || {};
     return {defaultBase:typeof EpiDefaultCatalog !== 'undefined' ? EpiDefaultCatalog.status(EpiStore) : null,connected:true,spreadsheetUrl:db.getUrl(),caCount:count('CaIndex'),source:meta.source || '',referenceDate:meta.referenceDate || '',updatedAt:meta.updatedAt || ''};
   }
-  return { writeAt:writeAt, count:count,connection:connection, initialize: initialize, rows: rows, replace: replace, locked: locked };
+  return { entryColumns:schema.Entries.slice(), writeAt:writeAt, count:count,connection:connection, initialize: initialize, rows: rows, replace: replace, locked: locked };
 })();
