@@ -69,24 +69,54 @@ Mantenha o arquivo original `.csv.gz` do botão de download CAEPI e siga [UPDATE
 
 ## Correção de relatórios e downloads Excel
 
-Após atualizar este código, execute `npm ci --cache /workspace/.npm-cache` e
-`npm run google:bundle`. Atualize os arquivos do pacote `google-apps-script/`
-no mesmo projeto Apps Script (incluindo `Index.html`, `Api.gs` e `Store.gs`).
-Se usa clasp, execute `npm run build` e envie `dist/` conforme as instruções acima.
-Em **Implantar → Gerenciar implantações**, edite a implantação existente e selecione
-uma nova versão. Reabra a URL da aplicação e recarregue a página para usar o HTML atualizado.
-Não é necessário recriar a planilha ou apagar fichas.
+Use os arquivos completos da pasta `google-apps-script/`, baixados do mesmo
+commit. Não copie a visualização formatada ou um trecho do GitHub: use **Raw →
+Download raw file** ou **Code → Download ZIP** e abra o arquivo baixado no editor.
+O Index agora tem aproximadamente 415 KB, com ExcelJS compactado e incorporado;
+não há dependência de CDN, serviço externo de download ou novo escopo OAuth.
 
-Verifique com dados fictícios: gerar relatório da origem Google sem filtros,
-baixar a matriz Excel e baixar o modelo na seção Ficha e lançamentos.
-Permita pop-ups para os downloads. O bundle neutraliza tags script literais
-presentes em strings do ExcelJS para evitar interferência no processamento do HTML.
+Para atualizar um projeto existente:
 
-Linhas totalmente vazias são ignoradas na leitura. Uma ficha com entregas, mas sem
-ID ou vínculo com trabalhador, deixa de bloquear as demais: a prévia/PDF informa
-o ID da ficha não incluída e o Excel inclui uma aba **Avisos**. O relatório nesse
-caso é parcial. Confira os vínculos `Sheets.workerId` → `Workers.id` antes de usá-lo
-como consolidado completo. Nenhum ID é inventado e nenhum dado é excluído.
+1. Substitua integralmente estes arquivos no projeto Apps Script existente:
+   - `Index.html` (arquivo HTML chamado **Index** no editor Google).
+   - `Api.gs` (script **Api**).
+   - `ReportDomain.gs` (script **ReportDomain**).
+   - `Domain.gs` (script **Domain**, para manter o domínio da mesma distribuição).
+   - `Store.gs` (script **Store**, incluindo a correção de linhas vazias).
+2. Salve todos os arquivos. Não mantenha cópias adicionais com outros nomes no
+   mesmo projeto: funções duplicadas podem carregar versões diferentes.
+3. No seletor de funções do editor, execute **verifyReportAndExcelDeployment**.
+   Essa verificação é somente leitura e não consulta nem modifica fichas reais.
+   Ela confirma: mesma versão em Api/Index, SHA-256 da biblioteca Excel e geração
+   de relatório sem filtros com um rascunho fictício antigo sem IDs. O registro
+   deve retornar `status: "OK"` e a identificação `epi-...`. Uma mensagem de erro
+   informa o arquivo incompleto ou desatualizado antes da publicação.
+4. Vá em **Implantar → Gerenciar implantações → lápis da implantação atual**.
+   Em **Versão**, selecione **Nova versão** e clique em **Implantar**. Salvar código
+   no editor não atualiza a versão atendida pela URL `/exec`.
+5. Feche a aba antiga da aplicação, reabra a mesma URL `/exec` e recarregue com
+   **Ctrl+Shift+R**. O rodapé deve exibir a mesma versão `epi-...` registrada no
+   passo 3. Se não exibir versão, a URL ainda está servindo o código anterior.
+   Se tela e servidor forem de versões diferentes, a aplicação avisará explicitamente.
+6. Permita pop-ups para a aplicação: o modelo e a matriz Excel são baixados numa
+   janela separada para funcionar no iframe do Apps Script. O link na janela é
+   mantido caso o navegador não inicie o download automaticamente.
 
-Os testes de interface Google usam serviços simulados e o pacote exportado;
-não substituem a verificação na implantação autenticada.
+Mantenha a planilha, a propriedade `SPREADSHEET_ID`, o manifesto e as configurações
+de acesso atuais. Não recrie o banco, não limpe o armazenamento do navegador e não
+execute inicialização ou atualização de catálogo para aplicar esta correção.
+
+A preparação local equivalente é `npm ci` e `npm run google:bundle`. Para clasp,
+use `npm run build` e envie `dist/` conforme as instruções acima; ainda é necessário
+publicar uma nova versão da implantação existente.
+
+O relatório trata rascunhos locais e fichas Google pelo mesmo caminho de validação.
+Linhas totalmente vazias são ignoradas. Uma ficha com entregas, mas sem IDs ou vínculo
+com trabalhador, não bloqueia as demais: a prévia/PDF informa a ficha não incluída e
+Excel contém uma aba **Avisos**. Nesse caso o relatório é parcial. Nenhum ID é inventado,
+nenhum dado é excluído e rascunhos antigos são preservados.
+
+Os testes automatizados carregam os arquivos `.gs` gerados em um único contexto V8
+sem `require`/`module`, serializam os RPCs, exercitam o pacote exportado em iframe com
+sandbox e leem os arquivos XLSX realmente baixados. Os serviços Google são simulados;
+isso não equivale a executar a implantação autenticada na conta Google.

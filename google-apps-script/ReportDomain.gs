@@ -13,17 +13,34 @@ var EpiReports = (function () {
     var w = sheet.worker || {};
     return (!filters.state || sheet.state === filters.state) && ['company','ges','sector','role'].every(function(k) { return fold(w[k]).includes(fold(filters[k])); }) && fold(w.name).includes(fold(filters.worker));
   }
+  function select(sheets, filters) {
+    if (!Array.isArray(sheets)) throw new Error('Fichas inválidas.');
+    filters = filters || {}; validate(filters);
+    var warnings = [], selected = [];
+    sheets.forEach(function(sheet) {
+      if (!sheet || !matches(sheet,filters)) return;
+      if (!Array.isArray(sheet.entries)) throw new Error('Lançamentos inválidos na ficha ' + (sheet.id || '(sem ID)') + '.');
+      if (!sheet.entries.length) return;
+      if (!sheet.id || !sheet.worker || !sheet.worker.id) {
+        warnings.push('Ficha ' + (sheet.id || '(sem ID)') + ' não incluída: ficha ou trabalhador sem ID. Para fichas Google, confira os vínculos nas abas Sheets e Workers; para rascunhos locais, reabra a ficha salva ou corrija o cadastro antes de salvar.');
+        return;
+      }
+      EpiDomain.validateSheet(sheet);
+      selected.push(sheet);
+    });
+    return {sheets:selected,warnings:warnings};
+  }
   function create(sheets, catalog, lives, metadata, filters) {
-    filters = filters || {}; var range = validate(filters), reports = [];
-    sheets.filter(function(s) { return matches(s,filters); }).forEach(function(sheet) {
+    filters = filters || {}; var range = validate(filters), reports = [], selection = select(sheets,filters);
+    selection.sheets.forEach(function(sheet) {
       if (!sheet.entries.length) return;
       var result = EpiDomain.analyze(sheet,catalog,lives,metadata);
       result.rows = result.rows.filter(function(r) { var t = EpiDomain.date(r.date); return (range.start === null || t >= range.start) && (range.end === null || t <= range.end); });
       if (result.rows.length) { result.state = sheet.state; result.updatedAt = sheet.updatedAt || ''; reports.push(result); }
     });
     reports.sort(function(a,b) { return String(a.worker.company || '').localeCompare(String(b.worker.company || ''),'pt-BR') || a.worker.ges.localeCompare(b.worker.ges,'pt-BR') || a.worker.name.localeCompare(b.worker.name,'pt-BR'); });
-    return {reports:reports,filters:filters,generatedAt:new Date().toISOString(),metadata:metadata};
+    return {reports:reports,warnings:selection.warnings,filters:filters,generatedAt:new Date().toISOString(),metadata:metadata};
   }
-  return {validate:validate,matches:matches,create:create};
+  return {validate:validate,matches:matches,select:select,create:create};
 })();
 if (typeof module !== 'undefined') module.exports = EpiReports;

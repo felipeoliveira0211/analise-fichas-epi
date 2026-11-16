@@ -1,22 +1,31 @@
 const fs = require('node:fs');
 const path = require('node:path');
+const crypto = require('node:crypto');
+const zlib = require('node:zlib');
 const root = path.resolve(__dirname, '..');
 const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 const out = path.join(root, 'dist');
 fs.mkdirSync(out, { recursive: true });
-for (const [source, target] of [['src/domain/reports.js','ReportDomain.gs'], ['src/domain/analysis.js','Domain.gs'], ['src/domain/official-updates.js','UpdateDomain.gs'], ['src/server/official-updates.js','OfficialUpdates.gs'], ['src/server/default-catalog.js','DefaultCatalog.gs'], ['src/domain/catalog-import.js','ImportDomain.gs'], ['src/server/setup.js','Setup.gs'], ['src/server/store.js','Store.gs'], ['src/server/catalog.js','Catalog.gs'], ['src/server/api.js','Api.gs'], ['src/appsscript.json','appsscript.json']]) fs.writeFileSync(path.join(out, target), read(source));
+function sourceFiles(dir) {
+  return fs.readdirSync(path.join(root,dir), {withFileTypes:true}).sort((a,b)=>a.name.localeCompare(b.name)).flatMap(entry => entry.isDirectory() ? sourceFiles(dir+'/'+entry.name) : [dir+'/'+entry.name]);
+}
+const fingerprint = crypto.createHash('sha256');
+for (const file of [...sourceFiles('src'), 'scripts/build.js', 'package-lock.json', 'SESI_logo.png']) fingerprint.update(file).update(fs.readFileSync(path.join(root,file)));
+const excelSource = read('node_modules/exceljs/dist/exceljs.min.js');
+const build = {id:'epi-' + fingerprint.digest('hex').slice(0,12), excelSha256:crypto.createHash('sha256').update(excelSource).digest('hex')};
+const excelData = zlib.gzipSync(Buffer.from(excelSource)).toString('base64');
+for (const [source, target] of [['src/domain/reports.js','ReportDomain.gs'], ['src/domain/analysis.js','Domain.gs'], ['src/domain/official-updates.js','UpdateDomain.gs'], ['src/server/official-updates.js','OfficialUpdates.gs'], ['src/server/default-catalog.js','DefaultCatalog.gs'], ['src/domain/catalog-import.js','ImportDomain.gs'], ['src/server/setup.js','Setup.gs'], ['src/server/store.js','Store.gs'], ['src/server/catalog.js','Catalog.gs'], ['src/server/api.js','Api.gs'], ['src/appsscript.json','appsscript.json']]) fs.writeFileSync(path.join(out, target), read(source).replace('/*__BUILD_ID__*/', build.id));
 const logoNames = ['sesi-logo.png','sesi-logo.svg','sesi-logo.jpg'];
 const rootLogo = ['SESI_logo.png','logo-sesi.png','logo-sesi.svg','logo-sesi.jpg'].find(name => fs.existsSync(path.join(root,name)));
 const logoName = rootLogo || logoNames.find(name => fs.existsSync(path.join(root,'src/web/assets',name)));
 const logoFile = logoName && path.join(root,rootLogo ? '' : 'src/web/assets',logoName);
 const logoType = logoName && (logoName.endsWith('.svg') ? 'image/svg+xml' : logoName.endsWith('.jpg') ? 'image/jpeg' : 'image/png');
 const brand = {logo:logoName ? 'data:'+logoType+';base64,'+fs.readFileSync(logoFile).toString('base64') : ''};
-// HtmlService also parses inline JavaScript: neutralize literal script tags
-// inside ExcelJS strings without changing their runtime values.
-const html = read('src/web/Index.html').replace('/*__CSS__*/', () => read('src/web/styles.css')).replace('/*__DOMAIN__*/', () => read('src/domain/analysis.js')).replace('/*__IMPORT__*/', () => read('src/domain/catalog-import.js')).replace('/*__CATALOG_UI__*/', () => read('src/web/catalog-ui.js')).replace('/*__REPORT_DOMAIN__*/', () => read('src/domain/reports.js')).replace('/*__BRAND__*/', () => 'var EpiBrand = '+JSON.stringify(brand)+';').replace('/*__RESULT_UI__*/', () => read('src/web/results-ui.js')).replace('/*__EXCEL__*/', () => read('node_modules/exceljs/dist/exceljs.min.js').replace(/<(\/?script)/gi, '\\x3c$1')).replace('/*__SPREADSHEETS__*/', () => read('src/web/spreadsheets.js')).replace('/*__SESSION_CACHE__*/', () => read('src/web/session-cache.js')).replace('/*__APP__*/', () => read('src/web/app.js'));
+// The vendor payload is inert base64. Only the small application script is parsed
+// by HtmlService; ExcelJS is verified and loaded on demand in the browser.
+const html = read('src/web/Index.html').replace('/*__CSS__*/', () => read('src/web/styles.css')).replace('/*__DOMAIN__*/', () => read('src/domain/analysis.js')).replace('/*__IMPORT__*/', () => read('src/domain/catalog-import.js')).replace('/*__CATALOG_UI__*/', () => read('src/web/catalog-ui.js')).replace('/*__REPORT_DOMAIN__*/', () => read('src/domain/reports.js')).replace('/*__BRAND__*/', () => 'var EpiBuild = '+JSON.stringify(build)+';var EpiBrand = '+JSON.stringify(brand)+';').replace('/*__RESULT_UI__*/', () => read('src/web/results-ui.js')).replace('/*__EXCEL_DATA__*/', () => excelData).replace('/*__EXCEL_LOADER__*/', () => read('src/web/excel-loader.js')).replace('/*__SPREADSHEETS__*/', () => read('src/web/spreadsheets.js')).replace('/*__SESSION_CACHE__*/', () => read('src/web/session-cache.js')).replace('/*__APP__*/', () => read('src/web/app.js'));
 fs.writeFileSync(path.join(out,'Index.html'),html);
 
-const crypto = require('node:crypto');
 const manifest = JSON.parse(read('data/default-ca/manifest.json'));
 manifest.classificationCounts = {auditiva:0,dermica:0,outros:0,revisao:0};
 const classification = require('../src/domain/analysis');

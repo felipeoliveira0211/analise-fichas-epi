@@ -155,6 +155,7 @@
   });
   async function init() {
     $('mode').textContent = remote ? 'Uso privado' : 'Demonstração local · dados fictícios';
+    $('buildVersion').textContent = 'Versão ' + EpiBuild.id;
     let cache = {};
     try { cache = JSON.parse(localStorage.getItem(KEY) || '{}'); sheets = Array.isArray(cache.sheets) ? cache.sheets : []; }
     catch (_) { notify('Rascunho local ilegível; não foi recuperado.', true); }
@@ -167,7 +168,7 @@
     if (sheets.length) open(sheets.find(s => s.id === cache.currentId) || sheets[0]); else newSheet();
     renderLives();
     if (remote) {
-      try { const data = await operation(() => rpc('epiBootstrap')); catalog = data.catalog; metadata = data.metadata; lifetimes = data.lifetimes; livesLoaded = true; savedSheets = data.sheets; sheets=EpiSessionCache.prune(sheets,savedSheets,current.id,Date.now());persist(); showBaseUpdated(); fillQuickLife(); renderLives(); renderSheets(); notify('Dados carregados.'); }
+      try { const data = await operation(() => rpc('epiBootstrap')); if (data.buildId !== EpiBuild.id) throw Error('Arquivos de versões diferentes. Atualize Api.gs e Index.html do mesmo pacote e publique uma nova versão da implantação. Versão da tela: ' + EpiBuild.id + '; servidor: ' + (data.buildId || 'anterior sem identificação')); catalog = data.catalog; metadata = data.metadata; lifetimes = data.lifetimes; livesLoaded = true; savedSheets = data.sheets; sheets=EpiSessionCache.prune(sheets,savedSheets,current.id,Date.now());persist(); showBaseUpdated(); fillQuickLife(); renderLives(); renderSheets(); notify('Dados carregados.'); }
       catch (err) { notify('Conexão com a planilha falhou: ' + err.message + '. O rascunho local continua disponível.', true); }
     }
   }
@@ -182,7 +183,6 @@
     const fromGoogle = $('reportSource').value === 'google';
     if (fromGoogle && !remote) throw new Error('Buscar fichas Google exige abrir a aplicação implantada no Apps Script.');
     const local = fromGoogle ? null : sheets.filter(s => s.entries.length && EpiReports.matches(s,filters));
-    if (local) local.forEach(EpiDomain.validateSheet);
     const result = remote ? await operation(() => rpc('epiGenerateReports', filters, local)) : EpiReports.create(local,catalog,lifetimes,metadata,filters);
     if (generation !== reportGeneration) return;
     reportData = result; renderReport(result,$('reportPreview'));
@@ -219,15 +219,28 @@
     document.body.classList.add('print-current'); window.print();
   });
   window.addEventListener('afterprint',()=>document.body.classList.remove('print-current'));
-  $('excelReport').onclick = guard(async () => { if(reportReady) { const target=EpiSpreadsheets.openDownload(); await operation(()=>EpiSpreadsheets.download(EpiSpreadsheets.matrix(reportData,EpiBrand.logo),'relatorio-matriz-epi.xlsx',target)); } });
+  async function downloadExcel(createWorkbook,name) {
+    const target=EpiSpreadsheets.openDownload();
+    return operation(async()=>{
+      try {
+        await EpiExcel.ready();
+        await EpiSpreadsheets.download(createWorkbook(),name,target);
+      } catch(error) {
+        if (!target.closed) target.document.body.textContent='Não foi possível gerar a planilha: '+error.message;
+        throw error;
+      }
+    });
+  }
+  $('excelReport').onclick = guard(() => { if(reportReady) return downloadExcel(()=>EpiSpreadsheets.matrix(reportData,EpiBrand.logo),'relatorio-matriz-epi.xlsx'); });
   let bulkPending = null;
-  $('bulkTemplate').onclick = guard(()=>{const target=EpiSpreadsheets.openDownload();return operation(()=>EpiSpreadsheets.download(EpiSpreadsheets.template(),'modelo-entregas-epi.xlsx',target));});
+  $('bulkTemplate').onclick = guard(()=>downloadExcel(()=>EpiSpreadsheets.template(),'modelo-entregas-epi.xlsx'));
   $('bulkFile').onchange = guard(async () => {
     bulkPending=null; $('bulkImport').disabled=true; $('bulkPreview').replaceChildren(); $('bulkStatus').textContent='';
     await operation(async()=>{
       const file=$('bulkFile').files[0]; if(!file)return;
       if(!/\.xlsx$/i.test(file.name)||file.size>2*1024*1024)throw Error('Use um arquivo .xlsx de até 2 MB.');
       const data=await file.arrayBuffer(); const hash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',data))).map(x=>x.toString(16).padStart(2,'0')).join('').slice(0,32);
+      await EpiExcel.ready();
       const workbook=new ExcelJS.Workbook(); await workbook.xlsx.load(data);
       const parsed=EpiSpreadsheets.parse(workbook,'imp-'+hash,EpiDomain);
       bulkPending=parsed.sheets.filter(s=>!sheets.some(x=>x.id===s.id)&&!savedSheets.some(x=>x.id===s.id));

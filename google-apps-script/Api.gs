@@ -1,3 +1,4 @@
+var EPI_BUILD_ID = 'epi-aa00d746b928';
 function doGet() {
   return HtmlService.createHtmlOutputFromFile('Index').setTitle('Análise de fichas de EPI');
 }
@@ -6,7 +7,7 @@ function epiBootstrap() { return EpiStore.locked(epiBootstrap_); }
 function epiBootstrap_() {
   var meta = EpiCatalog.metadata(EpiStore), lives = {};
   EpiStore.rows('Lifetimes').forEach(function (r) { lives[EpiDomain.ca(r.ca)] = Number(r.days); });
-  return { catalog: {}, metadata: meta, lifetimes: lives, sheets: epiListSheets_(), connection: EpiStore.connection() };
+  return { buildId: EPI_BUILD_ID, catalog: {}, metadata: meta, lifetimes: lives, sheets: epiListSheets_(), connection: EpiStore.connection() };
 }
 function epiListSheets() { return EpiStore.locked(epiListSheets_); }
 function epiListSheets_() {
@@ -82,29 +83,42 @@ function epiGenerateReports(filters, localSheets) {
     var sheets;
     if (localSheets != null) {
       if (!Array.isArray(localSheets)) throw new Error('Fichas locais inválidas.');
-      localSheets.forEach(EpiDomain.validateSheet); sheets = localSheets;
+      sheets = localSheets;
     } else {
       var workers = {}, entries = {};
       EpiStore.rows('Workers').forEach(function(w) { workers[w.id] = w; });
       EpiStore.rows('Entries').forEach(function(e) { (entries[e.sheetId] || (entries[e.sheetId] = [])).push(e); });
       sheets = EpiStore.rows('Sheets').map(function(s) { return {id:s.id,worker:workers[s.workerId],state:s.state,updatedAt:s.updatedAt,entries:(entries[s.id] || []).sort(function(a,b) { return Number(a.position)-Number(b.position); })}; });
     }
-    sheets = sheets.filter(function(s) { return EpiReports.matches(s,filters); });
-    var warnings = [];
-    sheets = sheets.filter(function(s) {
-      if (!s.entries.length) return false;
-      if (!s.id || !s.worker || !s.worker.id) {
-        warnings.push('Ficha ' + (s.id || '(sem ID)') + ' não incluída: vínculo com trabalhador ausente. Confira os IDs nas abas Sheets e Workers.');
-        return false;
-      }
-      return true;
-    });
+    var selection = EpiReports.select(sheets,filters);
+    sheets = selection.sheets;
     if (!EpiStore.count('CaIndex')) throw new Error('Base de CAs vazia. Carregue a base antes de gerar relatórios.');
     var numbers = []; sheets.forEach(function(s) { s.entries.forEach(function(e) { numbers.push(e.ca); }); });
     var data = EpiCatalog.load(EpiStore,numbers), lives = {};
     EpiStore.rows('Lifetimes').forEach(function(r) { lives[EpiDomain.ca(r.ca)] = Number(r.days); });
     var result = EpiReports.create(sheets,data.index,lives,data.metadata,filters);
-    result.warnings = warnings;
+    result.warnings = selection.warnings;
     return result;
   });
+}
+
+/* Read-only verification of the saved deployment package; no production rows. */
+function verifyReportAndExcelDeployment() {
+  var html = HtmlService.createHtmlOutputFromFile('Index').getContent();
+  var versionMatch = /var EpiBuild = (\{[^;]+\});/.exec(html);
+  if (!versionMatch) throw new Error('Index.html antigo ou incompleto: copie o arquivo inteiro do pacote atualizado.');
+  var build = JSON.parse(versionMatch[1]);
+  if (build.id !== EPI_BUILD_ID) throw new Error('Api.gs e Index.html são de versões diferentes. Substitua ambos pelo mesmo pacote.');
+  var payload = /id="excelBundle"[^>]*>([^<]+)<\/textarea>/.exec(html);
+  if (!payload || html.indexOf('var EpiSpreadsheets =') < 0 || html.indexOf('var EpiExcel =') < 0) throw new Error('Index.html incompleto: módulos Excel ausentes.');
+  var source = Utilities.ungzip(Utilities.newBlob(Utilities.base64Decode(payload[1].trim()))).getDataAsString();
+  var digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, source, Utilities.Charset.UTF_8).map(function(b) { return ('0' + ((b + 256) % 256).toString(16)).slice(-2); }).join('');
+  if (digest !== build.excelSha256) throw new Error('Pacote Excel alterado ou incompleto. Copie novamente o Index.html inteiro.');
+  var sample = {id:'verify-sheet',worker:{id:'verify-worker',name:'Teste fictício',sector:'Teste',role:'Teste',ges:'Teste'},state:'draft',entries:[{id:'verify-entry',ca:'1',date:'01/01/2026'}]};
+  var legacy = {id:'verify-legacy',worker:{name:'Rascunho antigo'},entries:sample.entries};
+  var report = EpiReports.create([sample,legacy],{'1':{name:'EPI fictício',approvedProtection:'Proteção auditiva'}},{},{},{});
+  if (report.reports.length !== 1 || report.warnings.length !== 1) throw new Error('ReportDomain.gs desatualizado: substitua pelo arquivo do pacote.');
+  var result = {status:'OK',version:build.id,excel:'SHA-256 confirmado',report:'Sem filtros e rascunho legado verificados',next:'Publique uma nova versão da implantação existente.'};
+  console.log(JSON.stringify(result));
+  return result;
 }

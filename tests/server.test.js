@@ -51,3 +51,11 @@ test('relatório sem filtros preserva fichas válidas e avisa sobre vínculos au
  assert.deepEqual(Array.from(result.reports,r=>r.sheetId),['s1']);assert.equal(result.warnings.length,1);assert.match(result.warnings[0],/orfã.*não incluída.*Workers/);assert.equal(JSON.stringify(t),before);
  assert.equal(c.epiGenerateReports({worker:'Pessoa'}).warnings.length,0);
 });
+
+
+test('rascunho local legado sem IDs não bloqueia relatório sem filtros nem altera dados',()=>{
+ const {context:c,tables:t}=setup();c.EpiReports=require('../src/domain/reports');t.CaIndex=imported().records;
+ const valid=input(),legacy=input();legacy.id='legado';delete legacy.worker.id;
+ const drafts=[valid,legacy],before=JSON.stringify(drafts),result=c.epiGenerateReports({},drafts);
+ assert.equal(result.reports.length,1);assert.equal(result.warnings.length,1);assert.match(result.warnings[0],/legado.*sem ID/);assert.equal(JSON.stringify(drafts),before);
+});
