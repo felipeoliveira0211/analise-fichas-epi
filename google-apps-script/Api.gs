@@ -1,4 +1,4 @@
-var EPI_BUILD_ID = 'epi-aa00d746b928';
+var EPI_BUILD_ID = 'epi-e6b2b34e38ce';
 function doGet() {
   return HtmlService.createHtmlOutputFromFile('Index').setTitle('Análise de fichas de EPI');
 }
@@ -111,7 +111,7 @@ function verifyReportAndExcelDeployment() {
   if (build.id !== EPI_BUILD_ID) throw new Error('Api.gs e Index.html são de versões diferentes. Substitua ambos pelo mesmo pacote.');
   var payload = /id="excelBundle"[^>]*>([^<]+)<\/textarea>/.exec(html);
   if (!payload || html.indexOf('var EpiSpreadsheets =') < 0 || html.indexOf('var EpiExcel =') < 0) throw new Error('Index.html incompleto: módulos Excel ausentes.');
-  var source = Utilities.ungzip(Utilities.newBlob(Utilities.base64Decode(payload[1].trim()))).getDataAsString();
+  var source = Utilities.ungzip(Utilities.newBlob(Utilities.base64Decode(payload[1].trim()), 'application/x-gzip', 'exceljs.min.js.gz')).getDataAsString('UTF-8');
   var digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, source, Utilities.Charset.UTF_8).map(function(b) { return ('0' + ((b + 256) % 256).toString(16)).slice(-2); }).join('');
   if (digest !== build.excelSha256) throw new Error('Pacote Excel alterado ou incompleto. Copie novamente o Index.html inteiro.');
   var sample = {id:'verify-sheet',worker:{id:'verify-worker',name:'Teste fictício',sector:'Teste',role:'Teste',ges:'Teste'},state:'draft',entries:[{id:'verify-entry',ca:'1',date:'01/01/2026'}]};

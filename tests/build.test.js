@@ -20,8 +20,8 @@ test('HTML exportado não contém tags script literais dentro do JavaScript Exce
 function setup(){
  let html=fs.readFileSync('dist/Index.html','utf8');
  const context=vm.createContext({console:{log(){}},HtmlService:{createHtmlOutputFromFile:()=>({getContent:()=>html})},Utilities:{
-  DigestAlgorithm:{SHA_256:'sha256'},Charset:{UTF_8:'utf8'},base64Decode:s=>Buffer.from(s,'base64'),newBlob:b=>b,
-  ungzip:b=>({getDataAsString:()=>zlib.gunzipSync(b).toString()}),computeDigest:(_,s)=>Array.from(crypto.createHash('sha256').update(s).digest())
+  DigestAlgorithm:{SHA_256:'sha256'},Charset:{UTF_8:'utf8'},base64Decode:s=>Buffer.from(s,'base64'),newBlob:(bytes,contentType)=>({bytes,contentType}),
+  ungzip:b=>{if(!b.contentType)throw Error('Objeto blob não pode ter tipo de conteúdo nulo para esta operação.');return {getDataAsString:()=>zlib.gunzipSync(b.bytes).toString()}},computeDigest:(_,s)=>Array.from(crypto.createHash('sha256').update(s).digest())
  }});
  for(const file of ['Domain','ReportDomain','Api'])vm.runInContext(fs.readFileSync(`dist/${file}.gs`,'utf8'),context);
  return {context,change:fn=>{html=fn(html)}};

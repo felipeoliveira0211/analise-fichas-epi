@@ -5,7 +5,7 @@ const {chromium}=require('playwright');require('./export-google');
  const tables={Workers:[],Sheets:[],Entries:[],Lifetimes:[{ca:'54460',days:90}],CaIndex:[],Metadata:[],CaDefaultStage:[],CaDefaultBackup:[]},props={};
  const c=vm.createContext({console:{log(){}},
  PropertiesService:{getScriptProperties:()=>({getProperty:k=>props[k],setProperty:(k,v)=>{props[k]=v}})},
- Utilities:{DigestAlgorithm:{SHA_256:'sha256'},Charset:{UTF_8:'utf8'},computeDigest:(_,bytes)=>Array.from(crypto.createHash('sha256').update(bytes).digest()),base64Decode:s=>Buffer.from(s,'base64'),newBlob:b=>b,ungzip:b=>({getDataAsString:()=>zlib.gunzipSync(b).toString('utf8')})},
+ Utilities:{DigestAlgorithm:{SHA_256:'sha256'},Charset:{UTF_8:'utf8'},computeDigest:(_,bytes)=>Array.from(crypto.createHash('sha256').update(bytes).digest()),base64Decode:s=>Buffer.from(s,'base64'),newBlob:(bytes,contentType)=>({bytes,contentType}),ungzip:b=>{if(!b.contentType)throw Error('Objeto blob não pode ter tipo de conteúdo nulo para esta operação.');return {getDataAsString:()=>zlib.gunzipSync(b.bytes).toString('utf8')}}},
  HtmlService:{createHtmlOutputFromFile:()=>({getContent:()=>fs.readFileSync('google-apps-script/Index.html','utf8')})},
  EpiStore:{initialize(){},rows:n=>structuredClone(tables[n]),count:n=>tables[n].length,replace:(n,v)=>{tables[n]=structuredClone(v)},writeAt:(n,offset,rows)=>rows.forEach((r,i)=>{tables[n][offset+i]=structuredClone(r)}),locked:fn=>fn()}});
  vm.runInContext(fs.readFileSync('dist/DefaultData.gs','utf8'),c);
