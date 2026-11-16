@@ -1,4 +1,4 @@
-var EPI_BUILD_ID = 'epi-e6b2b34e38ce';
+var EPI_BUILD_ID = 'epi-5a90966f6ee9';
 function doGet() {
   return HtmlService.createHtmlOutputFromFile('Index').setTitle('Análise de fichas de EPI');
 }

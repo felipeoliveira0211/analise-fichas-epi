@@ -12,7 +12,7 @@ A integração real com Google Sheets ainda exige configuração e autorização
 
 Em **Ficha e lançamentos → Lançamento em massa por Excel**, baixe o modelo `.xlsx`, preencha uma linha por entrega e carregue o arquivo. A ferramenta valida os dados e mostra uma prévia antes da confirmação. O identificador agrupa as entregas em novas fichas; não há mesclagem automática com fichas existentes. Limites: 2 MB e 2000 entregas por arquivo.
 
-Em **Relatórios / PDFs**, gere a prévia e clique em **Baixar matriz Excel**. A planilha inclui a logo e uma linha por ficha, com trabalhador, setor, empresa e blocos de entregas auditivas, dérmicas e outras entregas.
+Em **Relatórios / PDFs**, gere a prévia e clique em **Baixar matriz Excel**. A planilha inclui a logo e grupos de EPI lado a lado, com entregas cronológicas em linhas, dados do trabalhador mesclados por ficha e cores nos intervalos. A aba Detalhes preserva prazos, resultados e validades. O upload é validado em segundo plano, com etapas visíveis e interrupção após 30 segundos em caso de travamento.
 
 Consulte [ATUALIZACAO-IMPORTACAO-EXCEL.txt](ATUALIZACAO-IMPORTACAO-EXCEL.txt) para os campos do modelo, tratamento de falhas e passos de atualização da implantação Google.
 

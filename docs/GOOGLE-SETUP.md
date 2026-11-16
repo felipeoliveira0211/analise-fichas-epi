@@ -120,3 +120,27 @@ Os testes automatizados carregam os arquivos `.gs` gerados em um único contexto
 sem `require`/`module`, serializam os RPCs, exercitam o pacote exportado em iframe com
 sandbox e leem os arquivos XLSX realmente baixados. Os serviços Google são simulados;
 isso não equivale a executar a implantação autenticada na conta Google.
+
+## Validação de uploads e nova matriz visual
+
+A validação de Excel roda em Web Worker, com mensagens de etapa e limite de
+30 segundos. Em falha, o worker é encerrado e o seletor de arquivo é liberado.
+Arquivos excessivos em tamanho descompactado são rejeitados antes da leitura;
+isso evita que formatação aplicada a milhares de linhas vazias bloqueie a tela.
+Continuam os limites de 2 MB e 2000 entregas. Em arquivo rejeitado por excesso,
+copie somente as linhas preenchidas para uma cópia nova do modelo.
+
+A matriz usa colunas fixas para trabalhador/GHE, auditivos, dérmicos e outros
+EPIs, com entregas cronológicas em linhas. O trabalhador fica mesclado dentro da
+sua ficha; fichas distintas e homônimos permanecem separados. Os intervalos ficam
+verdes quando dentro do prazo, vermelhos quando fora e amarelos quando há vida
+útil ausente ou revisão; primeira entrega aparece como marco inicial. As cores
+seguem as regras do sistema, não limites inferidos de imagens de referência.
+A aba Detalhes mantém limite, resultado e situação/validade dos CAs.
+
+Para aplicar essa atualização sobre a versão anterior, substitua **Index.html**
+e **Api.gs** pelos arquivos completos do mesmo pacote `google-apps-script/`.
+O Api acompanha a nova identificação de versão. Execute
+`verifyReportAndExcelDeployment`, publique uma **Nova versão** da implantação
+existente e recarregue a URL `/exec`. Os scripts do Worker já estão incorporados
+no Index: não crie arquivos adicionais no editor Google.

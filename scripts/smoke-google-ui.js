@@ -75,7 +75,7 @@ const {chromium}=require('playwright');require('./export-google');
     await (await popupPromise).close();return book;
   }
   const matrix=await downloadExcel('#excelReport');
-  assert.equal(matrix.getWorksheet('Matriz de entregas').getCell('A6').value,'Pessoa fictícia Google');
+  assert.equal(matrix.getWorksheet('Matriz de entregas').getCell('D6').value,'Pessoa fictícia Google');
   assert.match(matrix.getWorksheet('Avisos').getCell('A2').value,/orphan-regression/);
   await app.locator('[data-view="entry"]').click();
   const template=await downloadExcel('#bulkTemplate');assert.ok(template.getWorksheet('Entregas'));

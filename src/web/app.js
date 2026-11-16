@@ -236,18 +236,23 @@
   $('bulkTemplate').onclick = guard(()=>downloadExcel(()=>EpiSpreadsheets.template(),'modelo-entregas-epi.xlsx'));
   $('bulkFile').onchange = guard(async () => {
     bulkPending=null; $('bulkImport').disabled=true; $('bulkPreview').replaceChildren(); $('bulkStatus').textContent='';
-    await operation(async()=>{
-      const file=$('bulkFile').files[0]; if(!file)return;
+    $('bulkStatus').textContent='Preparando a validação…';
+    $('bulkFile').disabled=true;
+    try { await operation(async()=>{
+      const file=$('bulkFile').files[0]; if(!file){$('bulkStatus').textContent='';return;}
       if(!/\.xlsx$/i.test(file.name)||file.size>2*1024*1024)throw Error('Use um arquivo .xlsx de até 2 MB.');
       const data=await file.arrayBuffer(); const hash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',data))).map(x=>x.toString(16).padStart(2,'0')).join('').slice(0,32);
-      await EpiExcel.ready();
-      const workbook=new ExcelJS.Workbook(); await workbook.xlsx.load(data);
-      const parsed=EpiSpreadsheets.parse(workbook,'imp-'+hash,EpiDomain);
+      EpiSpreadsheets.checkArchive(data);
+      const parsed=await EpiExcel.read(data,'imp-'+hash,stage=>{$('bulkStatus').textContent=stage;});
       bulkPending=parsed.sheets.filter(s=>!sheets.some(x=>x.id===s.id)&&!savedSheets.some(x=>x.id===s.id));
       if(!bulkPending.length){bulkPending=null;throw Error('As fichas deste arquivo já constam na lista.');}
       const table=document.createElement('table');bulkPending.forEach(s=>{const tr=document.createElement('tr');[s.worker.name,s.worker.company,s.worker.sector,s.entries.length+' entregas'].forEach(v=>cell(tr,v));table.append(tr);});$('bulkPreview').append(table);
       $('bulkStatus').textContent=bulkPending.length+' nova(s) ficha(s), '+bulkPending.reduce((n,s)=>n+s.entries.length,0)+' entregas. '+(remote?'Serão salvas na planilha Google.':'Serão criados rascunhos neste navegador.');
-    });
+    }); } catch(error) {
+      bulkPending=null;$('bulkImport').disabled=true;
+      $('bulkStatus').textContent='Validação interrompida: '+(error.message || String(error));
+      throw error;
+    } finally { $('bulkFile').disabled=false; }
   });
   $('bulkImport').onclick = guard(async()=>{
     if(!bulkPending)return;
