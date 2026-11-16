@@ -37,3 +37,12 @@ test('migração adiciona empresa e savedAt preservando IDs, dados e abas',()=>{
 test('migração acrescenta situação às três tabelas de CA e mantém todos os registros',()=>{
  const {store:s,tabs}=setup();s.initialize();for(const name of ['CaIndex','CaDefaultStage','CaDefaultBackup']){s.replace(name,[{ca:'13990',name:'PERNEIRA',caExpiry:'22/08/2028'}]);tabs.get(name).cells.forEach(r=>r.splice(4));}s.initialize();for(const name of ['CaIndex','CaDefaultStage','CaDefaultBackup']){assert.equal(s.rows(name)[0].ca,'13990');assert.equal(s.rows(name)[0].caSituation,'');}s.initialize();
 });
+
+test('linhas inteiramente vazias entre registros não se tornam fichas ou trabalhadores',()=>{
+ const {store:s,tabs}=setup();s.initialize();
+ s.replace('Sheets',[{id:'s1',workerId:'w1',state:'draft'},{},{id:'s2',workerId:'w2',state:'complete'}]);
+ assert.deepEqual(Array.from(s.rows('Sheets'),r=>r.id),['s1','s2']);
+ // A partially populated row remains visible for integrity diagnostics.
+ tabs.get('Sheets').cells[2][1]="'w3";
+ assert.equal(s.rows('Sheets').length,3);
+});

@@ -90,10 +90,21 @@ function epiGenerateReports(filters, localSheets) {
       sheets = EpiStore.rows('Sheets').map(function(s) { return {id:s.id,worker:workers[s.workerId],state:s.state,updatedAt:s.updatedAt,entries:(entries[s.id] || []).sort(function(a,b) { return Number(a.position)-Number(b.position); })}; });
     }
     sheets = sheets.filter(function(s) { return EpiReports.matches(s,filters); });
+    var warnings = [];
+    sheets = sheets.filter(function(s) {
+      if (!s.entries.length) return false;
+      if (!s.id || !s.worker || !s.worker.id) {
+        warnings.push('Ficha ' + (s.id || '(sem ID)') + ' não incluída: vínculo com trabalhador ausente. Confira os IDs nas abas Sheets e Workers.');
+        return false;
+      }
+      return true;
+    });
     if (!EpiStore.count('CaIndex')) throw new Error('Base de CAs vazia. Carregue a base antes de gerar relatórios.');
     var numbers = []; sheets.forEach(function(s) { s.entries.forEach(function(e) { numbers.push(e.ca); }); });
     var data = EpiCatalog.load(EpiStore,numbers), lives = {};
     EpiStore.rows('Lifetimes').forEach(function(r) { lives[EpiDomain.ca(r.ca)] = Number(r.days); });
-    return EpiReports.create(sheets,data.index,lives,data.metadata,filters);
+    var result = EpiReports.create(sheets,data.index,lives,data.metadata,filters);
+    result.warnings = warnings;
+    return result;
   });
 }

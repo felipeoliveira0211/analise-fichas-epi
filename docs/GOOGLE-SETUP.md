@@ -66,3 +66,27 @@ Para atualizar uma implantação existente, crie uma nova versão na tela de ger
 ## Próximas atualizações da base
 
 Mantenha o arquivo original `.csv.gz` do botão de download CAEPI e siga [UPDATE-OFFICIAL-BASE.md](UPDATE-OFFICIAL-BASE.md). A administração acontece no editor e na preparação local do pacote, sem seção de base/conexão no aplicativo de uso.
+
+## Correção de relatórios e downloads Excel
+
+Após atualizar este código, execute `npm ci --cache /workspace/.npm-cache` e
+`npm run google:bundle`. Atualize os arquivos do pacote `google-apps-script/`
+no mesmo projeto Apps Script (incluindo `Index.html`, `Api.gs` e `Store.gs`).
+Se usa clasp, execute `npm run build` e envie `dist/` conforme as instruções acima.
+Em **Implantar → Gerenciar implantações**, edite a implantação existente e selecione
+uma nova versão. Reabra a URL da aplicação e recarregue a página para usar o HTML atualizado.
+Não é necessário recriar a planilha ou apagar fichas.
+
+Verifique com dados fictícios: gerar relatório da origem Google sem filtros,
+baixar a matriz Excel e baixar o modelo na seção Ficha e lançamentos.
+Permita pop-ups para os downloads. O bundle neutraliza tags script literais
+presentes em strings do ExcelJS para evitar interferência no processamento do HTML.
+
+Linhas totalmente vazias são ignoradas na leitura. Uma ficha com entregas, mas sem
+ID ou vínculo com trabalhador, deixa de bloquear as demais: a prévia/PDF informa
+o ID da ficha não incluída e o Excel inclui uma aba **Avisos**. O relatório nesse
+caso é parcial. Confira os vínculos `Sheets.workerId` → `Workers.id` antes de usá-lo
+como consolidado completo. Nenhum ID é inventado e nenhum dado é excluído.
+
+Os testes de interface Google usam serviços simulados e o pacote exportado;
+não substituem a verificação na implantação autenticada.

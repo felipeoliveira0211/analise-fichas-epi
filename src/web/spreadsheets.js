@@ -54,6 +54,12 @@ var EpiSpreadsheets = (function () {
     s.getRow(1).height=52;s.getCell('C1').value='Análise de fichas de EPI';s.getCell('C1').font={bold:true,size:16};
     s.getCell('A2').value='Gerado em: '+result.generatedAt;
     s.getCell('A3').value='Filtros: '+JSON.stringify(result.filters||{});
+    if ((result.warnings || []).length) {
+      const notices=w.addWorksheet('Avisos');
+      notices.addRow(['Relatório parcial — confira os registros não incluídos']);
+      result.warnings.forEach(warning=>notices.addRow([warning]));
+      notices.getColumn(1).width=120;
+    }
     const groups=[['Proteção auditiva',r=>r.group==='auditiva'],['Proteção dérmica',r=>r.group==='dermica'],['Outras entregas',r=>!['auditiva','dermica'].includes(r.group)]];
     const sizes=groups.map(([,f])=>Math.max(0,...result.reports.map(r=>r.rows.filter(f).length)));
     if(6+sizes.reduce((a,b)=>a+b,0)*8>16384)throw Error('Matriz excede o limite de colunas do Excel. Reduza o período.');

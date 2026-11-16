@@ -42,3 +42,12 @@ test('relatório Google usa dados persistidos e relatório local usa rascunhos s
  const before=JSON.stringify(t);const filter={start:'2026-02-01',end:'2026-02-01',company:'empresa a'};const result=c.epiGenerateReports(filter);assert.equal(result.reports[0].rows[0].interval,31);assert.ok(result.reports[0].rows[0].savedAt);
  s.worker.company='Empresa B';assert.equal(c.epiGenerateReports({company:'B'},[s]).reports.length,1);assert.equal(c.epiGenerateReports({company:'B'}).reports.length,0);assert.equal(JSON.stringify(t),before);
 });
+
+test('relatório sem filtros preserva fichas válidas e avisa sobre vínculos ausentes sem inventar IDs',()=>{
+ const {context:c,tables:t}=setup();c.EpiReports=require('../src/domain/reports');c.epiSaveSheet(input());t.CaIndex=imported().records;
+ t.Sheets.push({id:'orfã',workerId:'inexistente',state:'draft'},{id:'vazia',workerId:'inexistente',state:'draft'});
+ t.Entries.push({id:'e-orfa',sheetId:'orfã',ca:'1',date:'01/01/2026'});
+ const before=JSON.stringify(t),result=c.epiGenerateReports({});
+ assert.deepEqual(Array.from(result.reports,r=>r.sheetId),['s1']);assert.equal(result.warnings.length,1);assert.match(result.warnings[0],/orfã.*não incluída.*Workers/);assert.equal(JSON.stringify(t),before);
+ assert.equal(c.epiGenerateReports({worker:'Pessoa'}).warnings.length,0);
+});

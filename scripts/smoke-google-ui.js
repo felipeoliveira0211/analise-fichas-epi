@@ -1,6 +1,6 @@
 /* Real application/server with mocked Google services; no OAuth or live deployment. */
 const assert=require('node:assert/strict'),http=require('node:http'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),crypto=require('node:crypto'),zlib=require('node:zlib');
-const {chromium}=require('playwright');require('./build');
+const {chromium}=require('playwright');require('./export-google');
 (async()=>{
  const tables={Workers:[],Sheets:[],Entries:[],Lifetimes:[{ca:'54460',days:90}],CaIndex:[],Metadata:[],CaDefaultStage:[],CaDefaultBackup:[]},props={};
  const c=vm.createContext({console:{log(){}},EpiReports:require('../src/domain/reports'),EpiDomain:require('../src/domain/analysis'),EpiImport:require('../src/domain/catalog-import'),
@@ -13,7 +13,7 @@ const {chromium}=require('playwright');require('./build');
  c.adminUpdateOfficialBase();assert.equal(tables.CaIndex.length,42478);assert.equal(tables.Lifetimes[0].days,90);
  const baseTimestamp=tables.Metadata[0].updatedAt;c.adminUpdateOfficialBase();assert.equal(tables.Metadata[0].updatedAt,baseTimestamp);
  const allowed=new Set(['epiBootstrap','epiListSheets','epiLoadSheet','epiSaveSheet','epiSaveLifetime','epiDeleteLifetime','epiAnalyzeSheet','epiGenerateReports']);
- const server=http.createServer((req,res)=>{res.setHeader('Content-Type','text/html; charset=utf-8');res.end(fs.readFileSync('dist/Index.html'))});await new Promise(r=>server.listen(0,'127.0.0.1',r));let browser;
+ const server=http.createServer((req,res)=>{res.setHeader('Content-Type','text/html; charset=utf-8');res.end(fs.readFileSync('google-apps-script/Index.html'))});await new Promise(r=>server.listen(0,'127.0.0.1',r));let browser;
  try{
   browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||undefined,headless:true});const page=await browser.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('dialog',d=>d.accept());
   await page.exposeFunction('__epiRpc',(method,args)=>{if(!allowed.has(method))throw Error('Unexpected RPC '+method);return c[method](...args)});
@@ -47,6 +47,26 @@ const {chromium}=require('playwright');require('./build');
   await page.locator('[data-view="entry"]').click();await page.locator('#saveSheet').click();await page.waitForFunction(()=>document.getElementById('message').textContent==='Ficha salva na planilha.');assert.equal(tables.Entries.length,8);
   await page.reload();await page.waitForFunction(()=>document.getElementById('message').textContent==='Dados carregados.');await page.locator('#ca').fill('54460');assert.equal(await page.locator('#quickLifeDays').inputValue(),'30');await page.locator('#ca').fill('');assert.equal(tables.Metadata[0].updatedAt,baseTimestamp);
   await page.locator('[data-view="reports"]').click();await page.locator('#reportSource').selectOption('google');await page.locator('#reportCompany').fill('Empresa ficticia');await page.locator('#reportForm button').click();await page.waitForFunction(()=>document.getElementById('reportStatus').textContent.includes('1 ficha(s), 8 lançamento(s)'));
+  // No filters must work even when a saved sheet has lost its worker link.
+  tables.Sheets.push({id:'orphan-regression',workerId:'missing',state:'draft'});
+  tables.Entries.push({id:'orphan-entry',sheetId:'orphan-regression',ca:'54460',date:'01/01/2026'});
+  await page.locator('#reportCompany').fill('');await page.locator('#reportForm button').click();
+  await page.waitForFunction(()=>document.getElementById('reportStatus').textContent.includes('não incluída'));
+  assert.match(await page.locator('#reportPreview').innerText(),/orphan-regression.*Workers/);
+  async function downloadExcel(button) {
+    const popupPromise=page.waitForEvent('popup');
+    const downloadPromise=popupPromise.then(p=>p.waitForEvent('download'));
+    await page.locator(button).click();const file=await downloadPromise;
+    const book=new (require('exceljs').Workbook)();await book.xlsx.readFile(await file.path());
+    await (await popupPromise).close();return book;
+  }
+  const matrix=await downloadExcel('#excelReport');
+  assert.equal(matrix.getWorksheet('Matriz de entregas').getCell('A6').value,'Pessoa fictícia Google');
+  assert.match(matrix.getWorksheet('Avisos').getCell('A2').value,/orphan-regression/);
+  await page.locator('[data-view="entry"]').click();
+  const template=await downloadExcel('#bulkTemplate');assert.ok(template.getWorksheet('Entregas'));
+  await page.locator('[data-view="reports"]').click();
+  tables.Sheets=tables.Sheets.filter(s=>s.id!=='orphan-regression');tables.Entries=tables.Entries.filter(e=>e.id!=='orphan-entry');
   const preview=await page.locator('#reportPreview').innerText();assert.match(preview,/Análise entregas de EPI/);assert.doesNotMatch(preview,/Relatório de fichas de EPI/);assert.match(preview,/Gerado em/);assert.match(preview,/Filtros:/);assert.doesNotMatch(preview,/Origem:|Fonte de CAs|Referência:|Último salvamento|Salvo na planilha|Base e conexão/);
   assert.deepEqual(await page.locator('#reportPreview .group-heading').allTextContents(),['Proteção dérmica','Proteção auditiva','Outras entregas']);assert.equal(await page.locator('#reportPreview thead th').last().innerText(),'Resultado');
   await page.locator('#reportPreview .report-logo').evaluate(img=>img.decode());assert.ok(await page.locator('#reportPreview .report-logo').evaluate(img=>img.naturalWidth>0&&img.src.startsWith('data:image/png;base64,')));

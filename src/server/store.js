@@ -39,7 +39,10 @@ var EpiStore = (function () {
   function rows(name) {
     var tab = table(name), count = tab.getLastRow() - 1;
     if (count < 1) return [];
-    return tab.getRange(2, 1, count, schema[name].length).getDisplayValues().map(function (cells) {
+    return tab.getRange(2, 1, count, schema[name].length).getDisplayValues().filter(function (cells) {
+      // Ignore entirely empty rows, including gaps left by manual deletions.
+      return cells.some(function (value) { return String(value).trim() !== ''; });
+    }).map(function (cells) {
       var obj = {}; schema[name].forEach(function (key, i) { obj[key] = cells[i]; }); return obj;
     });
   }

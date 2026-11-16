@@ -186,7 +186,7 @@
     const result = remote ? await operation(() => rpc('epiGenerateReports', filters, local)) : EpiReports.create(local,catalog,lifetimes,metadata,filters);
     if (generation !== reportGeneration) return;
     reportData = result; renderReport(result,$('reportPreview'));
-    $('reportStatus').textContent = result.reports.length + ' ficha(s), ' + result.reports.reduce((sum,r) => sum+r.rows.length,0) + ' lançamento(s).';
+    $('reportStatus').textContent = result.reports.length + ' ficha(s), ' + result.reports.reduce((sum,r) => sum+r.rows.length,0) + ' lançamento(s).' + ((result.warnings || []).length ? ' Atenção: ' + result.warnings.length + ' ficha(s) não incluída(s); confira os avisos na prévia.' : '');
     reportReady = result.reports.length > 0; $('printReport').disabled = !reportReady; $('excelReport').disabled = !reportReady;
   });
   function renderReport(result,preview) {
@@ -199,6 +199,7 @@
     paragraph(title,'Análise entregas de EPI','h2');
     paragraph(title,'Gerado em ' + timeLabel(result.generatedAt));
     if(result.filters) paragraph(preview,'Filtros: ' + Object.entries(filters).filter(([,v]) => v).map(([k,v]) => ({start:'Entrega desde',end:'Entrega até',company:'Empresa',ges:'GES',worker:'Funcionário',sector:'Setor',role:'Cargo',state:'Situação'}[k]) + ': ' + v).join(' • '));
+    (result.warnings || []).forEach(warning => paragraph(preview,warning));
     if (!remote) paragraph(preview,'DEMONSTRAÇÃO COM CAs FICTÍCIOS — não usar para conclusões técnicas.');
     result.reports.forEach(report => {
       const section = document.createElement('article'); section.className = 'report-sheet'; preview.append(section);
